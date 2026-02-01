@@ -101,19 +101,25 @@ export default function Dashboard() {
   );
 
   const activeGoal = useMemo(() => getActiveGoal(goals, settings), [goals, settings]);
+  const totalGoalsSaved = useMemo(
+    () => goals.reduce((sum, goal) => sum + Number(goal.currentAmount || 0), 0),
+    [goals]
+  );
 
   const plannedMonthlySavings = useMemo(() => {
     return computeRequiredMonthlySavings(activeGoal, stats.net, settings);
   }, [activeGoal, settings, stats.net]);
 
+  const budgetPlannedSavings = 0;
+
   const recommendedMaxSpend = useMemo(() => {
     return computeRecommendedSpend({
       monthlyIncome,
       monthlyMandatory,
-      plannedMonthlySavings,
+      plannedMonthlySavings: budgetPlannedSavings,
       settings
     });
-  }, [monthlyIncome, monthlyMandatory, plannedMonthlySavings, settings]);
+  }, [monthlyIncome, monthlyMandatory, settings]);
 
   const safeRecommendedSpend = useMemo(
     () => (recommendedMaxSpend < 0 ? 0 : recommendedMaxSpend || 0),
@@ -121,9 +127,9 @@ export default function Dashboard() {
   );
 
   const planSpend = useMemo(() => {
-    const value = monthlyIncome - monthlyMandatory - plannedMonthlySavings;
+    const value = monthlyIncome - monthlyMandatory - budgetPlannedSavings;
     return value < 0 ? 0 : value;
-  }, [monthlyIncome, monthlyMandatory, plannedMonthlySavings]);
+  }, [monthlyIncome, monthlyMandatory]);
 
   const plannedMonthlyNet = useMemo(() => {
     if (!Number.isFinite(safeRecommendedSpend)) return 0;
@@ -230,8 +236,8 @@ export default function Dashboard() {
           </div>
           <div className="stat-tile tile-blue">
             <div className="tile-label">{t("toGoal")}</div>
-            <div className="tile-value">{formatAmount(Math.round(plannedMonthlySavings))}</div>
-            <div className="tile-sub">{t("planSavings")}</div>
+            <div className="tile-value">{formatAmount(Math.round(totalGoalsSaved))}</div>
+            <div className="tile-sub">{t("goalSavedAll")}</div>
           </div>
           <div className="stat-tile tile-emerald">
             <div className="tile-label">{t("wallet")}</div>

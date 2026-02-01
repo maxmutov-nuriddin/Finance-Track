@@ -2,7 +2,17 @@
 import GoalPanel from "../components/GoalPanel";
 import StatsCard from "../components/StatsCard";
 import { useUser } from "../lib/user";
-import { addGoal, deleteGoal, watchGoals, watchPayments, watchSettings, watchTransactions } from "../lib/store";
+import {
+  addGoal,
+  addGoalContribution,
+  completeGoal,
+  deleteGoal,
+  saveSettings,
+  watchGoals,
+  watchPayments,
+  watchSettings,
+  watchTransactions
+} from "../lib/store";
 import { computeStats } from "../lib/calcs";
 import {
   computeMandatoryMonthly,
@@ -22,6 +32,8 @@ export default function Goals() {
   const [settings, setSettings] = useState(null);
   const [allTransactions, setAllTransactions] = useState([]);
   const [monthTick, setMonthTick] = useState(getMonthKey(new Date()));
+  const [deletingIds, setDeletingIds] = useState(() => new Set());
+  const [deleteMessage, setDeleteMessage] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -71,6 +83,10 @@ export default function Goals() {
     [payments]
   );
   const activeGoal = useMemo(() => getActiveGoal(goals, settings), [goals, settings]);
+  const activeGoalId = useMemo(
+    () => settings?.activeGoalId || (goals[0]?.id || ""),
+    [settings, goals]
+  );
   const plannedMonthlySavings = useMemo(
     () => computeRequiredMonthlySavings(activeGoal, stats.net, settings),
     [activeGoal, settings, stats.net]
@@ -88,16 +104,44 @@ export default function Goals() {
         <div className="card-title">{t("goalsTitle")}</div>
         <div className="helper-text">{t("goalsHelp")}</div>
       </div>
+      {deleteMessage && <div className="toast">{deleteMessage}</div>}
       <GoalPanel
         goals={goals}
         monthlyNet={plannedMonthlyNet}
         dailyNet={dailyNet}
         plannedMonthlySavings={plannedMonthlySavings}
-        activeGoalId={settings?.activeGoalId || ""}
+        activeGoalId={activeGoalId}
         targetSavingsMode={settings?.targetSavingsMode || "goal_based"}
         fixedMonthlySavings={settings?.fixedMonthlySavings || 0}
+        deletingIds={deletingIds}
         onAdd={(payload) => addGoal(user.uid, payload)}
-        onDelete={(id) => deleteGoal(user.uid, id)}
+        onDelete={async (id) => {
+          if (deletingIds.has(id)) return;
+          setDeletingIds((prev) => new Set(prev).add(id));
+          try {
+            const goal = goals.find((item) => item.id === id);
+            const refund = Math.max(0, Number(goal?.currentAmount || 0));
+            await deleteGoal(user.uid, id);
+            if (refund > 0) {
+              const nextBalance = Math.max(0, Number(settings?.walletBalance || 0)) + refund;
+              await saveSettings(user.uid, { walletBalance: nextBalance });
+            }
+            setDeleteMessage(t("deleted"));
+          } catch (error) {
+            setDeleteMessage(t("deleteFailed"));
+          } finally {
+            setDeletingIds((prev) => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+            setTimeout(() => setDeleteMessage(""), 2000);
+          }
+        }}
+        onContribute={(goal) =>
+          addGoalContribution(user.uid, goal.id, plannedMonthlySavings, goal.title)
+        }
+        onComplete={(goal) => completeGoal(user.uid, goal.id)}
       />
       <StatsCard
         stats={stats}

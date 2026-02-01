@@ -9,10 +9,12 @@
   query,
   serverTimestamp,
   setDoc,
-  writeBatch
+  writeBatch,
+  increment
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { dedupById, filterByOccurredAtISO, getPeriodRange } from "./utils";
+import { formatISOWithOffset, getTzParts, nowInTashkent } from "./timezone";
 
 export function addTransaction(uid, payload) {
   return addDoc(collection(db, `users/${uid}/transactions`), {
@@ -77,6 +79,47 @@ export function deletePayment(uid, id) {
   return deleteDoc(doc(db, `users/${uid}/payments/${id}`));
 }
 
+export async function addGoalContribution(uid, goalId, amount, goalTitle = "") {
+  const safeAmount = Math.round(Number(amount || 0));
+  if (!safeAmount || safeAmount <= 0) return;
+  const now = nowInTashkent();
+  const occurredAtISO = formatISOWithOffset(getTzParts(now));
+  const batch = writeBatch(db);
+  const goalRef = doc(db, `users/${uid}/goals/${goalId}`);
+  batch.set(
+    goalRef,
+    {
+      currentAmount: increment(safeAmount),
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
+  const txRef = doc(collection(db, `users/${uid}/transactions`));
+  batch.set(txRef, {
+    amount: safeAmount,
+    createdAt: serverTimestamp(),
+    occurredAt: now,
+    occurredAtISO,
+    category: "other",
+    type: "expense",
+    description: goalTitle ? `Накопление: ${goalTitle}` : "Накопление",
+    raw: goalTitle ? `накопить ${safeAmount} ${goalTitle}` : `накопить ${safeAmount}`
+  });
+  await batch.commit();
+}
+
+export function completeGoal(uid, goalId) {
+  const goalRef = doc(db, `users/${uid}/goals/${goalId}`);
+  return setDoc(
+    goalRef,
+    {
+      isCompleted: true,
+      completedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
+}
+
 export function watchLast14Or30(uid, days, callback) {
   const range = getPeriodRange(days);
   const ref = query(
@@ -106,7 +149,7 @@ export function saveSettings(uid, payload) {
 }
 
 export async function clearAllUserData(uid) {
-  const collections = ["transactions", "goals", "payments", "fcmTokens"];
+  const collections = ["transactions", "goals", "payments", "fcmTokens", "alerts"];
   for (const name of collections) {
     const ref = collection(db, `users/${uid}/${name}`);
     const snap = await getDocs(ref);
@@ -121,5 +164,8 @@ export async function clearAllUserData(uid) {
   const settingsRef = doc(db, `users/${uid}/settings/main`);
   const settingsBatch = writeBatch(db);
   settingsBatch.delete(settingsRef);
+  settingsBatch.delete(doc(db, `users/${uid}`));
   await settingsBatch.commit();
 }
+
+

@@ -1,5 +1,5 @@
 ﻿import { useMemo, useState } from "react";
-import { addDaysInTz, formatDateISO, getTzParts, makeTashkentDate } from "../lib/timezone";
+import { addMonthsInTz, formatDateISO, getTzParts, makeTashkentDate } from "../lib/timezone";
 import GlassCard from "./GlassCard";
 import GlassButton from "./GlassButton";
 import GlassInput from "./GlassInput";
@@ -12,9 +12,9 @@ function formatRuDate(isoDate) {
   return `${day}.${month}.${year}`;
 }
 
-function computeAutoDateISO(daysToGoal) {
+function computeAutoDateISO(monthsToGoal) {
   const base = makeTashkentDate(getTzParts(new Date()));
-  const parts = addDaysInTz(base, daysToGoal);
+  const parts = addMonthsInTz(base, monthsToGoal);
   return formatDateISO(parts);
 }
 
@@ -24,6 +24,9 @@ export default function GoalPanel({
   dailyNet,
   onAdd,
   onDelete,
+  onContribute,
+  onComplete,
+  deletingIds,
   activeGoalId,
   targetSavingsMode,
   fixedMonthlySavings,
@@ -68,8 +71,13 @@ export default function GoalPanel({
   const renderedGoals = useMemo(
     () =>
       goals.map((goal) => {
+        const contributionAmount = Math.max(0, Math.round(plannedMonthlySavings || 0));
+        const isActive = activeGoalId ? goal.id === activeGoalId : false;
         const saved = Number(goal.currentAmount || 0);
         const remaining = Math.max(0, goal.targetAmount - saved);
+        const isCompleted = Boolean(goal.isCompleted || goal.completedAt) || remaining <= 0;
+        const canContribute = isActive && contributionAmount > 0 && !isCompleted;
+        const canComplete = remaining <= 0 && !goal.isCompleted;
         let forecast = "";
         let perMonth = "";
         let perDay = "";
@@ -94,13 +102,18 @@ export default function GoalPanel({
           autoLabel = t("goalNoProgress");
           autoHint = t("goalAutoHintNew");
         } else {
-          const daysToGoal = Math.ceil(remaining / dailyNet);
-          const autoDateISO = computeAutoDateISO(daysToGoal);
-          const monthsToGoal = Math.ceil(daysToGoal / 30);
-          forecast = t("goalBuyIn", { months: monthsToGoal });
+          const isActiveGoal = activeGoalId && goal.id === activeGoalId;
+          const monthlyContribution = isActiveGoal
+            ? Math.max(1, Math.round(plannedMonthlySavings || 0))
+            : Math.max(1, Math.ceil(remaining / 6));
+          const monthsToGoal = Math.max(1, Math.ceil(remaining / monthlyContribution));
+          const autoDateISO = computeAutoDateISO(monthsToGoal);
           autoLabel = t("goalBuyBy", { date: formatRuDate(autoDateISO) });
           autoHint = t("goalAutoHintChange");
-          const perMonthNeeded = Math.ceil(remaining / Math.max(1, monthsToGoal));
+          forecast = t("goalBuyIn", { months: monthsToGoal });
+          const perMonthNeeded = isActiveGoal
+            ? monthlyContribution
+            : Math.ceil(remaining / Math.max(1, monthsToGoal));
           perMonth = t("goalNeedPerMonth", { amount: formatAmount(perMonthNeeded) });
         }
 
@@ -130,6 +143,11 @@ export default function GoalPanel({
 
         return {
           ...goal,
+          contributionAmount,
+          canContribute,
+          isActive,
+          isCompleted,
+          canComplete,
           saved,
           remaining,
           forecast,
@@ -173,15 +191,32 @@ export default function GoalPanel({
                 {t("savedAmount")}: {formatAmount(goal.saved)}
               </span>
               <span className="muted">{t("remaining")}: {formatAmount(goal.remaining)}</span>
+              {goal.isCompleted && <span className="badge">{t("goalCompleted")}</span>}
               {goal.perMonth && <span className="muted">{goal.perMonth}</span>}
               {goal.perDay && <span className="muted">{goal.perDay}</span>}
-              {goal.forecast && <span className="muted">{goal.forecast}</span>}
               {goal.autoLabel && <span className="muted">{goal.autoLabel}</span>}
+              {!goal.autoLabel && goal.forecast && <span className="muted">{goal.forecast}</span>}
               {goal.autoHint && <span className="helper-text">{goal.autoHint}</span>}
             </div>
-            <GlassButton variant="ghost" onClick={() => onDelete(goal.id)}>
-              {t("delete")}
-            </GlassButton>
+            <div className="row" style={{ gap: 10 }}>
+              {goal.canContribute && (
+                <GlassButton onClick={() => onContribute?.(goal)}>
+                  {t("goalContribute", { amount: formatAmount(goal.contributionAmount) })}
+                </GlassButton>
+              )}
+              {goal.canComplete && (
+                <GlassButton onClick={() => onComplete?.(goal)}>
+                  {t("goalComplete")}
+                </GlassButton>
+              )}
+              <GlassButton
+                variant="ghost"
+                onClick={() => onDelete(goal.id)}
+                disabled={deletingIds?.has(goal.id)}
+              >
+                {t("delete")}
+              </GlassButton>
+            </div>
           </div>
         ))}
         {!goals.length && <div className="muted">{t("noGoals")}</div>}

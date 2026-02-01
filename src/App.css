@@ -263,6 +263,10 @@
   opacity: 0.9;
 }
 
+.tile-purple::before {
+  background: linear-gradient(180deg, #7c5cff, #a98bff);
+}
+
 .tile-label {
   font-size: 0.7rem;
   text-transform: uppercase;

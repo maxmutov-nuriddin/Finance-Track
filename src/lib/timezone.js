@@ -57,6 +57,23 @@ export function addDaysInTz(date, days, tz = TZ) {
   return getTzParts(next, tz);
 }
 
+export function addMonthsInTz(date, months, tz = TZ) {
+  const parts = getTzParts(date, tz);
+  const totalMonths = parts.year * 12 + (parts.month - 1) + months;
+  const nextYear = Math.floor(totalMonths / 12);
+  const nextMonth = (totalMonths % 12) + 1;
+  const daysInMonth = new Date(Date.UTC(nextYear, nextMonth, 0)).getUTCDate();
+  const nextDay = Math.min(parts.day, daysInMonth);
+  return {
+    year: nextYear,
+    month: nextMonth,
+    day: nextDay,
+    hour: parts.hour,
+    minute: parts.minute,
+    second: parts.second || 0
+  };
+}
+
 export function formatISOWithOffset(parts) {
   const pad = (value) => String(value).padStart(2, "0");
   return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}T${pad(

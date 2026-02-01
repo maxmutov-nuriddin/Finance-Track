@@ -28,6 +28,7 @@ export default function Settings() {
   const [activeGoalId, setActiveGoalId] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [clearMessage, setClearMessage] = useState("");
+  const [clearing, setClearing] = useState(false);
   const [activeTab, setActiveTab] = useState("budget");
 
   useEffect(() => {
@@ -62,12 +63,16 @@ export default function Settings() {
     if (!user) return;
     const confirmed = window.confirm(t("clearConfirm"));
     if (!confirmed) return;
+    if (clearing) return;
+    setClearing(true);
+    setClearMessage(t("clearing"));
     try {
       await clearAllUserData(user.uid);
       setClearMessage(t("cleared"));
     } catch (error) {
       setClearMessage(t("clearFailed"));
     }
+    setClearing(false);
     setTimeout(() => setClearMessage(""), 2000);
   };
 
@@ -77,6 +82,8 @@ export default function Settings() {
         <div className="card-title">{t("settingsTitle")}</div>
         <div className="helper-text">{t("settingsHelp")}</div>
       </div>
+
+      {clearMessage && <div className="toast">{clearMessage}</div>}
 
       <div className="row settings-tabs">
         <GlassButton
@@ -229,9 +236,9 @@ export default function Settings() {
             <div className="card-title">{t("clearAll")}</div>
             <div className="helper-text">{t("clearAllHelp")}</div>
             <div className="row" style={{ marginTop: 12 }}>
-              <GlassButton variant="ghost" onClick={handleClearAll}>
-                {t("clearAll")}
-              </GlassButton>
+          <GlassButton variant="ghost" onClick={handleClearAll} disabled={clearing}>
+            {t("clearAll")}
+          </GlassButton>
               {clearMessage && <span className="toast">{clearMessage}</span>}
             </div>
           </GlassCard>
