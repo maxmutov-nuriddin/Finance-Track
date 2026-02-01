@@ -3,12 +3,13 @@
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
-  where
+  writeBatch
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { dedupById, filterByOccurredAtISO, getPeriodRange } from "./utils";
@@ -102,4 +103,16 @@ export function watchSettings(uid, callback) {
 
 export function saveSettings(uid, payload) {
   return setDoc(doc(db, `users/${uid}/settings/main`), payload, { merge: true });
+}
+
+export async function clearAllUserData(uid) {
+  const collections = ["transactions", "goals", "payments", "fcmTokens"];
+  const batch = writeBatch(db);
+  for (const name of collections) {
+    const ref = collection(db, `users/${uid}/${name}`);
+    const snap = await getDocs(ref);
+    snap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+  }
+  batch.delete(doc(db, `users/${uid}/settings/main`));
+  await batch.commit();
 }

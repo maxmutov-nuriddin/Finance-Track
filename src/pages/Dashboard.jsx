@@ -17,6 +17,7 @@ import { computeBudgetStatus } from "../lib/budget";
 import { filterByOccurredAtISO, getMonthKey, getMonthRange, getMonthRangeFor } from "../lib/utils";
 import { computeStats } from "../lib/calcs";
 import { formatAmount } from "../lib/format";
+import { useI18n } from "../components/I18nProvider";
 import {
   computeMandatoryMonthly,
   computeMonthExpense,
@@ -48,6 +49,7 @@ function buildSeries(transactions, range) {
 export default function Dashboard() {
   const user = useUser();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [goals, setGoals] = useState([]);
   const [payments, setPayments] = useState([]);
   const [allTransactions, setAllTransactions] = useState([]);
@@ -146,6 +148,11 @@ export default function Dashboard() {
     [allTransactions]
   );
 
+  const remainingToSpend = useMemo(
+    () => Math.max(0, safeRecommendedSpend - currentMonthExpense),
+    [safeRecommendedSpend, currentMonthExpense]
+  );
+
   const chartSeries = useMemo(
     () => buildSeries(statsTransactions, periodRange),
     [statsTransactions, periodRange]
@@ -198,7 +205,7 @@ export default function Dashboard() {
     });
 
     if (prevUnused > 0) {
-      setWalletNotice(`Перенесли в кошелек ${formatAmount(prevUnused)} с прошлого месяца.`);
+      setWalletNotice(t("walletCarry", { amount: formatAmount(prevUnused) }));
       setTimeout(() => setWalletNotice(""), 4000);
     }
   }, [
@@ -215,6 +222,33 @@ export default function Dashboard() {
   return (
     <div className="dashboard-grid">
       <div className="dashboard-main">
+        <div className="dashboard-tiles">
+          <div className="stat-tile tile-green">
+            <div className="tile-label">{t("status")}</div>
+            <div className="tile-value">{status.message ? t("statusWarn") : t("statusOk")}</div>
+            <div className="tile-sub">{t("monthBalance")}</div>
+          </div>
+          <div className="stat-tile tile-blue">
+            <div className="tile-label">{t("toGoal")}</div>
+            <div className="tile-value">{formatAmount(Math.round(plannedMonthlySavings))}</div>
+            <div className="tile-sub">{t("planSavings")}</div>
+          </div>
+          <div className="stat-tile tile-emerald">
+            <div className="tile-label">{t("wallet")}</div>
+            <div className="tile-value">{formatAmount(walletBalance)}</div>
+            <div className="tile-sub">{t("walletSub")}</div>
+          </div>
+          <div className="stat-tile tile-orange">
+            <div className="tile-label">{t("canSpend")}</div>
+            <div className="tile-value">{formatAmount(Math.round(remainingToSpend))}</div>
+            <div className="tile-sub">{t("remainingMonth")}</div>
+          </div>
+          <div className="stat-tile tile-red">
+            <div className="tile-label">{t("mandatory")}</div>
+            <div className="tile-value">{formatAmount(Math.round(monthlyMandatory))}</div>
+            <div className="tile-sub">{t("monthlyPayments")}</div>
+          </div>
+        </div>
         <BudgetCard
           monthlyIncome={monthlyIncome}
           monthlyMandatory={monthlyMandatory}
@@ -225,83 +259,61 @@ export default function Dashboard() {
           warning={status.message}
           onOpenSettings={() => navigate("/settings")}
         />
-        <StatsCard
-          stats={stats}
-          periodLabel="За текущий месяц"
-          monthlyNet={factMonthlyNet}
-          series={chartSeries}
-        />
+      <StatsCard
+        stats={stats}
+        periodLabel={t("periodMonth")}
+        monthlyNet={factMonthlyNet}
+        series={chartSeries}
+      />
       </div>
       <div className="dashboard-side">
-        <GlassCard className="wallet-card">
-        <div className="footer-row">
-          <div>
-            <div className="card-title">Кошелек</div>
-            <div className="muted">Остаток лимита трат переносится сюда каждый месяц.</div>
-          </div>
-        </div>
-        <div className="stat" style={{ marginTop: 12 }}>
-          <span className="muted">Баланс</span>
-          <span className="stat-value">{formatAmount(walletBalance)}</span>
-        </div>
-        {settings?.walletLastCarryover ? (
-          <div className="helper-text" style={{ marginTop: 6 }}>
-            Последний перенос: {formatAmount(settings.walletLastCarryover)} ({settings.walletLastCarryoverMonth})
-          </div>
-        ) : null}
-        {walletNotice && (
-          <div className="alert" style={{ marginTop: 10 }}>
-            {walletNotice}
-          </div>
-        )}
-        </GlassCard>
         <PaymentsOverview payments={payments} />
-      </div>
-      {import.meta.env.DEV && (
-        <details className="glass-card">
-          <summary className="card-title">Проверка расчётов (dev)</summary>
-          <div className="stack" style={{ marginTop: 12 }}>
-            <div>
-              Период (месяц): {periodRange.startISO} → {periodRange.endISO}
-            </div>
-            <div>Транзакции в периоде: {periodTransactions.length}</div>
-            <div>Факт: пришло {formatAmount(stats.income)}, потрачено {formatAmount(stats.expense)}, остаётся {formatAmount(stats.net)}</div>
-            <div>Месячный доход: {formatAmount(monthlyIncome)}</div>
-            <div>Месячный расход: {formatAmount(monthlyExpense)}</div>
-            <div>Ежемесячные обязательные: {formatAmount(monthlyMandatory)}</div>
-            <div>План накоплений: {formatAmount(plannedMonthlySavings)}</div>
-            <div>Рекомендовано тратить: {formatAmount(recommendedMaxSpend)}</div>
-            <div>Плановый остаток (на цели): {formatAmount(plannedMonthlyNet)}</div>
-            <div>Проверка: обязательные + накопления + можно тратить = {formatAmount(monthlyMandatory + plannedMonthlySavings + planSpend)}</div>
-            <div>Настройки бюджета: {settings?.budgetMode || "auto"}</div>
-            <div>Ручной бюджет: {formatAmount(settings?.manualMonthlyBudget || 0)}</div>
-            <div>Режим накоплений: {settings?.targetSavingsMode || "goal_based"}</div>
-            <div>Фикс накоплений: {formatAmount(settings?.fixedMonthlySavings || 0)}</div>
-            <div>Активная цель: {activeGoal?.title || "-"}</div>
-            <div className="stack" style={{ marginTop: 8 }}>
-              <strong>Ежемесячные платежи:</strong>
-              {payments
-                .filter((p) => (p.recurrence || "oneTime") === "monthly")
-                .map((p) => (
-                  <div key={p.id}>
-                    {p.title} • {formatAmount(p.amount)}
+        {import.meta.env.DEV && (
+          <details className="glass-card">
+            <summary className="card-title dev-summary">Проверка расчётов (dev)</summary>
+            <div className="stack" style={{ marginTop: 12 }}>
+              <div>
+                Период (месяц): {periodRange.startISO} → {periodRange.endISO}
+              </div>
+              <div>Транзакции в периоде: {periodTransactions.length}</div>
+              <div>Факт: пришло {formatAmount(stats.income)}, потрачено {formatAmount(stats.expense)}, остаётся {formatAmount(stats.net)}</div>
+              <div>Месячный доход: {formatAmount(monthlyIncome)}</div>
+              <div>Месячный расход: {formatAmount(monthlyExpense)}</div>
+              <div>Ежемесячные обязательные: {formatAmount(monthlyMandatory)}</div>
+              <div>План накоплений: {formatAmount(plannedMonthlySavings)}</div>
+              <div>Рекомендовано тратить: {formatAmount(recommendedMaxSpend)}</div>
+              <div>Плановый остаток (на цели): {formatAmount(plannedMonthlyNet)}</div>
+              <div>Проверка: обязательные + накопления + можно тратить = {formatAmount(monthlyMandatory + plannedMonthlySavings + planSpend)}</div>
+              <div>Настройки бюджета: {settings?.budgetMode || "auto"}</div>
+              <div>Ручной бюджет: {formatAmount(settings?.manualMonthlyBudget || 0)}</div>
+              <div>Режим накоплений: {settings?.targetSavingsMode || "goal_based"}</div>
+              <div>Фикс накоплений: {formatAmount(settings?.fixedMonthlySavings || 0)}</div>
+              <div>Активная цель: {activeGoal?.title || "-"}</div>
+              <div className="stack" style={{ marginTop: 8 }}>
+                <strong>Ежемесячные платежи:</strong>
+                {payments
+                  .filter((p) => (p.recurrence || "oneTime") === "monthly")
+                  .map((p) => (
+                    <div key={p.id}>
+                      {p.title} • {formatAmount(p.amount)}
+                    </div>
+                  ))}
+                {!payments.some((p) => (p.recurrence || "oneTime") === "monthly") && (
+                  <div className="muted">Нет ежемесячных платежей.</div>
+                )}
+              </div>
+              <div className="stack" style={{ marginTop: 8 }}>
+                <strong>Транзакции в периоде:</strong>
+                {periodTransactions.map((tx) => (
+                  <div key={tx.id}>
+                    {tx.occurredAtISO} • {tx.type} • {formatAmount(tx.amount)} • {tx.raw}
                   </div>
                 ))}
-              {!payments.some((p) => (p.recurrence || "oneTime") === "monthly") && (
-                <div className="muted">Нет ежемесячных платежей.</div>
-              )}
+              </div>
             </div>
-            <div className="stack" style={{ marginTop: 8 }}>
-              <strong>Транзакции в периоде:</strong>
-              {periodTransactions.map((tx) => (
-                <div key={tx.id}>
-                  {tx.occurredAtISO} • {tx.type} • {formatAmount(tx.amount)} • {tx.raw}
-                </div>
-              ))}
-            </div>
-          </div>
-        </details>
-      )}
+          </details>
+        )}
+      </div>
     </div>
   );
 }

@@ -2,8 +2,10 @@
 import { addDaysInTz, formatDateISO, getTzParts, makeTashkentDate } from "../lib/timezone";
 import GlassCard from "./GlassCard";
 import { formatAmount } from "../lib/format";
+import { useI18n } from "./I18nProvider";
 
 export default function PaymentsOverview({ payments }) {
+  const { t } = useI18n();
   const upcomingAlertDateISO = useMemo(() => {
     const base = makeTashkentDate(getTzParts(new Date()));
     const parts = addDaysInTz(base, 3);
@@ -17,8 +19,8 @@ export default function PaymentsOverview({ payments }) {
 
   return (
     <GlassCard>
-      <div className="card-title">Ближайшие платежи</div>
-      <div className="helper-text">Мы напомним за 3 дня.</div>
+      <div className="card-title">{t("upcomingPayments")}</div>
+      <div className="helper-text">{t("remind3days")}</div>
       <div className="list" style={{ marginTop: 12 }}>
         {upcoming.map((payment) => (
           <div className="list-item" key={payment.id}>
@@ -29,7 +31,7 @@ export default function PaymentsOverview({ payments }) {
             <span className="badge">{formatAmount(payment.amount)}</span>
           </div>
         ))}
-        {!upcoming.length && <div className="muted">Пока нет платежей.</div>}
+        {!upcoming.length && <div className="muted">{t("noPayments")}</div>}
       </div>
     </GlassCard>
   );

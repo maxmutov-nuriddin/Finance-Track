@@ -2,9 +2,11 @@
 import PaymentsPanel from "../components/PaymentsPanel";
 import { useUser } from "../lib/user";
 import { addPayment, deletePayment, watchPayments } from "../lib/store";
+import { useI18n } from "../components/I18nProvider";
 
 export default function Payments() {
   const user = useUser();
+  const { t } = useI18n();
   const [payments, setPayments] = useState([]);
 
   useEffect(() => {
@@ -15,10 +17,8 @@ export default function Payments() {
   return (
     <div className="stack">
       <div>
-        <div className="card-title">Обязательные платежи</div>
-        <div className="helper-text">
-          Добавь платеж, и мы напомним за 3 дня.
-        </div>
+        <div className="card-title">{t("monthlyPayments")}</div>
+        <div className="helper-text">{t("remind3days")}</div>
       </div>
       <PaymentsPanel
         uid={user.uid}

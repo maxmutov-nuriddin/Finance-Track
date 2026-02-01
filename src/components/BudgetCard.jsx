@@ -3,6 +3,7 @@ import GlassCard from "./GlassCard";
 import GlassButton from "./GlassButton";
 import { computeBudgetProgress } from "../lib/budget";
 import { formatAmount } from "../lib/format";
+import { useI18n } from "./I18nProvider";
 
 export default function BudgetCard({
   monthlyIncome,
@@ -14,33 +15,45 @@ export default function BudgetCard({
   warning,
   onOpenSettings
 }) {
+  const { t } = useI18n();
   const { progress, overspent } = computeBudgetProgress(
     currentMonthExpense,
     recommendedMaxSpend
   );
+  const remaining = Math.max(0, Math.round(recommendedMaxSpend - currentMonthExpense));
+  const warningText = warning
+    ? warning === "Добавь доход (зп), чтобы мы рассчитали бюджет."
+      ? t("budgetWarnNoIncome")
+      : warning === "Не удалось рассчитать бюджет. Проверь данные."
+        ? t("budgetWarnInvalid")
+        : warning ===
+          "С текущим доходом и обязательными платежами цель в выбранный срок недостижима."
+          ? t("budgetWarnNegative")
+          : warning
+    : "";
 
   return (
     <GlassCard>
       <div className="footer-row">
         <div>
-          <div className="card-title">Сколько можно тратить в месяц</div>
-          <div className="helper-text">Чтобы платить обязательное и идти к цели.</div>
+          <div className="card-title">{t("budgetTitle")}</div>
+          <div className="helper-text">{t("budgetHelper")}</div>
         </div>
         <GlassButton variant="secondary" onClick={onOpenSettings}>
-          Настроить
+          {t("configure")}
         </GlassButton>
       </div>
 
-      {warning ? (
+      {warningText ? (
         <div className="alert alert-danger" style={{ marginTop: 12 }}>
-          {warning}
+          {warningText}
         </div>
       ) : (
         <div style={{ marginTop: 16 }}>
           <div className="hero-amount">
-            ≈ {formatAmount(Math.round(recommendedMaxSpend))}
+            {formatAmount(remaining)}
           </div>
-          <div className="helper-text">Лимит трат на месяц.</div>
+          <div className="helper-text">{t("remainingSpendLabel")}</div>
           <div style={{ marginTop: 12 }}>
             <div className="progress" style={{ marginBottom: 6 }}>
               <span
@@ -53,11 +66,11 @@ export default function BudgetCard({
               />
             </div>
             <div className="muted">
-              Потрачено: {formatAmount(Math.round(currentMonthExpense))} / {formatAmount(Math.round(recommendedMaxSpend))}
-              {overspent ? " • перерасход" : ""}
+              {t("spentLabel")}: {formatAmount(Math.round(currentMonthExpense))} / {formatAmount(Math.round(recommendedMaxSpend))}
+              {overspent ? " • " + t("overspent") : ""}
             </div>
             <div className="muted" style={{ marginTop: 4 }}>
-              Осталось: {formatAmount(Math.max(0, Math.round(recommendedMaxSpend - currentMonthExpense)))}
+              {t("limitMonth")}: {formatAmount(Math.round(recommendedMaxSpend))}
             </div>
           </div>
         </div>
@@ -65,22 +78,22 @@ export default function BudgetCard({
 
       <div className="plan-summary">
         <div className="plan-item">
-          <span className="muted">Доход</span>
+          <span className="muted">{t("income")}</span>
           <span className="stat-value">{formatAmount(Math.round(monthlyIncome))}</span>
         </div>
         <div className="plan-item">
-          <span className="muted">Обязательные</span>
+          <span className="muted">{t("mandatory")}</span>
           <span className="stat-value">{formatAmount(Math.round(monthlyMandatory))}</span>
         </div>
         <div className="plan-item">
-          <span className="muted">Можно тратить</span>
+          <span className="muted">{t("canSpend")}</span>
           <span className="stat-value">{formatAmount(Math.round(planSpend))}</span>
         </div>
       </div>
 
       {budgetMode === "manual" && (
         <div className="helper-text" style={{ marginTop: 8 }}>
-          Ручной лимит трат: {formatAmount(Math.round(recommendedMaxSpend))}
+          {t("limitMonth")}: {formatAmount(Math.round(recommendedMaxSpend))}
         </div>
       )}
     </GlassCard>

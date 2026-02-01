@@ -5,6 +5,7 @@ import GlassButton from "./GlassButton";
 import GlassInput from "./GlassInput";
 import { formatAmount } from "../lib/format";
 import ModalPortal from "./ModalPortal";
+import { useI18n } from "./I18nProvider";
 
 function formatRuDate(isoDate) {
   const [year, month, day] = isoDate.split("-");
@@ -28,6 +29,7 @@ export default function GoalPanel({
   fixedMonthlySavings,
   plannedMonthlySavings
 }) {
+  const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -45,7 +47,7 @@ export default function GoalPanel({
         ? Math.max(0, Math.round(monthlyNet))
         : parsedTarget;
     if (!computedTarget) {
-      setNotice("Нет суммы и нулевая/отрицательная средняя прибыль за месяц.");
+      setNotice(t("budgetWarnNegative"));
       return;
     }
     onAdd({
@@ -87,28 +89,28 @@ export default function GoalPanel({
             Math.ceil((target.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
           );
           const needed = Math.ceil(remaining / diffDays);
-          perDay = `Чтобы успеть к этой дате, нужно откладывать ${formatAmount(needed)} в день.`;
+          perDay = t("goalNeedPerDay", { amount: formatAmount(needed) });
         } else if (dailyNet <= 0) {
-          autoLabel = "С текущими расходами цель не приближается.";
-          autoHint = "Дата рассчитана автоматически и обновляется при новых записях.";
+          autoLabel = t("goalNoProgress");
+          autoHint = t("goalAutoHintNew");
         } else {
           const daysToGoal = Math.ceil(remaining / dailyNet);
           const autoDateISO = computeAutoDateISO(daysToGoal);
           const monthsToGoal = Math.ceil(daysToGoal / 30);
-          forecast = `Купишь примерно через ${monthsToGoal} мес.`;
-          autoLabel = `Если продолжишь так же, купишь примерно к ${formatRuDate(autoDateISO)}.`;
-          autoHint = "Дата рассчитана автоматически и обновляется при изменении расходов.";
+          forecast = t("goalBuyIn", { months: monthsToGoal });
+          autoLabel = t("goalBuyBy", { date: formatRuDate(autoDateISO) });
+          autoHint = t("goalAutoHintChange");
           const perMonthNeeded = Math.ceil(remaining / Math.max(1, monthsToGoal));
-          perMonth = `Нужно откладывать: ${formatAmount(perMonthNeeded)} / мес.`;
+          perMonth = t("goalNeedPerMonth", { amount: formatAmount(perMonthNeeded) });
         }
 
         if (targetSavingsMode === "fixed" && fixedMonthlySavings) {
           if (activeGoalId && goal.id === activeGoalId) {
-            perMonth = `По плану откладываешь: ${formatAmount(fixedMonthlySavings)} / мес. (активная цель)`;
+            perMonth = t("goalFixedActive", { amount: formatAmount(fixedMonthlySavings) });
           } else if (activeGoalId) {
-            perMonth = "В очереди (фикс накоплений идет на активную цель)";
+            perMonth = t("goalFixedQueue");
           } else {
-            perMonth = `Фикс накоплений: ${formatAmount(fixedMonthlySavings)} / мес.`;
+            perMonth = t("goalFixed", { amount: formatAmount(fixedMonthlySavings) });
           }
         } else {
           const monthsRaw = manualDateISO
@@ -118,11 +120,11 @@ export default function GoalPanel({
           const needed = Math.ceil(remaining / months);
 
           if (!activeGoalId) {
-            perMonth = `Если сделать активной: нужно ${formatAmount(needed)} / мес.`;
+            perMonth = t("goalIfActive", { amount: formatAmount(needed) });
           } else if (goal.id !== activeGoalId) {
-            perMonth = `Если сделать активной: нужно ${formatAmount(needed)} / мес.`;
+            perMonth = t("goalIfActive", { amount: formatAmount(needed) });
           } else {
-            perMonth = `По плану откладываешь: ${formatAmount(plannedMonthlySavings)} / мес. (активная цель)`;
+            perMonth = t("goalFixedActive", { amount: formatAmount(plannedMonthlySavings) });
           }
         }
 
@@ -139,22 +141,22 @@ export default function GoalPanel({
           progress
         };
       }),
-    [goals, monthlyNet, dailyNet]
+    [goals, monthlyNet, dailyNet, t, activeGoalId, targetSavingsMode, fixedMonthlySavings, plannedMonthlySavings]
   );
 
   return (
     <GlassCard>
       <div className="footer-row">
         <div>
-          <div className="card-title">Цели</div>
-          <div className="muted">Добавляй цель одной кнопкой.</div>
+          <div className="card-title">{t("goalsTitle")}</div>
+          <div className="muted">{t("goalsHelp")}</div>
         </div>
-        <GlassButton onClick={() => setOpen(true)}>Добавить цель</GlassButton>
+        <GlassButton onClick={() => setOpen(true)}>{t("addGoal")}</GlassButton>
       </div>
 
       {targetSavingsMode === "goal_based" && !activeGoalId && (
         <div className="alert" style={{ marginTop: 12 }}>
-          Выбери главную цель для расчета плана.
+          {t("chooseMainGoal")}
         </div>
       )}
 
@@ -166,11 +168,11 @@ export default function GoalPanel({
               <div className="progress" style={{ marginTop: 6, marginBottom: 6 }}>
                 <span style={{ width: `${goal.progress}%` }} />
               </div>
-              <span className="muted">Прогресс: {goal.progress}%</span>
+              <span className="muted">{t("progress")}: {goal.progress}%</span>
               <span className="muted">
-                Накоплено: {formatAmount(goal.saved)}
+                {t("savedAmount")}: {formatAmount(goal.saved)}
               </span>
-              <span className="muted">Осталось: {formatAmount(goal.remaining)}</span>
+              <span className="muted">{t("remaining")}: {formatAmount(goal.remaining)}</span>
               {goal.perMonth && <span className="muted">{goal.perMonth}</span>}
               {goal.perDay && <span className="muted">{goal.perDay}</span>}
               {goal.forecast && <span className="muted">{goal.forecast}</span>}
@@ -178,11 +180,11 @@ export default function GoalPanel({
               {goal.autoHint && <span className="helper-text">{goal.autoHint}</span>}
             </div>
             <GlassButton variant="ghost" onClick={() => onDelete(goal.id)}>
-              Удалить
+              {t("delete")}
             </GlassButton>
           </div>
         ))}
-        {!goals.length && <div className="muted">Пока нет целей.</div>}
+        {!goals.length && <div className="muted">{t("noGoals")}</div>}
       </div>
 
       {open && (
@@ -190,9 +192,9 @@ export default function GoalPanel({
           <div className="modal-backdrop" onClick={() => setOpen(false)}>
             <div className="modal" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
-              <strong>Новая цель</strong>
+              <strong>{t("newGoal")}</strong>
               <GlassButton variant="ghost" onClick={() => setOpen(false)}>
-                Закрыть
+                {t("close")}
               </GlassButton>
             </div>
             {notice && (
@@ -202,12 +204,12 @@ export default function GoalPanel({
             )}
             <div className="stack" style={{ marginTop: 12 }}>
               <GlassInput
-                placeholder="Например: Айфон"
+                placeholder={t("goalTitlePlaceholder")}
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
               />
               <GlassInput
-                placeholder="Сумма (можно оставить пустой)"
+                placeholder={t("goalAmountPlaceholder")}
                 type="number"
                 value={targetAmount}
                 onChange={(event) => setTargetAmount(event.target.value)}
@@ -221,22 +223,20 @@ export default function GoalPanel({
                   checked={manualDateEnabled}
                   onChange={(event) => setManualDateEnabled(event.target.checked)}
                 />
-                <span className="muted">Я хочу указать дату сам</span>
+                <span className="muted">{t("manualDate")}</span>
               </label>
               {manualDateEnabled && (
                 <GlassInput
-                  placeholder="Дата (дд.мм.гггг)"
+                  placeholder={t("goalDatePlaceholder")}
                   type="date"
                   value={targetDate}
                   onChange={(event) => setTargetDate(event.target.value)}
                 />
               )}
               <GlassButton onClick={handleAdd} disabled={!canAdd}>
-                Добавить
+                {t("add")}
               </GlassButton>
-              <div className="helper-text">
-                Если сумма пустая — подставим твою среднюю прибыль за месяц.
-              </div>
+              <div className="helper-text">{t("goalHelper")}</div>
             </div>
             </div>
           </div>

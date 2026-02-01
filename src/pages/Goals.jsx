@@ -12,9 +12,11 @@ import {
   getActiveGoal
 } from "../lib/budgetCalc";
 import { filterByOccurredAtISO, getMonthKey, getMonthRange } from "../lib/utils";
+import { useI18n } from "../components/I18nProvider";
 
 export default function Goals() {
   const user = useUser();
+  const { t } = useI18n();
   const [goals, setGoals] = useState([]);
   const [payments, setPayments] = useState([]);
   const [settings, setSettings] = useState(null);
@@ -83,10 +85,8 @@ export default function Goals() {
   return (
     <div className="stack">
       <div>
-        <div className="card-title">Твои цели</div>
-        <div className="helper-text">
-          Добавляй цели, а мы покажем темп и срок.
-        </div>
+        <div className="card-title">{t("goalsTitle")}</div>
+        <div className="helper-text">{t("goalsHelp")}</div>
       </div>
       <GoalPanel
         goals={goals}
@@ -101,7 +101,7 @@ export default function Goals() {
       />
       <StatsCard
         stats={stats}
-        periodLabel="За текущий месяц"
+        periodLabel={t("periodMonth")}
         monthlyNet={factMonthlyNet}
         series={[]}
       />

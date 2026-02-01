@@ -7,8 +7,10 @@ import GlassButton from "./GlassButton";
 import GlassInput from "./GlassInput";
 import { formatAmount } from "../lib/format";
 import ModalPortal from "./ModalPortal";
+import { useI18n } from "./I18nProvider";
 
 export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
+  const { t } = useI18n();
   const [quickRaw, setQuickRaw] = useState("");
   const [notificationStatus, setNotificationStatus] = useState(getNotificationStatus());
   const [notice, setNotice] = useState("");
@@ -29,7 +31,7 @@ export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
     if (!quickRaw.trim()) return;
     const parsed = parsePaymentInput(quickRaw, new Date());
     if (parsed.warnings.length) {
-      setNotice("Не удалось распознать сумму или дату. Пример: кредит 350000 15.02.2026");
+      setNotice(t("noAmountText"));
       return;
     }
     onAdd({
@@ -52,24 +54,24 @@ export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
     <GlassCard>
       <div className="footer-row">
         <div>
-          <div className="card-title">Платежи</div>
-          <div className="muted">Добавляй обязательные платежи одной строкой.</div>
+          <div className="card-title">{t("paymentsTitle")}</div>
+          <div className="muted">{t("paymentsHelp")}</div>
         </div>
-        <GlassButton onClick={() => setOpen(true)}>Добавить платеж</GlassButton>
+        <GlassButton onClick={() => setOpen(true)}>{t("addPayment")}</GlassButton>
       </div>
 
       {notificationStatus !== "granted" ? (
         <div className="alert" style={{ marginTop: 12 }}>
-          Уведомления выключены. Включи, чтобы получать напоминания.
+          {t("notificationsOff")}
           <div style={{ marginTop: 8 }}>
             <GlassButton variant="secondary" onClick={handleEnableNotifications}>
-              Включить уведомления
+              {t("enableNotifications")}
             </GlassButton>
           </div>
         </div>
       ) : (
         <div className="alert" style={{ marginTop: 12 }}>
-          Уведомления включены — напомним за 3 дня.
+          {t("notificationsOn")}
         </div>
       )}
 
@@ -80,25 +82,25 @@ export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
               <strong>{payment.title}</strong>
               <span className="muted">{payment.payDateISO}</span>
               {payment.recurrence === "monthly" ? (
-                <span className="badge">Ежемесячно (в бюджете)</span>
+                <span className="badge">{t("monthlyInBudget")}</span>
               ) : (
-                <span className="badge">Разовый (не в бюджете)</span>
+                <span className="badge">{t("oneTimeNotBudget")}</span>
               )}
             </div>
             <div className="row">
               <span className="badge">{formatAmount(payment.amount)}</span>
               <GlassButton variant="ghost" onClick={() => onDelete(payment.id)}>
-                Удалить
+                {t("delete")}
               </GlassButton>
             </div>
           </div>
         ))}
-        {!payments.length && <div className="muted">Платежей пока нет.</div>}
+        {!payments.length && <div className="muted">{t("noPaymentsYet")}</div>}
       </div>
 
       {upcoming.length > 0 && (
         <div style={{ marginTop: 14 }}>
-          <div className="card-title">Через 3 дня</div>
+          <div className="card-title">{t("in3days")}</div>
           <div className="list">
             {upcoming.map((payment) => (
               <div className="list-item" key={`up-${payment.id}`}>
@@ -118,9 +120,9 @@ export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
           <div className="modal-backdrop" onClick={() => setOpen(false)}>
             <div className="modal" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
-              <strong>Новый платеж</strong>
+              <strong>{t("newPayment")}</strong>
               <GlassButton variant="ghost" onClick={() => setOpen(false)}>
-                Закрыть
+                {t("close")}
               </GlassButton>
             </div>
             {notice && (
@@ -130,14 +132,12 @@ export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
             )}
             <div className="stack" style={{ marginTop: 12 }}>
               <GlassInput
-                placeholder="Например: кредит 350000 15.02.2026 (ежемесячно)"
+                placeholder={t("paymentPlaceholder")}
                 value={quickRaw}
                 onChange={(event) => setQuickRaw(event.target.value)}
               />
-              <div className="helper-text">
-                Добавь "ежемесячно" если платеж повторяется каждый месяц.
-              </div>
-              <GlassButton onClick={handleQuickAdd}>Добавить</GlassButton>
+              <div className="helper-text">{t("paymentHint")}</div>
+              <GlassButton onClick={handleQuickAdd}>{t("add")}</GlassButton>
             </div>
             </div>
           </div>

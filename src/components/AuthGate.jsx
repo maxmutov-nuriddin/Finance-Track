@@ -7,27 +7,27 @@ import {
   signOut
 } from "firebase/auth";
 import { auth, googleProvider } from "../lib/firebase";
-import { useNavigate } from "react-router-dom";
 import { storeUserProfile } from "../lib/store";
 import { UserContext } from "../lib/user";
 import GlassCard from "./GlassCard";
 import GlassButton from "./GlassButton";
 import GlassInput from "./GlassInput";
+import { t as translate } from "../lib/i18n";
 
-const mapAuthError = (err) => {
+const mapAuthError = (err, t) => {
   const code = err?.code || "";
-  if (code.includes("auth/invalid-email")) return "Неверный email.";
-  if (code.includes("auth/missing-email")) return "Введите email.";
-  if (code.includes("auth/missing-password")) return "Введите пароль.";
-  if (code.includes("auth/wrong-password")) return "Неверный пароль.";
-  if (code.includes("auth/user-not-found")) return "Пользователь не найден.";
-  if (code.includes("auth/email-already-in-use")) return "Email уже используется.";
-  if (code.includes("auth/weak-password")) return "Слишком простой пароль.";
-  return "Ошибка входа. Проверьте данные.";
+  if (code.includes("auth/invalid-email")) return t("authInvalidEmail");
+  if (code.includes("auth/missing-email")) return t("authMissingEmail");
+  if (code.includes("auth/missing-password")) return t("authMissingPassword");
+  if (code.includes("auth/wrong-password")) return t("authWrongPassword");
+  if (code.includes("auth/user-not-found")) return t("authUserNotFound");
+  if (code.includes("auth/email-already-in-use")) return t("authEmailInUse");
+  if (code.includes("auth/weak-password")) return t("authWeakPassword");
+  return t("authGenericError");
 };
 
 export default function AuthGate({ children }) {
-  const navigate = useNavigate();
+  const t = (key, vars) => translate("ru", key, vars);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -45,11 +45,10 @@ export default function AuthGate({ children }) {
           name: nextUser.displayName || "",
           lastLoginAt: new Date().toISOString()
         });
-        navigate("/", { replace: true });
       }
     });
     return () => unsub();
-  }, [navigate]);
+  }, []);
 
   const value = useMemo(() => user, [user]);
 
@@ -58,49 +57,49 @@ export default function AuthGate({ children }) {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      setError(err.message || "Ошибка входа");
+      setError(mapAuthError(err, t));
     }
   };
 
   const handleEmailSignIn = async () => {
     setError("");
     if (!email.trim()) {
-      setError("Введите email.");
+      setError(t("authMissingEmail"));
       return;
     }
     if (!password) {
-      setError("Введите пароль.");
+      setError(t("authMissingPassword"));
       return;
     }
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
-      setError(mapAuthError(err));
+      setError(mapAuthError(err, t));
     }
   };
 
   const handleEmailRegister = async () => {
     setError("");
     if (!email.trim()) {
-      setError("Введите email.");
+      setError(t("authMissingEmail"));
       return;
     }
     if (!password) {
-      setError("Введите пароль.");
+      setError(t("authMissingPassword"));
       return;
     }
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       setMode("login");
     } catch (err) {
-      setError(mapAuthError(err));
+      setError(mapAuthError(err, t));
     }
   };
 
   if (loading) {
     return (
       <div className="auth-shell">
-        <GlassCard className="auth-card">Загрузка...</GlassCard>
+        <GlassCard className="auth-card">{t("authLoading")}</GlassCard>
       </div>
     );
   }
@@ -110,40 +109,39 @@ export default function AuthGate({ children }) {
       <div className="auth-shell">
         <GlassCard className="auth-card">
           <h1 className="auth-title">
-            {mode === "login" ? "Вход в финансовый помощник" : "Регистрация"}
+            {mode === "login" ? t("authLogin") : t("authRegister")}
           </h1>
           <p className="muted">
-            {mode === "login"
-              ? "Войди через Google или по email."
-              : "Создай аккаунт через Google или по email."}
+            {mode === "login" ? t("authLoginHelp") : t("authRegisterHelp")}
           </p>
           <div className="stack" style={{ marginTop: 16 }}>
-            <GlassButton onClick={handleGoogle}>Войти через Google</GlassButton>
+            <GlassButton onClick={handleGoogle}>{t("signInGoogle")}</GlassButton>
             <GlassInput
               type="email"
-              placeholder="Email"
+              placeholder={t("email")}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
             <GlassInput
               type="password"
-              placeholder="Пароль"
+              placeholder={t("password")}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
           </div>
           {mode === "login" ? (
             <div className="stack" style={{ marginTop: 12 }}>
-              <GlassButton onClick={handleEmailSignIn}>Войти</GlassButton>
-              <GlassButton variant="secondary" onClick={() => setMode("register")}>
-                Создать аккаунт
+              <GlassButton onClick={handleEmailSignIn}>{t("login")}</GlassButton>
+              <GlassButton variant="secondary" onClick={() => setMode("register")}
+              >
+                {t("createAccount")}
               </GlassButton>
             </div>
           ) : (
             <div className="stack" style={{ marginTop: 12 }}>
-              <GlassButton onClick={handleEmailRegister}>Зарегистрироваться</GlassButton>
+              <GlassButton onClick={handleEmailRegister}>{t("register")}</GlassButton>
               <GlassButton variant="secondary" onClick={() => setMode("login")}>
-                У меня уже есть аккаунт
+                {t("haveAccount")}
               </GlassButton>
             </div>
           )}
@@ -159,9 +157,7 @@ export default function AuthGate({ children }) {
 
   return (
     <UserContext.Provider value={value}>
-      <div>
-        {children}
-      </div>
+      <div>{children}</div>
     </UserContext.Provider>
   );
 }

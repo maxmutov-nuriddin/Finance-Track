@@ -2,9 +2,11 @@
 import TransactionList from "../components/TransactionList";
 import { useUser } from "../lib/user";
 import { deleteTransaction, watchTransactions } from "../lib/store";
+import { useI18n } from "../components/I18nProvider";
 
 export default function History() {
   const user = useUser();
+  const { t } = useI18n();
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
@@ -15,10 +17,8 @@ export default function History() {
   return (
     <div className="stack">
       <div>
-        <div className="card-title">Что ты записал</div>
-        <div className="helper-text">
-          Здесь все записи — просто список, без сложных форм.
-        </div>
+        <div className="card-title">{t("historyTitle")}</div>
+        <div className="helper-text">{t("historyHelp")}</div>
       </div>
       <TransactionList
         items={transactions}

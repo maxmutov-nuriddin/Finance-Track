@@ -1,13 +1,18 @@
-﻿import React, { useState } from "react";
-const menu = [
-  { label: "Главная", path: "/" },
-  { label: "История", path: "/history" },
-  { label: "Цели", path: "/goals" },
-  { label: "Платежи", path: "/payments" },
-  { label: "Настройки", path: "/settings" }
-];
+﻿import React, { useMemo, useState } from "react";
+import { useI18n } from "./I18nProvider";
 
 export default function Sidebar({ activePath, onNavigate }) {
+  const { t } = useI18n();
+  const menu = useMemo(
+    () => [
+      { label: t("navHome"), path: "/" },
+      { label: t("navHistory"), path: "/history" },
+      { label: t("navGoals"), path: "/goals" },
+      { label: t("navPayments"), path: "/payments" },
+      { label: t("navSettings"), path: "/settings" }
+    ],
+    [t]
+  );
   const [open, setOpen] = useState(false);
 
   const handleNavigate = (path) => {
@@ -21,12 +26,12 @@ export default function Sidebar({ activePath, onNavigate }) {
         <div className="sidebar-logo">FT</div>
         <div>
           <div className="sidebar-title">Finance Track</div>
-          <div className="sidebar-sub">Без AI • правила</div>
+          <div className="sidebar-sub">{t("sidebarSub")}</div>
         </div>
         <button
           className="sidebar-toggle"
           type="button"
-          aria-label="Открыть меню"
+          aria-label={t("openMenu")}
           aria-expanded={open}
           onClick={() => setOpen((prev) => !prev)}
         >
@@ -58,9 +63,6 @@ export default function Sidebar({ activePath, onNavigate }) {
           </button>
         ))}
       </nav>
-      <div className="sidebar-footer">
-        <div className="helper-text">Быстрый ввод сверху</div>
-      </div>
     </aside>
   );
 }
