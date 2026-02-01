@@ -107,12 +107,19 @@ export function saveSettings(uid, payload) {
 
 export async function clearAllUserData(uid) {
   const collections = ["transactions", "goals", "payments", "fcmTokens"];
-  const batch = writeBatch(db);
   for (const name of collections) {
     const ref = collection(db, `users/${uid}/${name}`);
     const snap = await getDocs(ref);
-    snap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+    const docs = snap.docs;
+    for (let i = 0; i < docs.length; i += 400) {
+      const batch = writeBatch(db);
+      docs.slice(i, i + 400).forEach((docSnap) => batch.delete(docSnap.ref));
+      await batch.commit();
+    }
   }
-  batch.delete(doc(db, `users/${uid}/settings/main`));
-  await batch.commit();
+
+  const settingsRef = doc(db, `users/${uid}/settings/main`);
+  const settingsBatch = writeBatch(db);
+  settingsBatch.delete(settingsRef);
+  await settingsBatch.commit();
 }

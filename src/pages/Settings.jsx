@@ -62,8 +62,12 @@ export default function Settings() {
     if (!user) return;
     const confirmed = window.confirm(t("clearConfirm"));
     if (!confirmed) return;
-    await clearAllUserData(user.uid);
-    setClearMessage(t("cleared"));
+    try {
+      await clearAllUserData(user.uid);
+      setClearMessage(t("cleared"));
+    } catch (error) {
+      setClearMessage(t("clearFailed"));
+    }
     setTimeout(() => setClearMessage(""), 2000);
   };
 
