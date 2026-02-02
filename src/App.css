@@ -1,4 +1,4 @@
-.app-shell {
+﻿.app-shell {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -20,7 +20,7 @@
   width: 240px;
   padding: 28px 18px;
   background:
-    radial-gradient(circle at 20% 10%, rgba(108, 107, 255, 0.18), transparent 55%),
+    radial-gradient(circle at 20% 10%, rgba(103, 182, 255, 0.20), transparent 55%),
     linear-gradient(180deg, rgba(12, 18, 34, 0.92), rgba(10, 14, 26, 0.85));
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(22px);
@@ -71,7 +71,7 @@
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(108, 107, 255, 0.8), rgba(59, 183, 255, 0.8));
+  background: linear-gradient(135deg, rgba(103, 182, 255, 0.92), rgba(156, 123, 255, 0.88));
   display: grid;
   place-items: center;
   color: #fff;
@@ -119,9 +119,9 @@
 
 .sidebar-item.active {
   color: #fff;
-  background: rgba(108, 107, 255, 0.12);
-  border-color: rgba(108, 107, 255, 0.3);
-  box-shadow: 0 10px 24px rgba(108, 107, 255, 0.2);
+  background: rgba(103, 182, 255, 0.14);
+  border-color: rgba(103, 182, 255, 0.36);
+  box-shadow: 0 10px 24px rgba(103, 182, 255, 0.22);
 }
 
 .sidebar-item.active .dot {
@@ -141,7 +141,7 @@
   justify-content: space-between;
   padding: 26px 34px;
   background:
-    radial-gradient(circle at 10% 20%, rgba(108, 107, 255, 0.22), transparent 50%),
+    radial-gradient(circle at 10% 20%, rgba(103, 182, 255, 0.24), transparent 52%),
     linear-gradient(90deg, rgba(12, 18, 32, 0.88), rgba(16, 24, 42, 0.88));
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
@@ -162,7 +162,7 @@
 }
 
 .brand-title {
-  text-shadow: 0 6px 20px rgba(108, 107, 255, 0.35);
+  text-shadow: 0 6px 20px rgba(103, 182, 255, 0.35);
 }
 
 .brand-title {
@@ -264,7 +264,7 @@
 }
 
 .tile-purple::before {
-  background: linear-gradient(180deg, #7c5cff, #a98bff);
+  background: linear-gradient(180deg, #9c7bff, #67b6ff);
 }
 
 .tile-label {
@@ -287,29 +287,29 @@
 }
 
 .tile-green::before {
-  background: linear-gradient(180deg, #54d28a, #1ea46d);
+  background: linear-gradient(180deg, #61e7c1, #38b39f);
 }
 
 .tile-blue::before {
-  background: linear-gradient(180deg, #7c8bff, #4b6bff);
+  background: linear-gradient(180deg, #71bfff, #588dff);
 }
 
 .tile-emerald::before {
-  background: linear-gradient(180deg, #4fd2b4, #1f9e86);
+  background: linear-gradient(180deg, #85f2e5, #41c5bf);
 }
 
 .tile-orange::before {
-  background: linear-gradient(180deg, #ffb36a, #ff8c3c);
+  background: linear-gradient(180deg, #ffb66d, #ff8a5a);
 }
 
 .tile-red::before {
-  background: linear-gradient(180deg, #ff8a8a, #ff5a6b);
+  background: linear-gradient(180deg, #ff8da4, #ff6d91);
 }
 
 .glass-card {
   position: relative;
   background:
-    radial-gradient(circle at 15% 10%, rgba(108, 107, 255, 0.12), transparent 45%),
+    radial-gradient(circle at 15% 10%, rgba(103, 182, 255, 0.12), transparent 45%),
     linear-gradient(160deg, rgba(16, 22, 38, 0.9), rgba(12, 18, 32, 0.82));
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -483,7 +483,7 @@
   padding: 10px 14px;
   border-radius: var(--radius-md);
   background: rgba(18, 24, 45, 0.7);
-  border: 1px solid rgba(108, 107, 255, 0.35);
+  border: 1px solid rgba(103, 182, 255, 0.35);
   color: #dbe0ff;
   font-size: 0.9rem;
 }
@@ -515,7 +515,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.2s ease;
-  box-shadow: 0 14px 26px rgba(76, 96, 255, 0.35);
+  box-shadow: 0 14px 26px rgba(103, 182, 255, 0.32);
   letter-spacing: 0.01em;
 }
 
@@ -526,7 +526,7 @@
 .glass-button.secondary {
   background: rgba(18, 24, 45, 0.55);
   color: var(--accent);
-  border-color: rgba(108, 107, 255, 0.3);
+  border-color: rgba(103, 182, 255, 0.36);
   box-shadow: none;
 }
 
@@ -572,8 +572,8 @@ select {
 }
 
 .pill-tab-active {
-  background: rgba(108, 107, 255, 0.2);
-  color: #d6d1ff;
+  background: rgba(103, 182, 255, 0.22);
+  color: #dbe9ff;
 }
 
 .modal-backdrop {
@@ -606,7 +606,7 @@ select {
 .progress {
   height: 8px;
   border-radius: 999px;
-  background: rgba(108, 107, 255, 0.15);
+  background: rgba(103, 182, 255, 0.16);
   overflow: hidden;
 }
 
@@ -658,7 +658,7 @@ select {
 
 .chart-card {
   height: 200px;
-  background: linear-gradient(180deg, rgba(108, 107, 255, 0.12), transparent);
+  background: linear-gradient(180deg, rgba(103, 182, 255, 0.14), transparent);
   border-radius: var(--radius-md);
   position: relative;
   overflow: hidden;
@@ -733,15 +733,47 @@ select {
 }
 
 @media (max-width: 900px) {
+  .layout {
+    gap: 0;
+  }
+
+  .sidebar-item.active {
+    background: rgba(103, 182, 255, 0.18);
+    border-color: rgba(103, 182, 255, 0.45);
+    color: #eaf3ff;
+    box-shadow: 0 8px 20px rgba(103, 182, 255, 0.22);
+  }
+
+  .sidebar-item.active .dot {
+    background: #67b6ff;
+  }
+
+  .app-shell {
+    background:
+      radial-gradient(circle at 15% -10%, rgba(103, 182, 255, 0.12), transparent 36%),
+      radial-gradient(circle at 90% 0%, rgba(156, 123, 255, 0.24), transparent 42%),
+      linear-gradient(180deg, #040b17, #071226 60%, #060d1c);
+  }
+
+  .app-content {
+    width: 100%;
+  }
+
   .app-header {
-    padding: 18px 20px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    margin: 12px 12px 0;
+    padding: 16px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      radial-gradient(circle at 100% 0%, rgba(103, 182, 255, 0.20), transparent 38%),
+      linear-gradient(180deg, rgba(18, 26, 44, 0.94), rgba(10, 16, 30, 0.9));
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
   }
 
   .app-main {
-    padding: 20px;
+    padding: 14px 12px 108px;
   }
 
   .grid-2,
@@ -756,57 +788,95 @@ select {
   }
 
   .sidebar-nav {
+    display: flex;
     width: 100%;
-    justify-content: center;
+    justify-content: space-between;
     flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: 6px;
   }
 
   .sidebar-item {
-    flex: 1 1 140px;
+    flex: 1 1 0;
     justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 4px;
+    border-radius: 14px;
+    font-size: 0.7rem;
+    min-height: 52px;
+  }
+
+  .sidebar-item .dot {
+    width: 6px;
+    height: 6px;
   }
 
   .sidebar {
-    flex-direction: column;
-    align-items: stretch;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    top: auto;
+    height: auto;
+    z-index: 60;
+    width: auto;
+    padding: 10px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px rgba(2, 8, 20, 0.7);
+    background:
+      radial-gradient(circle at 50% -70%, rgba(103, 182, 255, 0.28), transparent 58%),
+      linear-gradient(180deg, rgba(16, 24, 40, 0.96), rgba(8, 13, 24, 0.95));
+    backdrop-filter: blur(16px);
   }
 
   .sidebar-toggle {
-    display: inline-flex;
-  }
-
-  .sidebar-nav {
     display: none;
   }
 
-  .sidebar-open .sidebar-nav {
-    display: flex;
-  }
-
-  .sidebar-footer {
+  .sidebar-brand,
+  .sidebar-footer,
+  .sidebar::after {
     display: none;
   }
 
   .plan-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .glass-card {
+    border-radius: 20px;
+    padding: 18px 16px;
+    background:
+      radial-gradient(circle at 85% -20%, rgba(103, 182, 255, 0.12), transparent 44%),
+      linear-gradient(160deg, rgba(18, 25, 42, 0.95), rgba(8, 14, 27, 0.92));
   }
 
   .plan-item .stat-value {
-    white-space: normal;
+    white-space: nowrap;
   }
 }
 
 @media (max-width: 700px) {
   .dashboard-tiles {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tile-value {
+    font-size: 1.05rem;
+  }
+
+  .tile-sub {
+    font-size: 0.72rem;
   }
 }
 @media (max-width: 480px) {
   .app-header {
-    padding: 16px;
-    gap: 10px;
+    margin: 10px 10px 0;
+    padding: 12px 14px;
+    gap: 8px;
   }
 
   .brand-title {
@@ -818,11 +888,11 @@ select {
   }
 
   .app-main {
-    padding: 16px;
+    padding: 12px 10px 100px;
   }
 
   .glass-card {
-    padding: 18px 16px;
+    padding: 14px 12px;
   }
 
   .hero-amount {
@@ -834,23 +904,16 @@ select {
   }
 
   .sidebar {
-    padding: 14px 14px;
-    gap: 12px;
-  }
-
-  .sidebar-nav {
-    gap: 6px;
-    justify-content: center;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    padding: 8px;
   }
 
   .sidebar-item {
-    padding: 8px 10px;
-    font-size: 0.9rem;
-    flex: 1 1 120px;
-  }
-
-  .sidebar-sub {
-    display: none;
+    min-height: 48px;
+    font-size: 0.66rem;
+    padding: 7px 2px;
   }
 
   .list-item {
@@ -882,17 +945,9 @@ select {
 }
 
 @media (max-width: 320px) {
-  .app-header {
-    padding: 12px;
-  }
-
-  .app-main {
-    padding: 12px;
-  }
-
-  .glass-card {
-    padding: 16px 12px;
-  }
+  .app-header { margin: 8px 8px 0; padding: 10px 10px; }
+  .app-main { padding: 10px 8px 98px; }
+  .glass-card { padding: 12px 10px; }
 
   .hero-amount {
     font-size: 1.7rem;
@@ -902,13 +957,7 @@ select {
     font-size: 1.15rem;
   }
 
-  .sidebar-logo {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-  }
-
-  .sidebar-item .dot {
-    display: none;
-  }
+  .sidebar-item { font-size: 0.62rem; }
 }
+
+

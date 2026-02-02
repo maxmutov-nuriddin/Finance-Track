@@ -1,17 +1,17 @@
 :root {
   color-scheme: dark;
   font-family: "Segoe UI", Arial, sans-serif;
-  --bg: #0a0f1c;
-  --bg-2: #11182a;
-  --ink: #eef1fb;
-  --muted: #9aa3b6;
-  --accent: #6c6bff;
-  --accent-2: #3bb7ff;
+  --bg: #060c1a;
+  --bg-2: #0d1830;
+  --ink: #eff4ff;
+  --muted: #9aa8c2;
+  --accent: #67b6ff;
+  --accent-2: #9c7bff;
   --warning: #ff9a76;
-  --glass: rgba(16, 22, 38, 0.6);
-  --glass-strong: rgba(12, 18, 32, 0.78);
-  --border: rgba(255, 255, 255, 0.08);
-  --shadow: 0 30px 80px rgba(6, 12, 24, 0.7);
+  --glass: rgba(16, 24, 42, 0.62);
+  --glass-strong: rgba(10, 16, 30, 0.84);
+  --border: rgba(195, 214, 255, 0.14);
+  --shadow: 0 30px 90px rgba(4, 10, 24, 0.72);
   --radius-lg: 24px;
   --radius-md: 18px;
   --radius-sm: 12px;
@@ -25,10 +25,10 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 10% 10%, rgba(108, 107, 255, 0.22), transparent 45%),
-    radial-gradient(circle at 90% 15%, rgba(59, 183, 255, 0.18), transparent 45%),
-    radial-gradient(circle at 15% 85%, rgba(88, 106, 255, 0.12), transparent 50%),
-    linear-gradient(160deg, #0a0f1c 0%, #121a2f 45%, #0b1022 100%);
+    radial-gradient(circle at 8% 8%, rgba(103, 182, 255, 0.18), transparent 34%),
+    radial-gradient(circle at 86% 4%, rgba(156, 123, 255, 0.16), transparent 36%),
+    radial-gradient(circle at 20% 88%, rgba(68, 225, 255, 0.12), transparent 40%),
+    linear-gradient(160deg, #060c1a 0%, #0c1530 52%, #071224 100%);
   color: var(--ink);
 }
 
