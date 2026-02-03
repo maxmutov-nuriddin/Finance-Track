@@ -55,15 +55,21 @@ export default function BudgetCard({
           </div>
           <div className="helper-text">{t("remainingSpendLabel")}</div>
           <div style={{ marginTop: 12 }}>
-            <div className="progress" style={{ marginBottom: 6 }}>
-              <span
-                style={{
-                  width: `${progress}%`,
-                  background: overspent
-                    ? "linear-gradient(90deg, #ff6a85, #ff9d6c)"
-                    : undefined
-                }}
-              />
+            <div
+              className="progress-wrap"
+              style={{ marginBottom: 6 }}
+              data-tooltip={`${t("spentLabel")}: ${formatAmount(Math.round(currentMonthExpense))} / ${formatAmount(Math.round(recommendedMaxSpend))}`}
+            >
+              <div className="progress">
+                <span
+                  style={{
+                    width: `${progress}%`,
+                    background: overspent
+                      ? "linear-gradient(90deg, #ff6a85, #ff9d6c)"
+                      : undefined
+                  }}
+                />
+              </div>
             </div>
             <div className="muted">
               {t("spentLabel")}: {formatAmount(Math.round(currentMonthExpense))} / {formatAmount(Math.round(recommendedMaxSpend))}

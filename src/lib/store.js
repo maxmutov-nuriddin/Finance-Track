@@ -7,6 +7,7 @@
   onSnapshot,
   orderBy,
   query,
+  limit,
   serverTimestamp,
   setDoc,
   writeBatch,
@@ -58,13 +59,66 @@ export function deleteGoal(uid, id) {
   return deleteDoc(doc(db, `users/${uid}/goals/${id}`));
 }
 
+export function deleteGoalWithRefund(uid, goalId, refundAmount = 0) {
+  const batch = writeBatch(db);
+  const goalRef = doc(db, `users/${uid}/goals/${goalId}`);
+  if (refundAmount > 0) {
+    const settingsRef = doc(db, `users/${uid}/settings/main`);
+    batch.set(
+      settingsRef,
+      { walletBalance: increment(Math.round(Number(refundAmount || 0))) },
+      { merge: true }
+    );
+  }
+  batch.delete(goalRef);
+  return batch.commit();
+}
+
 export function addPayment(uid, payload) {
+  const nowParts = getTzParts(nowInTashkent());
+  const fallbackDateISO = `${nowParts.year}-${String(nowParts.month).padStart(2, "0")}-${String(
+    nowParts.day
+  ).padStart(2, "0")}`;
+  const fallbackDateTimeISO = formatISOWithOffset(nowParts);
   return addDoc(collection(db, `users/${uid}/payments`), {
     ...payload,
+    title: payload.title || "Платеж",
+    payDateISO: payload.payDateISO || fallbackDateISO,
+    payDateTimeISO: payload.payDateTimeISO || fallbackDateTimeISO,
     amount: Math.round(Number(payload.amount || 0)),
     recurrence: payload.recurrence || "oneTime",
     createdAt: serverTimestamp()
   });
+}
+
+export function addDebt(uid, payload) {
+  return addDoc(collection(db, `users/${uid}/debts`), {
+    ...payload,
+    amount: Math.round(Number(payload.amount || 0)),
+    remaining: Math.round(Number(payload.remaining || payload.amount || 0)),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export function watchDebts(uid, callback) {
+  const ref = query(collection(db, `users/${uid}/debts`), orderBy("createdAt", "desc"));
+  return onSnapshot(ref, (snapshot) => {
+    const rows = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+    callback(dedupById(rows));
+  });
+}
+
+export function updateDebt(uid, id, payload) {
+  return setDoc(doc(db, `users/${uid}/debts/${id}`), payload, { merge: true });
+}
+
+export function adjustWalletBalance(uid, delta) {
+  return setDoc(
+    doc(db, `users/${uid}/settings/main`),
+    { walletBalance: increment(Math.round(Number(delta || 0))) },
+    { merge: true }
+  );
 }
 
 export function watchPayments(uid, callback) {
@@ -149,16 +203,21 @@ export function saveSettings(uid, payload) {
 }
 
 export async function clearAllUserData(uid) {
-  const collections = ["transactions", "goals", "payments", "fcmTokens", "alerts"];
-  for (const name of collections) {
+  const collections = ["transactions", "goals", "payments", "debts", "fcmTokens", "alerts"];
+
+  const deleteCollection = async (name) => {
     const ref = collection(db, `users/${uid}/${name}`);
-    const snap = await getDocs(ref);
-    const docs = snap.docs;
-    for (let i = 0; i < docs.length; i += 400) {
+    while (true) {
+      const snap = await getDocs(query(ref, limit(200)));
+      if (snap.empty) break;
       const batch = writeBatch(db);
-      docs.slice(i, i + 400).forEach((docSnap) => batch.delete(docSnap.ref));
+      snap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
       await batch.commit();
     }
+  };
+
+  for (const name of collections) {
+    await deleteCollection(name);
   }
 
   const settingsRef = doc(db, `users/${uid}/settings/main`);

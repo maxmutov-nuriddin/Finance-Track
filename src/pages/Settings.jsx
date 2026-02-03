@@ -70,7 +70,7 @@ export default function Settings() {
       await clearAllUserData(user.uid);
       setClearMessage(t("cleared"));
     } catch (error) {
-      setClearMessage(t("clearFailed"));
+      setClearMessage(`${t("clearFailed")}${error?.message ? `: ${error.message}` : ""}`);
     }
     setClearing(false);
     setTimeout(() => setClearMessage(""), 2000);

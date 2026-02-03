@@ -16,12 +16,26 @@ export default function PaymentsOverview({ payments }) {
     () => payments.filter((pay) => pay.payDateISO >= upcomingAlertDateISO).slice(0, 3),
     [payments, upcomingAlertDateISO]
   );
+  const monthly = useMemo(
+    () => payments.filter((pay) => (pay.recurrence || "oneTime") === "monthly"),
+    [payments]
+  );
 
   return (
     <GlassCard>
       <div className="card-title">{t("upcomingPayments")}</div>
       <div className="helper-text">{t("remind3days")}</div>
       <div className="list" style={{ marginTop: 12 }}>
+        {monthly.map((payment) => (
+          <div className="list-item" key={`m-${payment.id}`}>
+            <div className="list-item-meta">
+              <strong>{payment.title}</strong>
+              <span className="muted">{payment.payDateISO}</span>
+              <span className="badge">{t("monthlyInBudget")}</span>
+            </div>
+            <span className="badge">{formatAmount(payment.amount)}</span>
+          </div>
+        ))}
         {upcoming.map((payment) => (
           <div className="list-item" key={payment.id}>
             <div className="list-item-meta">
@@ -31,7 +45,7 @@ export default function PaymentsOverview({ payments }) {
             <span className="badge">{formatAmount(payment.amount)}</span>
           </div>
         ))}
-        {!upcoming.length && <div className="muted">{t("noPayments")}</div>}
+        {!upcoming.length && !monthly.length && <div className="muted">{t("noPayments")}</div>}
       </div>
     </GlassCard>
   );

@@ -9,7 +9,7 @@ import { formatAmount } from "../lib/format";
 import ModalPortal from "./ModalPortal";
 import { useI18n } from "./I18nProvider";
 
-export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
+export default function PaymentsPanel({ uid, payments, transactions = [], onAdd, onDelete }) {
   const { t } = useI18n();
   const [quickRaw, setQuickRaw] = useState("");
   const [notificationStatus, setNotificationStatus] = useState(getNotificationStatus());
@@ -26,6 +26,11 @@ export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
     () => payments.filter((pay) => pay.payDateISO === upcomingAlertDateISO),
     [payments, upcomingAlertDateISO]
   );
+  const recurringFromTransactions = useMemo(() => {
+    return (transactions || [])
+      .filter((tx) => tx?.isRecurring && tx.type === "expense")
+      .slice(0, 5);
+  }, [transactions]);
 
   const handleQuickAdd = () => {
     if (!quickRaw.trim()) return;
@@ -76,6 +81,18 @@ export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
       )}
 
       <div className="list" style={{ marginTop: 14 }}>
+        {recurringFromTransactions.map((tx) => (
+          <div className="list-item" key={`rtx-${tx.id}`}>
+            <div className="list-item-meta">
+              <strong>{tx.description || t("monthlyExpense")}</strong>
+              <span className="muted">{tx.occurredAtISO?.slice(0, 10)}</span>
+              <span className="badge">{t("monthlyInBudget")}</span>
+            </div>
+            <div className="row">
+              <span className="badge">{formatAmount(tx.amount)}</span>
+            </div>
+          </div>
+        ))}
         {payments.map((payment) => (
           <div className="list-item" key={payment.id}>
             <div className="list-item-meta">
@@ -95,7 +112,9 @@ export default function PaymentsPanel({ uid, payments, onAdd, onDelete }) {
             </div>
           </div>
         ))}
-        {!payments.length && <div className="muted">{t("noPaymentsYet")}</div>}
+        {!payments.length && recurringFromTransactions.length === 0 && (
+          <div className="muted">{t("noPaymentsYet")}</div>
+        )}
       </div>
 
       {upcoming.length > 0 && (

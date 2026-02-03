@@ -6,7 +6,7 @@ import {
   addGoal,
   addGoalContribution,
   completeGoal,
-  deleteGoal,
+  deleteGoalWithRefund,
   saveSettings,
   watchGoals,
   watchPayments,
@@ -121,11 +121,7 @@ export default function Goals() {
           try {
             const goal = goals.find((item) => item.id === id);
             const refund = Math.max(0, Number(goal?.currentAmount || 0));
-            await deleteGoal(user.uid, id);
-            if (refund > 0) {
-              const nextBalance = Math.max(0, Number(settings?.walletBalance || 0)) + refund;
-              await saveSettings(user.uid, { walletBalance: nextBalance });
-            }
+            await deleteGoalWithRefund(user.uid, id, refund);
             setDeleteMessage(t("deleted"));
           } catch (error) {
             setDeleteMessage(t("deleteFailed"));

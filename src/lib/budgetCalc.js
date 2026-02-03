@@ -33,6 +33,18 @@ export function computeMandatoryMonthly(payments, nowDate = new Date()) {
   }, 0);
 }
 
+export function computeRecurringMonthlyFromTransactions(transactions, nowDate = new Date()) {
+  const nowParts = getTzParts(nowDate);
+  return transactions.reduce((sum, item) => {
+    if (!item?.isRecurring || item.type !== "expense" || !item.occurredAtISO) return sum;
+    const parts = getTzParts(new Date(item.occurredAtISO));
+    if (parts.year === nowParts.year && parts.month === nowParts.month) {
+      return sum + Number(item.amount || 0);
+    }
+    return sum;
+  }, 0);
+}
+
 export function getActiveGoal(goals, settings) {
   if (!goals?.length) return null;
   if (settings?.activeGoalId) {

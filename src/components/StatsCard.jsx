@@ -10,7 +10,9 @@ export default function StatsCard({
   series,
   dailyLimit,
   dailyRemaining,
-  daysInMonth
+  daysInMonth,
+  range,
+  onRangeChange
 }) {
   const { t } = useI18n();
   return (
@@ -20,6 +22,31 @@ export default function StatsCard({
           <div className="card-title">{t("moneyNow")}</div>
           <div className="muted">{periodLabel}</div>
         </div>
+        {onRangeChange && (
+          <div className="pill-tabs">
+            <button
+              type="button"
+              className={`pill-tab ${range === "day" ? "pill-tab-active" : ""}`}
+              onClick={() => onRangeChange("day")}
+            >
+              {t("rangeDay")}
+            </button>
+            <button
+              type="button"
+              className={`pill-tab ${range === "week" ? "pill-tab-active" : ""}`}
+              onClick={() => onRangeChange("week")}
+            >
+              {t("rangeWeek")}
+            </button>
+            <button
+              type="button"
+              className={`pill-tab ${range === "month" ? "pill-tab-active" : ""}`}
+              onClick={() => onRangeChange("month")}
+            >
+              {t("rangeMonth")}
+            </button>
+          </div>
+        )}
       </div>
       <div className="grid-3" style={{ marginTop: 16 }}>
         <div className="stat">
@@ -49,7 +76,7 @@ export default function StatsCard({
         </div>
       )}
       <div style={{ marginTop: 16 }}>
-        <StatsChart series={series} targetValue={dailyLimit} />
+        <StatsChart series={series} targetValue={dailyLimit} formatValue={formatAmount} />
       </div>
     </GlassCard>
   );

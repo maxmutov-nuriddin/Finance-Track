@@ -8,6 +8,11 @@
   --accent: #2f6bff;
   --accent-2: #5b8cff;
   --chart-target: rgba(110, 122, 140, 0.65);
+  --chart-grid: rgba(148, 163, 184, 0.25);
+  --chart-label: rgba(71, 85, 105, 0.7);
+  --chart-bar: #5a7bff;
+  --chart-bar-last: rgba(90, 123, 255, 0.45);
+  --chart-line: rgba(255, 120, 120, 0.9);
   --bg-gradient: linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%);
   --ink: #1f2937;
   --muted: #667085;

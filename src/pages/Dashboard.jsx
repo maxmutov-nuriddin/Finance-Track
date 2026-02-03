@@ -12,7 +12,7 @@ import {
   watchSettings,
   saveSettings
 } from "../lib/store";
-import { addDaysInTz, formatDateISO, getTzParts, makeTashkentDate, nowInTashkent } from "../lib/timezone";
+import { addDaysInTz, addMonthsInTz, formatDateISO, getTzParts, makeTashkentDate, nowInTashkent } from "../lib/timezone";
 import { useNavigate } from "react-router-dom";
 import { computeBudgetStatus } from "../lib/budget";
 import { filterByOccurredAtISO, getMonthKey, getMonthRange, getMonthRangeFor } from "../lib/utils";
@@ -23,6 +23,7 @@ import ModalPortal from "../components/ModalPortal";
 import GlassButton from "../components/GlassButton";
 import {
   computeMandatoryMonthly,
+  computeRecurringMonthlyFromTransactions,
   computeMonthExpense,
   computeMonthlyExpense,
   computeMonthlyIncome,
@@ -36,9 +37,9 @@ function buildExpenseSeries(transactions, range) {
   const base = makeTashkentDate(getTzParts(range.end));
   const dates = Array.from({ length: days }).map((_, index) => {
     const parts = addDaysInTz(base, -days + 1 + index);
-    return formatDateISO(parts);
+    return { iso: formatDateISO(parts), label: String(parts.day).padStart(2, "0") };
   });
-  const map = new Map(dates.map((d) => [d, 0]));
+  const map = new Map(dates.map((d) => [d.iso, 0]));
   transactions.forEach((item) => {
     if (!item.occurredAtISO) return;
     const dateKey = item.occurredAtISO.slice(0, 10);
@@ -46,13 +47,77 @@ function buildExpenseSeries(transactions, range) {
     if (item.type !== "expense") return;
     map.set(dateKey, map.get(dateKey) + Number(item.amount || 0));
   });
-  return dates.map((dateKey) => ({ date: dateKey, value: map.get(dateKey) || 0 }));
+  return dates.map((item) => ({
+    date: item.iso,
+    label: item.label,
+    value: map.get(item.iso) || 0
+  }));
+}
+
+function buildExpenseSeriesForDays(transactions, endDate, days) {
+  const base = makeTashkentDate(getTzParts(endDate));
+  const dates = Array.from({ length: days }).map((_, index) => {
+    const parts = addDaysInTz(base, -days + 1 + index);
+    return { iso: formatDateISO(parts), label: String(parts.day).padStart(2, "0") };
+  });
+  const map = new Map(dates.map((d) => [d.iso, 0]));
+  transactions.forEach((item) => {
+    if (item.type !== "expense" || !item.occurredAtISO) return;
+    const dateKey = item.occurredAtISO.slice(0, 10);
+    if (!map.has(dateKey)) return;
+    map.set(dateKey, map.get(dateKey) + Number(item.amount || 0));
+  });
+  return dates.map((item) => ({
+    date: item.iso,
+    label: item.label,
+    value: map.get(item.iso) || 0
+  }));
+}
+
+function buildExpenseSeriesByHour(transactions, nowDate) {
+  const now = nowDate;
+  const hours = Array.from({ length: 24 }).map((_, i) => {
+    const d = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+    return {
+      key: `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}-${d.getHours()}`,
+      label: String(d.getHours()).padStart(2, "0")
+    };
+  });
+  const map = new Map(hours.map((h) => [h.key, 0]));
+  transactions.forEach((item) => {
+    if (item.type !== "expense" || !item.occurredAtISO) return;
+    const d = new Date(item.occurredAtISO);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}-${d.getHours()}`;
+    if (!map.has(key)) return;
+    map.set(key, map.get(key) + Number(item.amount || 0));
+  });
+  return hours.map((h) => ({ date: h.key, label: h.label, value: map.get(h.key) || 0 }));
+}
+
+function buildExpenseSeriesByMonth(transactions, nowDate, lang = "ru") {
+  const locale = lang === "uz" ? "uz-UZ" : "ru-RU";
+  const formatter = new Intl.DateTimeFormat(locale, { month: "short" });
+  const months = Array.from({ length: 6 }).map((_, i) => {
+    const parts = addMonthsInTz(nowDate, -5 + i);
+    const key = `${parts.year}-${String(parts.month).padStart(2, "0")}`;
+    const label = formatter.format(new Date(parts.year, parts.month - 1, 1));
+    return { key, label };
+  });
+  const map = new Map(months.map((m) => [m.key, 0]));
+  transactions.forEach((item) => {
+    if (item.type !== "expense" || !item.occurredAtISO) return;
+    const d = new Date(item.occurredAtISO);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (!map.has(key)) return;
+    map.set(key, map.get(key) + Number(item.amount || 0));
+  });
+  return months.map((m) => ({ date: m.key, label: m.label, value: map.get(m.key) || 0 }));
 }
 
 export default function Dashboard() {
   const user = useUser();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [goals, setGoals] = useState([]);
   const [payments, setPayments] = useState([]);
   const [allTransactions, setAllTransactions] = useState([]);
@@ -60,6 +125,7 @@ export default function Dashboard() {
   const [walletNotice, setWalletNotice] = useState("");
   const [monthTick, setMonthTick] = useState(getMonthKey(new Date()));
   const [carryoverModalOpen, setCarryoverModalOpen] = useState(false);
+  const [chartRange, setChartRange] = useState("month");
 
   useEffect(() => {
     if (!user) return;
@@ -104,10 +170,11 @@ export default function Dashboard() {
     () => computeMonthlyExpense(statsTransactions, periodDays),
     [statsTransactions, periodDays]
   );
-  const monthlyMandatory = useMemo(
-    () => computeMandatoryMonthly(payments, new Date()),
-    [payments]
-  );
+  const monthlyMandatory = useMemo(() => {
+    const fromPayments = computeMandatoryMonthly(payments, new Date());
+    if (payments?.length) return fromPayments;
+    return computeRecurringMonthlyFromTransactions(allTransactions, new Date());
+  }, [payments, allTransactions]);
 
   const activeGoal = useMemo(() => getActiveGoal(goals, settings), [goals, settings]);
   const totalGoalsSaved = useMemo(
@@ -160,6 +227,28 @@ export default function Dashboard() {
     }, 0);
   }, [allTransactions, todayISO]);
 
+  const todaySpecialExpense = useMemo(() => {
+    return allTransactions.reduce((sum, item) => {
+      if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      const iso = item.occurredAtISO.slice(0, 10);
+      if (iso !== todayISO) return sum;
+      const category = item.category || "";
+      const description = (item.description || "").toLowerCase();
+      const raw = (item.raw || "").toLowerCase();
+      const isGoal = description.includes("накоп") || raw.includes("накоп");
+      const isDebt = category === "credit" || raw.includes("долг") || raw.includes("кредит");
+      if (isGoal || isDebt) {
+        return sum + Number(item.amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [allTransactions, todayISO]);
+
+  const todayRegularExpense = useMemo(() => {
+    const regular = Number(todayExpense || 0) - Number(todaySpecialExpense || 0);
+    return regular < 0 ? 0 : regular;
+  }, [todayExpense, todaySpecialExpense]);
+
   const currentMonthExpenseBeforeToday = useMemo(() => {
     return allTransactions.reduce((sum, item) => {
       if (item.type !== "expense" || !item.occurredAtISO) return sum;
@@ -190,12 +279,17 @@ export default function Dashboard() {
   const dailyLimitFixed = useMemo(() => {
     const storedDate = settings?.dailyLimitDateISO;
     const storedValue = Number(settings?.dailyLimitValue || 0);
-    if (storedDate === todayISO && storedValue > 0) {
+    if (storedDate === todayISO && storedValue > 0 && todaySpecialExpense <= 0) {
       return storedValue;
     }
     const carryPool = Number(settings?.dailyCarryoverPool || 0);
     const remainingBase =
-      monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpenseBeforeToday + carryPool;
+      monthlyIncome -
+      monthlyMandatory -
+      plannedMonthlySavings -
+      currentMonthExpenseBeforeToday -
+      todaySpecialExpense +
+      carryPool;
     const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
     return safeRemaining / remainingDaysInMonth;
   }, [
@@ -205,13 +299,14 @@ export default function Dashboard() {
     monthlyMandatory,
     plannedMonthlySavings,
     currentMonthExpenseBeforeToday,
-    remainingDaysInMonth
+    remainingDaysInMonth,
+    todaySpecialExpense
   ]);
 
   const dailyLimitRemaining = useMemo(() => {
-    const remaining = Number(dailyLimitFixed || 0) - Number(todayExpense || 0);
+    const remaining = Number(dailyLimitFixed || 0) - Number(todayRegularExpense || 0);
     return remaining < 0 ? 0 : remaining;
-  }, [dailyLimitFixed, todayExpense]);
+  }, [dailyLimitFixed, todayRegularExpense]);
   const factMonthlyNet = useMemo(() => stats.net, [stats.net]);
 
   const status = useMemo(
@@ -229,10 +324,19 @@ export default function Dashboard() {
     [safeRecommendedSpend, currentMonthExpense]
   );
 
-  const chartSeries = useMemo(
-    () => buildExpenseSeries(statsTransactions, periodRange),
-    [statsTransactions, periodRange]
-  );
+  const chartSeries = useMemo(() => {
+    const now = nowInTashkent();
+    if (chartRange === "day") {
+      return buildExpenseSeriesByHour(statsTransactions, now);
+    }
+    if (chartRange === "week") {
+      return buildExpenseSeriesForDays(statsTransactions, now, 7);
+    }
+    if (chartRange === "month") {
+      return buildExpenseSeriesByMonth(allTransactions, now, lang);
+    }
+    return buildExpenseSeries(statsTransactions, periodRange);
+  }, [statsTransactions, periodRange, chartRange, allTransactions, lang]);
 
   const upcomingOneTime = useMemo(() => {
     const todayISO = new Date().toISOString().slice(0, 10);
@@ -335,6 +439,38 @@ export default function Dashboard() {
     settings,
     todayISO,
     allTransactions,
+    monthlyIncome,
+    monthlyMandatory,
+    plannedMonthlySavings,
+    currentMonthExpenseBeforeToday,
+    remainingDaysInMonth,
+    todaySpecialExpense
+  ]);
+
+  useEffect(() => {
+    if (!user || !settings) return;
+    if (settings.dailyLimitDateISO !== todayISO) return;
+    if (todaySpecialExpense <= 0) return;
+    const carryPool = Number(settings.dailyCarryoverPool || 0);
+    const remainingBase =
+      monthlyIncome -
+      monthlyMandatory -
+      plannedMonthlySavings -
+      currentMonthExpenseBeforeToday -
+      todaySpecialExpense +
+      carryPool;
+    const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
+    const nextDailyLimit = Math.round(safeRemaining / remainingDaysInMonth);
+    if (Math.round(Number(settings.dailyLimitValue || 0)) !== nextDailyLimit) {
+      saveSettings(user.uid, {
+        dailyLimitValue: nextDailyLimit
+      });
+    }
+  }, [
+    user,
+    settings,
+    todayISO,
+    todaySpecialExpense,
     monthlyIncome,
     monthlyMandatory,
     plannedMonthlySavings,
@@ -460,6 +596,8 @@ export default function Dashboard() {
         dailyLimit={dailyLimitFixed}
         dailyRemaining={dailyLimitRemaining}
         daysInMonth={periodDays}
+        range={chartRange}
+        onRangeChange={setChartRange}
       />
       </div>
       <div className="dashboard-side">
