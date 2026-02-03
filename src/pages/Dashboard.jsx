@@ -90,7 +90,12 @@ export default function Dashboard() {
   );
 
   const stats = useMemo(() => computeStats(statsTransactions), [statsTransactions]);
-  const periodDays = periodRange.days;
+  const periodDays = useMemo(() => {
+    const now = nowInTashkent();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    return new Date(year, month, 0).getDate();
+  }, [monthTick]);
   const monthlyIncome = useMemo(
     () => computeMonthlyIncome(statsTransactions, periodDays),
     [statsTransactions, periodDays]
@@ -424,7 +429,7 @@ export default function Dashboard() {
           <div className="stat-tile tile-blue">
             <div className="tile-label">{t("dailyAllowed")}</div>
             <div className="tile-value">{formatAmount(Math.round(dailyLimitRemaining))}</div>
-            <div className="tile-sub">{t("dailyAllowed")}</div>
+            <div className="tile-sub">{t("dailyLimitLabel", { days: periodDays })}</div>
           </div>
           <div className="stat-tile tile-orange">
             <div className="tile-label">{t("mandatory")}</div>
@@ -454,7 +459,7 @@ export default function Dashboard() {
         series={chartSeries}
         dailyLimit={dailyLimitFixed}
         dailyRemaining={dailyLimitRemaining}
-        daysLeft={remainingDaysInMonth}
+        daysInMonth={periodDays}
       />
       </div>
       <div className="dashboard-side">

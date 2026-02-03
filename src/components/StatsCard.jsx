@@ -10,7 +10,7 @@ export default function StatsCard({
   series,
   dailyLimit,
   dailyRemaining,
-  daysLeft
+  daysInMonth
 }) {
   const { t } = useI18n();
   return (
@@ -38,9 +38,9 @@ export default function StatsCard({
       <div className="helper-text" style={{ marginTop: 10 }}>
         {t("monthFact")}: {formatAmount(Math.round(monthlyNet))}.
       </div>
-      {Number.isFinite(dailyLimit) && Number.isFinite(daysLeft) && (
+      {Number.isFinite(dailyLimit) && Number.isFinite(daysInMonth) && (
         <div className="helper-text" style={{ marginTop: 6 }}>
-          {t("dailyLimitLabel", { days: daysLeft })}: {formatAmount(Math.round(dailyLimit))}.
+          {t("dailyLimitLabel", { days: daysInMonth })}: {formatAmount(Math.round(dailyLimit))}.
         </div>
       )}
       {Number.isFinite(dailyRemaining) && (
