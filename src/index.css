@@ -1,17 +1,20 @@
+@import url("https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap");
+
 :root {
-  color-scheme: dark;
-  font-family: "Segoe UI", Arial, sans-serif;
-  --bg: #060c1a;
-  --bg-2: #0d1830;
-  --ink: #eff4ff;
-  --muted: #9aa8c2;
-  --accent: #67b6ff;
-  --accent-2: #9c7bff;
-  --warning: #ff9a76;
-  --glass: rgba(16, 24, 42, 0.62);
-  --glass-strong: rgba(10, 16, 30, 0.84);
-  --border: rgba(195, 214, 255, 0.14);
-  --shadow: 0 30px 90px rgba(4, 10, 24, 0.72);
+  color-scheme: light;
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --primary-color: #2f6bff;
+  --primary-color-2: #5b8cff;
+  --accent: #2f6bff;
+  --accent-2: #5b8cff;
+  --chart-target: rgba(110, 122, 140, 0.65);
+  --bg-gradient: linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%);
+  --ink: #1f2937;
+  --muted: #667085;
+  --surface: #ffffff;
+  --surface-2: #f5f7fb;
+  --border: #e4e7ec;
+  --shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
   --radius-lg: 24px;
   --radius-md: 18px;
   --radius-sm: 12px;
@@ -24,12 +27,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 8% 8%, rgba(103, 182, 255, 0.18), transparent 34%),
-    radial-gradient(circle at 86% 4%, rgba(156, 123, 255, 0.16), transparent 36%),
-    radial-gradient(circle at 20% 88%, rgba(68, 225, 255, 0.12), transparent 40%),
-    linear-gradient(160deg, #060c1a 0%, #0c1530 52%, #071224 100%);
+  background: var(--bg-gradient);
   color: var(--ink);
+  padding: 0;
 }
 
 body::before {
@@ -37,7 +37,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.04;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
   z-index: 0;
 }
@@ -62,5 +62,15 @@ select {
   select,
   button {
     width: 100%;
+  }
+
+  body {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 0;
   }
 }

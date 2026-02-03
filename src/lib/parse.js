@@ -23,11 +23,11 @@ function detectCategory(text) {
   for (const group of CATEGORY_MAP) {
     for (const word of group.words) {
       if (text.includes(word)) {
-        return group.key;
+        return { key: group.key, matched: true };
       }
     }
   }
-  return "other";
+  return { key: "other", matched: false };
 }
 
 function detectType(text) {
@@ -145,7 +145,8 @@ export function parseInput(rawText, nowDate = new Date()) {
   const warnings = [];
 
   const type = detectType(text);
-  const category = detectCategory(text);
+  const categoryResult = detectCategory(text);
+  const category = categoryResult.key;
   const incomePeriod = type === "income" ? detectIncomePeriod(text) : null;
 
   const tokensToStrip = [];
@@ -171,6 +172,7 @@ export function parseInput(rawText, nowDate = new Date()) {
     occurredAtISO: dt.occurredAtISO,
     occurredAtDate: dt.occurredAtDate,
     category,
+    categoryDetected: categoryResult.matched,
     type,
     incomePeriod,
     description,

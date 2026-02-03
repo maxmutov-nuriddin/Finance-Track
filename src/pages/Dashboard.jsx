@@ -5,19 +5,22 @@ import PaymentsOverview from "../components/PaymentsOverview";
 import StatsCard from "../components/StatsCard";
 import { useUser } from "../lib/user";
 import {
+  addGoalContribution,
   watchGoals,
   watchPayments,
   watchTransactions,
   watchSettings,
   saveSettings
 } from "../lib/store";
-import { addDaysInTz, formatDateISO, getTzParts, makeTashkentDate } from "../lib/timezone";
+import { addDaysInTz, formatDateISO, getTzParts, makeTashkentDate, nowInTashkent } from "../lib/timezone";
 import { useNavigate } from "react-router-dom";
 import { computeBudgetStatus } from "../lib/budget";
 import { filterByOccurredAtISO, getMonthKey, getMonthRange, getMonthRangeFor } from "../lib/utils";
 import { computeStats } from "../lib/calcs";
 import { formatAmount } from "../lib/format";
 import { useI18n } from "../components/I18nProvider";
+import ModalPortal from "../components/ModalPortal";
+import GlassButton from "../components/GlassButton";
 import {
   computeMandatoryMonthly,
   computeMonthExpense,
@@ -28,7 +31,7 @@ import {
   getActiveGoal
 } from "../lib/budgetCalc";
 
-function buildSeries(transactions, range) {
+function buildExpenseSeries(transactions, range) {
   const days = range.days;
   const base = makeTashkentDate(getTzParts(range.end));
   const dates = Array.from({ length: days }).map((_, index) => {
@@ -40,8 +43,8 @@ function buildSeries(transactions, range) {
     if (!item.occurredAtISO) return;
     const dateKey = item.occurredAtISO.slice(0, 10);
     if (!map.has(dateKey)) return;
-    const delta = item.type === "income" ? Number(item.amount || 0) : -Number(item.amount || 0);
-    map.set(dateKey, map.get(dateKey) + delta);
+    if (item.type !== "expense") return;
+    map.set(dateKey, map.get(dateKey) + Number(item.amount || 0));
   });
   return dates.map((dateKey) => ({ date: dateKey, value: map.get(dateKey) || 0 }));
 }
@@ -56,6 +59,7 @@ export default function Dashboard() {
   const [settings, setSettings] = useState(null);
   const [walletNotice, setWalletNotice] = useState("");
   const [monthTick, setMonthTick] = useState(getMonthKey(new Date()));
+  const [carryoverModalOpen, setCarryoverModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -136,7 +140,73 @@ export default function Dashboard() {
     return monthlyIncome - monthlyMandatory - safeRecommendedSpend;
   }, [monthlyIncome, monthlyMandatory, safeRecommendedSpend]);
 
-  const dailyNet = useMemo(() => plannedMonthlyNet / 30, [plannedMonthlyNet]);
+  const currentMonthExpense = useMemo(
+    () => computeMonthExpense(allTransactions),
+    [allTransactions]
+  );
+
+  const todayISO = useMemo(() => formatDateISO(getTzParts(nowInTashkent())), []);
+  const todayExpense = useMemo(() => {
+    return allTransactions.reduce((sum, item) => {
+      if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      const iso = item.occurredAtISO.slice(0, 10);
+      if (iso !== todayISO) return sum;
+      return sum + Number(item.amount || 0);
+    }, 0);
+  }, [allTransactions, todayISO]);
+
+  const currentMonthExpenseBeforeToday = useMemo(() => {
+    return allTransactions.reduce((sum, item) => {
+      if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      const parts = getTzParts(new Date(item.occurredAtISO));
+      const itemMonthKey = getMonthKey(new Date(item.occurredAtISO));
+      if (itemMonthKey !== getMonthKey(new Date())) return sum;
+      const itemISO = formatDateISO(parts);
+      if (itemISO >= todayISO) return sum;
+      return sum + Number(item.amount || 0);
+    }, 0);
+  }, [allTransactions, todayISO]);
+
+  const remainingDaysInMonth = useMemo(() => {
+    const todayParts = getTzParts(nowInTashkent());
+    const todayStart = makeTashkentDate({
+      year: todayParts.year,
+      month: todayParts.month,
+      day: todayParts.day,
+      hour: 0,
+      minute: 0,
+      second: 0
+    });
+    const endDate = makeTashkentDate(getTzParts(periodRange.end));
+    const diffDays = Math.ceil((endDate.getTime() - todayStart.getTime()) / (24 * 60 * 60 * 1000));
+    return Math.max(1, diffDays);
+  }, [periodRange.end]);
+
+  const dailyLimitFixed = useMemo(() => {
+    const storedDate = settings?.dailyLimitDateISO;
+    const storedValue = Number(settings?.dailyLimitValue || 0);
+    if (storedDate === todayISO && storedValue > 0) {
+      return storedValue;
+    }
+    const carryPool = Number(settings?.dailyCarryoverPool || 0);
+    const remainingBase =
+      monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpenseBeforeToday + carryPool;
+    const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
+    return safeRemaining / remainingDaysInMonth;
+  }, [
+    settings,
+    todayISO,
+    monthlyIncome,
+    monthlyMandatory,
+    plannedMonthlySavings,
+    currentMonthExpenseBeforeToday,
+    remainingDaysInMonth
+  ]);
+
+  const dailyLimitRemaining = useMemo(() => {
+    const remaining = Number(dailyLimitFixed || 0) - Number(todayExpense || 0);
+    return remaining < 0 ? 0 : remaining;
+  }, [dailyLimitFixed, todayExpense]);
   const factMonthlyNet = useMemo(() => stats.net, [stats.net]);
 
   const status = useMemo(
@@ -149,18 +219,13 @@ export default function Dashboard() {
     [monthlyIncome, monthlyMandatory, recommendedMaxSpend]
   );
 
-  const currentMonthExpense = useMemo(
-    () => computeMonthExpense(allTransactions),
-    [allTransactions]
-  );
-
   const remainingToSpend = useMemo(
     () => Math.max(0, safeRecommendedSpend - currentMonthExpense),
     [safeRecommendedSpend, currentMonthExpense]
   );
 
   const chartSeries = useMemo(
-    () => buildSeries(statsTransactions, periodRange),
+    () => buildExpenseSeries(statsTransactions, periodRange),
     [statsTransactions, periodRange]
   );
 
@@ -180,6 +245,8 @@ export default function Dashboard() {
 
   const walletBalance = Number(settings?.walletBalance || 0);
   const walletMonthKey = settings?.walletMonthKey || "";
+  const pendingCarryoverAmount = Number(settings?.dailyCarryoverPendingAmount || 0);
+  const pendingCarryoverDate = settings?.dailyCarryoverPendingDateISO || "";
 
   useEffect(() => {
     if (!user || !settings) return;
@@ -225,34 +292,149 @@ export default function Dashboard() {
     activeGoal
   ]);
 
+  useEffect(() => {
+    if (!user || !settings) return;
+    const today = todayISO;
+    if (settings.dailyLimitDateISO !== today) {
+      if (settings.dailyLimitDateISO && !settings.dailyCarryoverPendingAmount) {
+        const prevDate = settings.dailyLimitDateISO;
+        const prevSpent = allTransactions.reduce((sum, item) => {
+          if (item.type !== "expense" || !item.occurredAtISO) return sum;
+          const iso = item.occurredAtISO.slice(0, 10);
+          if (iso !== prevDate) return sum;
+          return sum + Number(item.amount || 0);
+        }, 0);
+        const prevLimit = Number(settings.dailyLimitValue || 0);
+        const leftover = Math.max(0, prevLimit - prevSpent);
+        if (leftover > 0) {
+          saveSettings(user.uid, {
+            dailyCarryoverPendingAmount: leftover,
+            dailyCarryoverPendingDateISO: prevDate
+          });
+        }
+      }
+
+      const carryPool = Number(settings.dailyCarryoverPool || 0);
+      const remainingBase =
+        monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpenseBeforeToday + carryPool;
+      const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
+      const nextDailyLimit = Math.round(safeRemaining / remainingDaysInMonth);
+      saveSettings(user.uid, {
+        dailyLimitDateISO: today,
+        dailyLimitValue: nextDailyLimit,
+        dailyCarryoverPool: 0
+      });
+    }
+  }, [
+    user,
+    settings,
+    todayISO,
+    allTransactions,
+    monthlyIncome,
+    monthlyMandatory,
+    plannedMonthlySavings,
+    currentMonthExpenseBeforeToday,
+    remainingDaysInMonth
+  ]);
+
+  useEffect(() => {
+    if (pendingCarryoverAmount > 0 && pendingCarryoverDate) {
+      setCarryoverModalOpen(true);
+    }
+  }, [pendingCarryoverAmount, pendingCarryoverDate]);
+
+  const handleCarryoverChoice = async (choice) => {
+    if (!user || !settings || pendingCarryoverAmount <= 0) return;
+    if (choice === "distribute") {
+      const nextPool = Number(settings.dailyCarryoverPool || 0) + pendingCarryoverAmount;
+      await saveSettings(user.uid, {
+        dailyCarryoverPool: nextPool,
+        dailyCarryoverPendingAmount: 0,
+        dailyCarryoverPendingDateISO: ""
+      });
+    } else if (choice === "goal") {
+      if (activeGoal?.id) {
+        await addGoalContribution(user.uid, activeGoal.id, pendingCarryoverAmount, activeGoal.title);
+      } else {
+        const nextBalance = walletBalance + pendingCarryoverAmount;
+        await saveSettings(user.uid, { walletBalance: nextBalance });
+      }
+      await saveSettings(user.uid, {
+        dailyCarryoverPendingAmount: 0,
+        dailyCarryoverPendingDateISO: ""
+      });
+    } else if (choice === "wallet") {
+      const nextBalance = walletBalance + pendingCarryoverAmount;
+      await saveSettings(user.uid, {
+        walletBalance: nextBalance,
+        dailyCarryoverPendingAmount: 0,
+        dailyCarryoverPendingDateISO: ""
+      });
+    }
+    setCarryoverModalOpen(false);
+  };
+
   return (
-    <div className="dashboard-grid">
+    <div className="dashboard-grid hide-side">
+      {carryoverModalOpen && (
+        <ModalPortal>
+          <div className="modal-backdrop" onClick={() => setCarryoverModalOpen(false)}>
+            <div className="modal" onClick={(event) => event.stopPropagation()}>
+              <div className="modal-header">
+                <strong>{t("dailyCarryoverTitle")}</strong>
+                <GlassButton variant="ghost" onClick={() => setCarryoverModalOpen(false)}>
+                  {t("close")}
+                </GlassButton>
+              </div>
+              <div className="stack" style={{ marginTop: 12 }}>
+                <div className="helper-text">
+                  {t("dailyCarryoverText", {
+                    date: pendingCarryoverDate,
+                    amount: formatAmount(pendingCarryoverAmount)
+                  })}
+                </div>
+                <div className="row">
+                  <GlassButton onClick={() => handleCarryoverChoice("distribute")}>
+                    {t("dailyCarryoverDistribute")}
+                  </GlassButton>
+                  <GlassButton onClick={() => handleCarryoverChoice("goal")}>
+                    {t("dailyCarryoverGoal")}
+                  </GlassButton>
+                  <GlassButton onClick={() => handleCarryoverChoice("wallet")}>
+                    {t("dailyCarryoverWallet")}
+                  </GlassButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
       <div className="dashboard-main">
         <div className="dashboard-tiles">
           <div className="stat-tile tile-green">
-            <div className="tile-label">{t("status")}</div>
-            <div className="tile-value">{status.message ? t("statusWarn") : t("statusOk")}</div>
-            <div className="tile-sub">{t("monthBalance")}</div>
-          </div>
-          <div className="stat-tile tile-blue">
-            <div className="tile-label">{t("toGoal")}</div>
-            <div className="tile-value">{formatAmount(Math.round(totalGoalsSaved))}</div>
-            <div className="tile-sub">{t("goalSavedAll")}</div>
+            <div className="tile-label">{t("monthlySalary")}</div>
+            <div className="tile-value">{formatAmount(Math.round(monthlyIncome))}</div>
+            <div className="tile-sub">{t("monthlySalary")}</div>
           </div>
           <div className="stat-tile tile-emerald">
             <div className="tile-label">{t("wallet")}</div>
             <div className="tile-value">{formatAmount(walletBalance)}</div>
-            <div className="tile-sub">{t("walletSub")}</div>
+            <div className="tile-sub">{t("wallet")}</div>
+          </div>
+          <div className="stat-tile tile-blue">
+            <div className="tile-label">{t("dailyAllowed")}</div>
+            <div className="tile-value">{formatAmount(Math.round(dailyLimitRemaining))}</div>
+            <div className="tile-sub">{t("dailyAllowed")}</div>
           </div>
           <div className="stat-tile tile-orange">
-            <div className="tile-label">{t("canSpend")}</div>
-            <div className="tile-value">{formatAmount(Math.round(remainingToSpend))}</div>
-            <div className="tile-sub">{t("remainingMonth")}</div>
-          </div>
-          <div className="stat-tile tile-red">
             <div className="tile-label">{t("mandatory")}</div>
             <div className="tile-value">{formatAmount(Math.round(monthlyMandatory))}</div>
-            <div className="tile-sub">{t("monthlyPayments")}</div>
+            <div className="tile-sub">{t("monthlyMandatoryPayments")}</div>
+          </div>
+          <div className="stat-tile tile-purple">
+            <div className="tile-label">{t("goalAmount")}</div>
+            <div className="tile-value">{formatAmount(Math.round(totalGoalsSaved))}</div>
+            <div className="tile-sub">{t("goalAmount")}</div>
           </div>
         </div>
         <BudgetCard
@@ -270,6 +452,9 @@ export default function Dashboard() {
         periodLabel={t("periodMonth")}
         monthlyNet={factMonthlyNet}
         series={chartSeries}
+        dailyLimit={dailyLimitFixed}
+        dailyRemaining={dailyLimitRemaining}
+        daysLeft={remainingDaysInMonth}
       />
       </div>
       <div className="dashboard-side">

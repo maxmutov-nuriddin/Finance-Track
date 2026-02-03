@@ -3,7 +3,15 @@ import StatsChart from "./StatsChart";
 import { formatAmount } from "../lib/format";
 import { useI18n } from "./I18nProvider";
 
-export default function StatsCard({ stats, periodLabel = "За текущий месяц", monthlyNet, series }) {
+export default function StatsCard({
+  stats,
+  periodLabel = "За текущий месяц",
+  monthlyNet,
+  series,
+  dailyLimit,
+  dailyRemaining,
+  daysLeft
+}) {
   const { t } = useI18n();
   return (
     <GlassCard>
@@ -30,8 +38,18 @@ export default function StatsCard({ stats, periodLabel = "За текущий м
       <div className="helper-text" style={{ marginTop: 10 }}>
         {t("monthFact")}: {formatAmount(Math.round(monthlyNet))}.
       </div>
+      {Number.isFinite(dailyLimit) && Number.isFinite(daysLeft) && (
+        <div className="helper-text" style={{ marginTop: 6 }}>
+          {t("dailyLimitLabel", { days: daysLeft })}: {formatAmount(Math.round(dailyLimit))}.
+        </div>
+      )}
+      {Number.isFinite(dailyRemaining) && (
+        <div className="helper-text" style={{ marginTop: 4 }}>
+          {t("dailyRemainingLabel")}: {formatAmount(Math.round(dailyRemaining))}.
+        </div>
+      )}
       <div style={{ marginTop: 16 }}>
-        <StatsChart series={series} />
+        <StatsChart series={series} targetValue={dailyLimit} />
       </div>
     </GlassCard>
   );
