@@ -43,6 +43,7 @@ export default function QuickAddModal() {
     if (key === "credit") return t("categoryCredit");
     if (key === "rent") return t("categoryRent");
     if (key === "health") return t("categoryHealth");
+    if (key === "carryover") return t("categoryCarryover");
     return t("categoryOther");
   };
 
