@@ -1314,21 +1314,26 @@ select {
 
 @media (max-width: 480px) {
   .app-header {
-    margin: 10px 10px 0;
-    padding: 12px 14px;
-    gap: 8px;
+    margin: 0;
+    padding: 10px 12px;
+    gap: 6px;
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    z-index: 1200;
   }
 
   .brand-title {
-    font-size: 1.35rem;
+    font-size: 1.15rem;
   }
 
   .brand-sub {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
   }
 
   .app-main {
-    padding: 12px 10px 110px;
+    padding: 150px 10px 110px;
   }
 
   .glass-card {
@@ -1348,12 +1353,6 @@ select {
     right: 8px;
     bottom: 8px;
     padding: 8px;
-  }
-
-  .sidebar-nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
   }
 
   .sidebar-nav {
@@ -1403,6 +1402,11 @@ select {
     white-space: nowrap;
   }
 
+  .glass-button {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
   .list-item {
     flex-direction: column;
     align-items: flex-start;
@@ -1446,8 +1450,8 @@ select {
 }
 
 @media (max-width: 320px) {
-  .app-header { margin: 8px 8px 0; padding: 10px 10px; }
-  .app-main { padding: 10px 8px 120px; }
+  .app-header { top: 6px; left: 6px; right: 6px; padding: 8px 10px; }
+  .app-main { padding: 138px 8px 120px; }
   .glass-card { padding: 12px 10px; }
 
   .hero-amount {
