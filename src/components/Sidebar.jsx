@@ -5,11 +5,11 @@ export default function Sidebar({ activePath, onNavigate }) {
   const { t } = useI18n();
   const menu = useMemo(
     () => [
-      { label: t("navHome"), path: "/" },
-      { label: t("navHistory"), path: "/history" },
-      { label: t("navGoals"), path: "/goals" },
-      { label: t("navPayments"), path: "/payments" },
-      { label: t("navSettings"), path: "/settings" }
+      { label: t("navHome"), path: "/", icon: "home" },
+      { label: t("navHistory"), path: "/history", icon: "history" },
+      { label: t("navGoals"), path: "/goals", icon: "goals" },
+      { label: t("navPayments"), path: "/payments", icon: "payments" },
+      { label: t("navSettings"), path: "/settings", icon: "settings" }
     ],
     [t]
   );
@@ -54,12 +54,12 @@ export default function Sidebar({ activePath, onNavigate }) {
         {menu.map((item) => (
           <button
             key={item.path}
-            className={`sidebar-item ${activePath === item.path ? "active" : ""}`}
+            className={`sidebar-item sidebar-${item.icon} ${activePath === item.path ? "active" : ""}`}
             onClick={() => handleNavigate(item.path)}
             type="button"
           >
-            <span className="dot" />
-            {item.label}
+            <span className="sidebar-icon" />
+            <span className="sidebar-label">{item.label}</span>
           </button>
         ))}
       </nav>
