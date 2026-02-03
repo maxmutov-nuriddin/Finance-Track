@@ -291,7 +291,8 @@ export default function Dashboard() {
       todaySpecialExpense +
       carryPool;
     const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
-    return safeRemaining / remainingDaysInMonth;
+    const value = safeRemaining / remainingDaysInMonth;
+    return Number.isFinite(value) && value > 0 ? value : 0;
   }, [
     settings,
     todayISO,
@@ -305,7 +306,8 @@ export default function Dashboard() {
 
   const dailyLimitRemaining = useMemo(() => {
     const remaining = Number(dailyLimitFixed || 0) - Number(todayRegularExpense || 0);
-    return remaining < 0 ? 0 : remaining;
+    if (!Number.isFinite(remaining)) return 0;
+    return remaining;
   }, [dailyLimitFixed, todayRegularExpense]);
   const factMonthlyNet = useMemo(() => stats.net, [stats.net]);
 
