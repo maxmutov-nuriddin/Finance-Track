@@ -809,10 +809,16 @@ select {
   align-items: flex-start;
   gap: 10px;
   line-height: 1.4;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 .modal-check input {
   margin-top: 2px;
+}
+
+.modal-check span {
+  flex: 1 1 auto;
 }
 
 .pill-tabs.compact {
@@ -1521,5 +1527,83 @@ select {
 
   .app-main {
     padding-bottom: 140px;
+  }
+}
+
+/* Modal responsive */
+@media (max-width: 480px) {
+  .modal-backdrop {
+    padding: 8px;
+    place-items: start;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: calc(100vh - 16px);
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .modal-header {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-header strong {
+    font-size: 1rem;
+  }
+
+  .modal-hint {
+    display: none;
+  }
+
+  .modal-header .glass-button {
+    width: auto;
+    padding: 6px 10px;
+    font-size: 0.82rem;
+  }
+
+  .modal-body {
+    gap: 10px;
+  }
+
+  .modal-card {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .modal-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .modal-check {
+    align-items: center;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .modal-check span {
+    text-align: left;
+  }
+
+  .modal-card .pill-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    border-radius: 16px;
+  }
+
+  .modal-card .pill-tab {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal-footer .glass-button {
+    width: 100%;
   }
 }
