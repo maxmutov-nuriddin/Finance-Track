@@ -98,8 +98,8 @@ export default function AuthGate({ children }) {
 
   if (loading) {
     return (
-      <div className="auth-shell">
-        <GlassCard className="auth-card">{t("authLoading")}</GlassCard>
+      <div className="auth-shell auth-loading">
+        <div className="loading-spinner" role="status" aria-label={t("authLoading")} />
       </div>
     );
   }

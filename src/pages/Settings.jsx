@@ -239,7 +239,15 @@ export default function Settings() {
           <GlassButton variant="ghost" onClick={handleClearAll} disabled={clearing}>
             {t("clearAll")}
           </GlassButton>
-              {clearMessage && <span className="toast">{clearMessage}</span>}
+              {clearing ? (
+                <span className="inline-loader" role="status" aria-label={t("clearing")}>
+                  <span className="loading-dot" />
+                  <span className="loading-dot" />
+                  <span className="loading-dot" />
+                </span>
+              ) : (
+                clearMessage && <span className="toast">{clearMessage}</span>
+              )}
             </div>
           </GlassCard>
         </div>
