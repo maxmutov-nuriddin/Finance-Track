@@ -229,11 +229,34 @@ export default function Dashboard() {
     () => computeMonthExpense(allTransactions),
     [allTransactions]
   );
+  const currentMonthExpenseNonRecurring = useMemo(() => {
+    const nowParts = getTzParts(new Date());
+    const year = nowParts.year;
+    const month = nowParts.month;
+    return allTransactions.reduce((sum, item) => {
+      if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      if (item.isRecurring) return sum;
+      const parts = getTzParts(new Date(item.occurredAtISO));
+      if (parts.year === year && parts.month === month) {
+        return sum + Number(item.amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [allTransactions]);
 
   const todayISO = useMemo(() => formatDateISO(getTzParts(nowInTashkent())), []);
   const todayExpense = useMemo(() => {
     return allTransactions.reduce((sum, item) => {
       if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      const iso = item.occurredAtISO.slice(0, 10);
+      if (iso !== todayISO) return sum;
+      return sum + Number(item.amount || 0);
+    }, 0);
+  }, [allTransactions, todayISO]);
+
+  const todayRecurringExpense = useMemo(() => {
+    return allTransactions.reduce((sum, item) => {
+      if (item.type !== "expense" || !item.occurredAtISO || !item.isRecurring) return sum;
       const iso = item.occurredAtISO.slice(0, 10);
       if (iso !== todayISO) return sum;
       return sum + Number(item.amount || 0);
@@ -258,13 +281,28 @@ export default function Dashboard() {
   }, [allTransactions, todayISO]);
 
   const todayRegularExpense = useMemo(() => {
-    const regular = Number(todayExpense || 0) - Number(todaySpecialExpense || 0);
+    const regular =
+      Number(todayExpense || 0) -
+      Number(todaySpecialExpense || 0) -
+      Number(todayRecurringExpense || 0);
     return regular < 0 ? 0 : regular;
-  }, [todayExpense, todaySpecialExpense]);
+  }, [todayExpense, todaySpecialExpense, todayRecurringExpense]);
 
   const currentMonthExpenseBeforeToday = useMemo(() => {
     return allTransactions.reduce((sum, item) => {
       if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      const parts = getTzParts(new Date(item.occurredAtISO));
+      const itemMonthKey = getMonthKey(new Date(item.occurredAtISO));
+      if (itemMonthKey !== getMonthKey(new Date())) return sum;
+      const itemISO = formatDateISO(parts);
+      if (itemISO >= todayISO) return sum;
+      return sum + Number(item.amount || 0);
+    }, 0);
+  }, [allTransactions, todayISO]);
+  const currentMonthExpenseBeforeTodayNonRecurring = useMemo(() => {
+    return allTransactions.reduce((sum, item) => {
+      if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      if (item.isRecurring) return sum;
       const parts = getTzParts(new Date(item.occurredAtISO));
       const itemMonthKey = getMonthKey(new Date(item.occurredAtISO));
       if (itemMonthKey !== getMonthKey(new Date())) return sum;
@@ -300,7 +338,7 @@ export default function Dashboard() {
       monthlyIncome -
       monthlyMandatory -
       plannedMonthlySavings -
-      currentMonthExpenseBeforeToday -
+      currentMonthExpenseBeforeTodayNonRecurring -
       todaySpecialExpense +
       carryPool;
     const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
@@ -312,7 +350,7 @@ export default function Dashboard() {
     monthlyIncome,
     monthlyMandatory,
     plannedMonthlySavings,
-    currentMonthExpenseBeforeToday,
+    currentMonthExpenseBeforeTodayNonRecurring,
     remainingDaysInMonth,
     todaySpecialExpense
   ]);
@@ -335,8 +373,8 @@ export default function Dashboard() {
   );
 
   const remainingToSpend = useMemo(
-    () => Math.max(0, safeRecommendedSpend - currentMonthExpense),
-    [safeRecommendedSpend, currentMonthExpense]
+    () => Math.max(0, safeRecommendedSpend - currentMonthExpenseNonRecurring),
+    [safeRecommendedSpend, currentMonthExpenseNonRecurring]
   );
   const projectedEndBalance = useMemo(() => {
     const todayParts = getTzParts(nowInTashkent());
@@ -447,7 +485,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user || !settings) return;
     const currentMonthKey = getMonthKey(new Date());
-    const overspend = Math.max(0, currentMonthExpense - safeRecommendedSpend);
+    const overspend = Math.max(0, currentMonthExpenseNonRecurring - safeRecommendedSpend);
     if (overspend <= 0) {
       if (overspendAppliedMonthKey !== currentMonthKey && overspendAppliedAmount !== 0) {
         saveSettings(user.uid, {
@@ -469,7 +507,7 @@ export default function Dashboard() {
     user,
     settings,
     walletBalance,
-    currentMonthExpense,
+    currentMonthExpenseNonRecurring,
     safeRecommendedSpend,
     overspendAppliedMonthKey,
     overspendAppliedAmount
@@ -513,7 +551,11 @@ export default function Dashboard() {
 
       const carryPool = 0;
       const remainingBase =
-        monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpenseBeforeToday + carryPool;
+        monthlyIncome -
+        monthlyMandatory -
+        plannedMonthlySavings -
+        currentMonthExpenseBeforeTodayNonRecurring +
+        carryPool;
       const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
       const nextDailyLimit = Math.round(safeRemaining / remainingDaysInMonth);
       saveSettings(user.uid, {
@@ -530,7 +572,7 @@ export default function Dashboard() {
     monthlyIncome,
     monthlyMandatory,
     plannedMonthlySavings,
-    currentMonthExpenseBeforeToday,
+    currentMonthExpenseBeforeTodayNonRecurring,
     remainingDaysInMonth,
     todaySpecialExpense
   ]);
@@ -544,7 +586,7 @@ export default function Dashboard() {
       monthlyIncome -
       monthlyMandatory -
       plannedMonthlySavings -
-      currentMonthExpenseBeforeToday -
+      currentMonthExpenseBeforeTodayNonRecurring -
       todaySpecialExpense +
       carryPool;
     const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
@@ -562,7 +604,7 @@ export default function Dashboard() {
     monthlyIncome,
     monthlyMandatory,
     plannedMonthlySavings,
-    currentMonthExpenseBeforeToday,
+    currentMonthExpenseBeforeTodayNonRecurring,
     remainingDaysInMonth
   ]);
 
@@ -681,7 +723,7 @@ export default function Dashboard() {
           monthlyIncome={monthlyIncome}
           monthlyMandatory={monthlyMandatory}
           recommendedMaxSpend={safeRecommendedSpend}
-          currentMonthExpense={currentMonthExpense}
+          currentMonthExpense={currentMonthExpenseNonRecurring}
           budgetMode={settings?.budgetMode || "auto"}
           planSpend={planSpend}
           warning={status.message}
