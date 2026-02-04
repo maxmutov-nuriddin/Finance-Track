@@ -78,12 +78,17 @@ export default function Settings() {
 
   return (
     <div className="stack">
+      {clearing && (
+        <div className="blocking-overlay" aria-live="polite" aria-busy="true">
+          <div className="loading-spinner" role="status" aria-label={t("clearing")} />
+        </div>
+      )}
       <div>
         <div className="card-title">{t("settingsTitle")}</div>
         <div className="helper-text">{t("settingsHelp")}</div>
       </div>
 
-      {clearMessage && <div className="toast">{clearMessage}</div>}
+      {!clearing && clearMessage && <div className="toast">{clearMessage}</div>}
 
       <div className="row settings-tabs">
         <GlassButton

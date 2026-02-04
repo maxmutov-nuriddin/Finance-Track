@@ -176,6 +176,14 @@ export default function Dashboard() {
     if (payments?.length) return fromPayments;
     return computeRecurringMonthlyFromTransactions(allTransactions, new Date());
   }, [payments, allTransactions]);
+  const recurringPaidThisMonth = useMemo(
+    () => computeRecurringMonthlyFromTransactions(allTransactions, new Date()),
+    [allTransactions]
+  );
+  const mandatoryRemaining = useMemo(
+    () => Math.max(0, Number(monthlyMandatory || 0) - Number(recurringPaidThisMonth || 0)),
+    [monthlyMandatory, recurringPaidThisMonth]
+  );
 
   const activeGoal = useMemo(() => getActiveGoal(goals, settings), [goals, settings]);
   const totalGoalsSaved = useMemo(
@@ -334,22 +342,26 @@ export default function Dashboard() {
     const todayParts = getTzParts(nowInTashkent());
     const daysPassed = Math.max(1, todayParts.day);
     const avgDailyExpense = currentMonthExpense / daysPassed;
-    const remainingMoney = monthlyIncome - plannedMonthlySavings - currentMonthExpense;
+    const remainingMoney =
+      monthlyIncome - plannedMonthlySavings - currentMonthExpense - mandatoryRemaining;
     const projectedFutureExpense = avgDailyExpense * remainingDaysInMonth;
     return remainingMoney - projectedFutureExpense;
   }, [
     monthlyIncome,
     plannedMonthlySavings,
     currentMonthExpense,
+    mandatoryRemaining,
     remainingDaysInMonth
   ]);
   const dailyToZero = useMemo(() => {
-    const remainingMoney = monthlyIncome - plannedMonthlySavings - currentMonthExpense;
+    const remainingMoney =
+      monthlyIncome - plannedMonthlySavings - currentMonthExpense - mandatoryRemaining;
     return remainingDaysInMonth > 0 ? remainingMoney / remainingDaysInMonth : remainingMoney;
   }, [
     monthlyIncome,
     plannedMonthlySavings,
     currentMonthExpense,
+    mandatoryRemaining,
     remainingDaysInMonth
   ]);
 

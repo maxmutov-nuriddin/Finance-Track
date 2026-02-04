@@ -1047,6 +1047,18 @@ select {
   background: radial-gradient(circle at top, #f7f9ff 0%, #eef3fb 45%, #eaf0fb 100%);
 }
 
+.blocking-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at top, rgba(245, 248, 255, 0.98), rgba(235, 241, 255, 0.92));
+  backdrop-filter: blur(12px);
+  z-index: 3000;
+  pointer-events: all;
+  cursor: wait;
+}
+
 .auth-card {
   max-width: 460px;
   width: 100%;
