@@ -115,6 +115,58 @@ function buildExpenseSeriesByMonth(transactions, nowDate, lang = "ru") {
   return months.map((m) => ({ date: m.key, label: m.label, value: map.get(m.key) || 0 }));
 }
 
+function getSalaryDay(transactions) {
+  const salaryWords = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
+  const now = new Date();
+  const limit = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+  const incomePool = [];
+  const salaryPool = [];
+
+  transactions.forEach((item) => {
+    if (item?.type !== "income" || !item?.occurredAtISO) return;
+    const date = new Date(item.occurredAtISO);
+    if (date < limit) return;
+    const parts = getTzParts(date);
+    const entry = { day: parts.day, date };
+    incomePool.push(entry);
+    const text = `${item.description || ""} ${item.raw || ""}`.toLowerCase();
+    if (salaryWords.some((word) => text.includes(word))) {
+      salaryPool.push(entry);
+    }
+  });
+
+  const pool = salaryPool.length >= 2 ? salaryPool : incomePool;
+  if (!pool.length) return null;
+
+  const stats = new Map();
+  pool.forEach((entry) => {
+    const existing = stats.get(entry.day) || { count: 0, last: null };
+    existing.count += 1;
+    if (!existing.last || entry.date > existing.last) {
+      existing.last = entry.date;
+    }
+    stats.set(entry.day, existing);
+  });
+
+  let bestDay = null;
+  let bestCount = -1;
+  let bestLast = null;
+  for (const [day, info] of stats.entries()) {
+    if (info.count > bestCount) {
+      bestDay = day;
+      bestCount = info.count;
+      bestLast = info.last;
+      continue;
+    }
+    if (info.count === bestCount && info.last && bestLast && info.last > bestLast) {
+      bestDay = day;
+      bestLast = info.last;
+    }
+  }
+
+  return bestDay;
+}
+
 export default function Dashboard() {
   const user = useUser();
   const navigate = useNavigate();
@@ -155,6 +207,45 @@ export default function Dashboard() {
     () => filterByOccurredAtISO(allTransactions, periodRange.start, periodRange.end),
     [allTransactions, periodRange]
   );
+  const analysisStartDate = useMemo(() => {
+    const monthStart = periodRange.start;
+    const salaryWords = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
+    let earliestSalary = null;
+    statsTransactions.forEach((item) => {
+      if (item?.type !== "income" || !item?.occurredAtISO) return;
+      const text = `${item.description || ""} ${item.raw || ""}`.toLowerCase();
+      const isSalary = salaryWords.some((word) => text.includes(word));
+      if (!isSalary) return;
+      const date = new Date(item.occurredAtISO);
+      if (!earliestSalary || date < earliestSalary) {
+        earliestSalary = date;
+      }
+    });
+    if (earliestSalary) return earliestSalary;
+    return monthStart;
+  }, [statsTransactions, periodRange.start]);
+  const analysisDaysPassed = useMemo(() => {
+    const todayParts = getTzParts(nowInTashkent());
+    const todayStart = makeTashkentDate({
+      year: todayParts.year,
+      month: todayParts.month,
+      day: todayParts.day,
+      hour: 0,
+      minute: 0,
+      second: 0
+    });
+    const startParts = getTzParts(analysisStartDate);
+    const startDate = makeTashkentDate({
+      year: startParts.year,
+      month: startParts.month,
+      day: startParts.day,
+      hour: 0,
+      minute: 0,
+      second: 0
+    });
+    const diffDays = Math.floor((todayStart.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+    return Math.max(1, diffDays);
+  }, [analysisStartDate]);
 
   const stats = useMemo(() => computeStats(statsTransactions), [statsTransactions]);
   const periodDays = useMemo(() => {
@@ -163,6 +254,40 @@ export default function Dashboard() {
     const month = now.getMonth() + 1;
     return new Date(year, month, 0).getDate();
   }, [monthTick]);
+  const salaryDay = useMemo(() => getSalaryDay(allTransactions), [allTransactions]);
+  const daysUntilSalary = useMemo(() => {
+    if (!salaryDay) return null;
+    const todayParts = getTzParts(nowInTashkent());
+    const todayStart = makeTashkentDate({
+      year: todayParts.year,
+      month: todayParts.month,
+      day: todayParts.day,
+      hour: 0,
+      minute: 0,
+      second: 0
+    });
+    const getMonthDays = (year, month) => new Date(year, month, 0).getDate();
+    let targetYear = todayParts.year;
+    let targetMonth = todayParts.month;
+    let targetDay = Math.min(salaryDay, getMonthDays(targetYear, targetMonth));
+    if (todayParts.day >= targetDay) {
+      const next = addMonthsInTz(nowInTashkent(), 1);
+      targetYear = next.year;
+      targetMonth = next.month;
+      targetDay = Math.min(salaryDay, getMonthDays(targetYear, targetMonth));
+    }
+    const targetDate = makeTashkentDate({
+      year: targetYear,
+      month: targetMonth,
+      day: targetDay,
+      hour: 0,
+      minute: 0,
+      second: 0
+    });
+    const diff =
+      Math.floor((targetDate.getTime() - todayStart.getTime()) / (24 * 60 * 60 * 1000));
+    return Math.max(0, diff);
+  }, [salaryDay]);
   const monthlyIncome = useMemo(
     () => computeMonthlyIncome(statsTransactions, periodDays),
     [statsTransactions, periodDays]
@@ -254,15 +379,6 @@ export default function Dashboard() {
     }, 0);
   }, [allTransactions, todayISO]);
 
-  const todayRecurringExpense = useMemo(() => {
-    return allTransactions.reduce((sum, item) => {
-      if (item.type !== "expense" || !item.occurredAtISO || !item.isRecurring) return sum;
-      const iso = item.occurredAtISO.slice(0, 10);
-      if (iso !== todayISO) return sum;
-      return sum + Number(item.amount || 0);
-    }, 0);
-  }, [allTransactions, todayISO]);
-
   const todaySpecialExpense = useMemo(() => {
     return allTransactions.reduce((sum, item) => {
       if (item.type !== "expense" || !item.occurredAtISO) return sum;
@@ -281,12 +397,9 @@ export default function Dashboard() {
   }, [allTransactions, todayISO]);
 
   const todayRegularExpense = useMemo(() => {
-    const regular =
-      Number(todayExpense || 0) -
-      Number(todaySpecialExpense || 0) -
-      Number(todayRecurringExpense || 0);
+    const regular = Number(todayExpense || 0) - Number(todaySpecialExpense || 0);
     return regular < 0 ? 0 : regular;
-  }, [todayExpense, todaySpecialExpense, todayRecurringExpense]);
+  }, [todayExpense, todaySpecialExpense]);
 
   const currentMonthExpenseBeforeToday = useMemo(() => {
     return allTransactions.reduce((sum, item) => {
@@ -341,9 +454,8 @@ export default function Dashboard() {
       currentMonthExpenseBeforeTodayNonRecurring -
       todaySpecialExpense +
       carryPool;
-    const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
-    const value = safeRemaining / remainingDaysInMonth;
-    return Number.isFinite(value) && value > 0 ? value : 0;
+    const value = remainingBase / remainingDaysInMonth;
+    return Number.isFinite(value) ? value : 0;
   }, [
     settings,
     todayISO,
@@ -377,29 +489,28 @@ export default function Dashboard() {
     [safeRecommendedSpend, currentMonthExpenseNonRecurring]
   );
   const projectedEndBalance = useMemo(() => {
-    const todayParts = getTzParts(nowInTashkent());
-    const daysPassed = Math.max(1, todayParts.day);
-    const avgDailyExpense = currentMonthExpense / daysPassed;
+    const avgDailyExpense = currentMonthExpenseNonRecurring / analysisDaysPassed;
     const remainingMoney =
-      monthlyIncome - plannedMonthlySavings - currentMonthExpense - mandatoryRemaining;
+      monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpenseNonRecurring;
     const projectedFutureExpense = avgDailyExpense * remainingDaysInMonth;
     return remainingMoney - projectedFutureExpense;
   }, [
     monthlyIncome,
+    monthlyMandatory,
     plannedMonthlySavings,
-    currentMonthExpense,
-    mandatoryRemaining,
+    currentMonthExpenseNonRecurring,
+    analysisDaysPassed,
     remainingDaysInMonth
   ]);
   const dailyToZero = useMemo(() => {
     const remainingMoney =
-      monthlyIncome - plannedMonthlySavings - currentMonthExpense - mandatoryRemaining;
+      monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpenseNonRecurring;
     return remainingDaysInMonth > 0 ? remainingMoney / remainingDaysInMonth : remainingMoney;
   }, [
     monthlyIncome,
+    monthlyMandatory,
     plannedMonthlySavings,
-    currentMonthExpense,
-    mandatoryRemaining,
+    currentMonthExpenseNonRecurring,
     remainingDaysInMonth
   ]);
 
@@ -556,8 +667,7 @@ export default function Dashboard() {
         plannedMonthlySavings -
         currentMonthExpenseBeforeTodayNonRecurring +
         carryPool;
-      const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
-      const nextDailyLimit = Math.round(safeRemaining / remainingDaysInMonth);
+      const nextDailyLimit = Math.round(remainingBase / remainingDaysInMonth);
       saveSettings(user.uid, {
         dailyLimitDateISO: today,
         dailyLimitValue: nextDailyLimit,
@@ -589,8 +699,7 @@ export default function Dashboard() {
       currentMonthExpenseBeforeTodayNonRecurring -
       todaySpecialExpense +
       carryPool;
-    const safeRemaining = remainingBase < 0 ? 0 : remainingBase;
-    const nextDailyLimit = Math.round(safeRemaining / remainingDaysInMonth);
+    const nextDailyLimit = Math.round(remainingBase / remainingDaysInMonth);
     if (Math.round(Number(settings.dailyLimitValue || 0)) !== nextDailyLimit) {
       saveSettings(user.uid, {
         dailyLimitValue: nextDailyLimit
@@ -691,6 +800,9 @@ export default function Dashboard() {
             <div className="tile-label">{t("endMonthBalance")}</div>
             <div className="tile-value">{formatAmount(Math.round(projectedEndBalance))}</div>
             <div className="tile-sub">{t("endMonthForecast")}</div>
+            {Number.isFinite(daysUntilSalary) && (
+              <div className="tile-meta">{t("salaryDaysLeft", { days: daysUntilSalary })}</div>
+            )}
             <div className="tile-corner">
               {formatAmount(Math.round(dailyToZero))}
             </div>

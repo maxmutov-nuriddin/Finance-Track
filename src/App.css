@@ -383,6 +383,12 @@
   opacity: 1;
 }
 
+.tile-meta {
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
 .tile-value-sub {
   font-size: 0.85em;
   color: var(--muted);
