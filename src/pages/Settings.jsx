@@ -66,8 +66,14 @@ export default function Settings() {
     if (clearing) return;
     setClearing(true);
     setClearMessage(t("clearing"));
+    const timeoutMs = 15000;
     try {
-      await clearAllUserData(user.uid);
+      await Promise.race([
+        clearAllUserData(user.uid),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(t("clearTimeout"))), timeoutMs)
+        )
+      ]);
       setClearMessage(t("cleared"));
     } catch (error) {
       setClearMessage(`${t("clearFailed")}${error?.message ? `: ${error.message}` : ""}`);
