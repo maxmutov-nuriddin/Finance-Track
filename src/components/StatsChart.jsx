@@ -4,8 +4,8 @@ import {
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip
+  Tooltip,
+  Cell
 } from "recharts";
 
 function formatCompact(value) {
@@ -39,6 +39,7 @@ export default function StatsChart({ series = [], height = 240 }) {
   }));
 
   const maxValue = Math.max(...data.map((d) => d.value), 1);
+  const threshold = maxValue * 0.5; // Values above 50% of max are "high"
 
   const safeHeight = Math.max(220, Number(height || 240));
   return (
@@ -48,37 +49,37 @@ export default function StatsChart({ series = [], height = 240 }) {
     >
       <ResponsiveContainer width="100%" height={safeHeight} minWidth={0}>
         <BarChart data={data} margin={{ top: 10, right: 10, left: 4, bottom: 4 }}>
-          <defs>
-            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--chart-bar)" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="var(--chart-bar)" stopOpacity="0.35" />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="label"
-            tick={{ fill: "var(--chart-label)", fontSize: 12 }}
+            tick={{ fill: "#9ca3af", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
           />
           <YAxis
-            tick={{ fill: "var(--chart-label)", fontSize: 12 }}
+            tick={{ fill: "#9ca3af", fontSize: 11 }}
             tickFormatter={formatCompact}
             axisLine={false}
             tickLine={false}
-            width={36}
-            domain={[0, maxValue * 1.05]}
+            width={50}
+            domain={[0, maxValue * 1.1]}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(47, 107, 255, 0.08)" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.02)" }} />
           <Bar
             dataKey="value"
-            fill="url(#barGradient)"
-            radius={[8, 8, 0, 0]}
-            maxBarSize={48}
-          />
+            radius={[12, 12, 12, 12]}
+            maxBarSize={32}
+          >
+            {data.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.value > threshold ? "#1f2937" : "#e5e7eb"}
+              />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
   );
 }
+

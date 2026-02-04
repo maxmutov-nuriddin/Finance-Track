@@ -23,7 +23,7 @@ export default function Sidebar({ activePath, onNavigate }) {
   return (
     <aside className={`sidebar ${open ? "sidebar-open" : ""}`}>
       <div className="sidebar-brand">
-        <div className="sidebar-logo">FT</div>
+        <div className="sidebar-logo">»</div>
         <div>
           <div className="sidebar-title">Finance Track</div>
           <div className="sidebar-sub">{t("sidebarSub")}</div>

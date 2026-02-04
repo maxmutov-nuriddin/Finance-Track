@@ -3,6 +3,7 @@ import BudgetCard from "../components/BudgetCard";
 import GlassCard from "../components/GlassCard";
 import PaymentsOverview from "../components/PaymentsOverview";
 import StatsCard from "../components/StatsCard";
+import ExpenseCategoriesPie from "../components/ExpenseCategoriesPie";
 import { useUser } from "../lib/user";
 import {
   addGoalContribution,
@@ -841,20 +842,21 @@ export default function Dashboard() {
           warning={status.message}
           onOpenSettings={() => navigate("/settings")}
         />
-      <StatsCard
-        stats={stats}
-        periodLabel={t("periodMonth")}
-        monthlyNet={factMonthlyNet}
-        series={chartSeries}
-        dailyLimit={dailyLimitFixed}
-        dailyRemaining={dailyLimitRemaining}
-        daysInMonth={periodDays}
-        range={chartRange}
-        onRangeChange={setChartRange}
-      />
+        <StatsCard
+          stats={stats}
+          periodLabel={t("periodMonth")}
+          monthlyNet={factMonthlyNet}
+          series={chartSeries}
+          dailyLimit={dailyLimitFixed}
+          dailyRemaining={dailyLimitRemaining}
+          daysInMonth={periodDays}
+          range={chartRange}
+          onRangeChange={setChartRange}
+        />
       </div>
       <div className="dashboard-side">
         <PaymentsOverview payments={payments} />
+        <ExpenseCategoriesPie transactions={periodTransactions} />
         {import.meta.env.DEV && (
           <details className="glass-card">
             <summary className="card-title dev-summary">Проверка расчётов (dev)</summary>
