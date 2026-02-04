@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import PaymentsPanel from "../components/PaymentsPanel";
 import { useUser } from "../lib/user";
-import { addPayment, deletePayment, watchPayments, watchTransactions } from "../lib/store";
+import { deletePayment, watchPayments, watchTransactions } from "../lib/store";
 import { useI18n } from "../components/I18nProvider";
 
 export default function Payments() {
@@ -29,7 +29,6 @@ export default function Payments() {
         uid={user.uid}
         payments={payments}
         transactions={transactions}
-        onAdd={(payload) => addPayment(user.uid, payload)}
         onDelete={(id) => deletePayment(user.uid, id)}
       />
     </div>

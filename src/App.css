@@ -398,7 +398,7 @@
 .tile-corner {
   position: absolute;
   top: 12px;
-  right: 12px;
+  left: 12px;
   font-size: 0.7rem;
   color: var(--muted);
   background: rgba(255, 255, 255, 0.85);

@@ -4,6 +4,7 @@ import { formatISOWithOffset, getTzParts, makeTashkentDate, nowInTashkent } from
 import { useUser } from "../lib/user";
 import {
   addDebt,
+  addGoal,
   addPayment,
   addTransaction,
   adjustWalletBalance,
@@ -107,7 +108,8 @@ export default function QuickAddModal() {
     preview &&
     debtMode === "none" &&
     !preview.categoryDetected &&
-    effectiveTypeForUi !== "income";
+    effectiveTypeForUi !== "income" &&
+    effectiveTypeForUi !== "goal";
   const showDebtSelect = debtMode === "repay" || debtMode === "collect";
 
   const monthRange = useMemo(() => getMonthRangeFor(nowInTashkent()), []);
@@ -148,7 +150,7 @@ export default function QuickAddModal() {
         : preview.categoryDetected
           ? preview.category
           : categoryOverride || "other";
-    if (effectiveType !== "income" && !effectiveCategory) return;
+    if (effectiveType !== "income" && effectiveType !== "goal" && !effectiveCategory) return;
 
     const customDate = useCustomDate ? buildCustomDate(customDateISO) : null;
     const occurredAtISO = customDate?.occurredAtISO || preview.occurredAtISO;
@@ -182,7 +184,32 @@ export default function QuickAddModal() {
     closeModalAfterSave();
     let success = false;
     try {
-      if (debtMode !== "none") {
+      if (effectiveType === "goal" && debtMode === "none") {
+        const amount = Number(preview.amount || 0);
+        if (!amount || amount <= 0) {
+          setSavedNotice(t("noAmountText"));
+          return;
+        }
+        const baseTitle = (preview.description || raw || "").trim();
+        const titleClean = baseTitle
+          .replace(/[0-9\\s.,]+/g, " ")
+          .replace(
+            /(?:^|\\s)(цель|maqsad|goal|накопить|накопление|коплю)(?=\\s|$)/gi,
+            " "
+          )
+          .replace(/\\s+/g, " ")
+          .trim();
+        const title = titleClean || t("goalDefaultTitle");
+        await addGoal(user.uid, {
+          title,
+          targetAmount: amount,
+          currentAmount: 0,
+          createdDateISO: dateISO
+        });
+        setSavedNotice(t("recordAdded"));
+        setTimeout(() => setSavedNotice(""), 1500);
+        success = true;
+      } else if (debtMode !== "none") {
         const amount = Number(preview.amount || 0);
         if (debtMode === "borrow" || debtMode === "lend") {
           await addDebt(user.uid, {
@@ -342,6 +369,17 @@ export default function QuickAddModal() {
                       }}
                     >
                       {t("typeExpense")}
+                    </button>
+                    <button
+                      type="button"
+                      className={`pill-tab compact ${!isDebtType && typeOverride === "goal" ? "pill-tab-active" : ""}`}
+                      onClick={() => {
+                        setDebtMode("none");
+                        setTypeOverride("goal");
+                        setTypeTouched(true);
+                      }}
+                    >
+                      {t("typeGoal")}
                     </button>
                     <button
                       type="button"
@@ -540,11 +578,15 @@ export default function QuickAddModal() {
                         <div className="summary-row">
                           <span className="summary-label">{t("summaryType")}</span>
                           <span className="summary-value">
-                            {effectiveTypeForUi === "income" ? t("typeIncome") : t("typeExpense")}
+                            {effectiveTypeForUi === "income"
+                              ? t("typeIncome")
+                              : effectiveTypeForUi === "goal"
+                                ? t("typeGoal")
+                                : t("typeExpense")}
                           </span>
                         </div>
                       )}
-                      {!hasAmountWarning && (
+                      {!hasAmountWarning && effectiveTypeForUi !== "goal" && (
                         <div className="summary-row">
                           <span className="summary-label">{t("summaryCategory")}</span>
                           <span className="summary-value">
@@ -577,7 +619,7 @@ export default function QuickAddModal() {
                           </span>
                         </div>
                       )}
-                      {!hasAmountWarning && isRecurring && (
+                      {!hasAmountWarning && isRecurring && effectiveTypeForUi === "expense" && (
                         <div className="summary-row">
                           <span className="summary-label">{t("summaryRecurring")}</span>
                           <span className="summary-value">{t("summaryRecurringYes")}</span>

@@ -3,7 +3,6 @@ import GoalPanel from "../components/GoalPanel";
 import StatsCard from "../components/StatsCard";
 import { useUser } from "../lib/user";
 import {
-  addGoal,
   addGoalContribution,
   completeGoal,
   deleteGoalWithRefund,
@@ -107,14 +106,12 @@ export default function Goals() {
       {deleteMessage && <div className="toast">{deleteMessage}</div>}
       <GoalPanel
         goals={goals}
-        monthlyNet={plannedMonthlyNet}
         dailyNet={dailyNet}
         plannedMonthlySavings={plannedMonthlySavings}
         activeGoalId={activeGoalId}
         targetSavingsMode={settings?.targetSavingsMode || "goal_based"}
         fixedMonthlySavings={settings?.fixedMonthlySavings || 0}
         deletingIds={deletingIds}
-        onAdd={(payload) => addGoal(user.uid, payload)}
         onDelete={async (id) => {
           if (deletingIds.has(id)) return;
           setDeletingIds((prev) => new Set(prev).add(id));

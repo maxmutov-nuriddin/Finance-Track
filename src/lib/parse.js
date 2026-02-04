@@ -10,6 +10,7 @@ const CATEGORY_MAP = [
 ];
 
 const INCOME_WORDS = ["зп", "зарплата", "доход", "получил", "получила", "премия", "аванс", "бонус"];
+const GOAL_WORDS = ["цель", "maqsad", "goal", "накопить", "накопление", "коплю"];
 
 const DATE_REGEX = /(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?/;
 const TIME_REGEX = /(\d{1,2}):(\d{2})/;
@@ -31,6 +32,7 @@ function detectCategory(text) {
 }
 
 function detectType(text) {
+  if (GOAL_WORDS.some((word) => text.includes(word))) return "goal";
   return INCOME_WORDS.some((word) => text.includes(word)) ? "income" : "expense";
 }
 

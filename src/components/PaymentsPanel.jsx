@@ -1,20 +1,14 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { enableNotifications, getNotificationStatus } from "../lib/notifications";
-import { parsePaymentInput } from "../lib/parse";
 import { addDaysInTz, formatDateISO, getTzParts, makeTashkentDate } from "../lib/timezone";
 import GlassCard from "./GlassCard";
 import GlassButton from "./GlassButton";
-import GlassInput from "./GlassInput";
 import { formatAmount } from "../lib/format";
-import ModalPortal from "./ModalPortal";
 import { useI18n } from "./I18nProvider";
 
-export default function PaymentsPanel({ uid, payments, transactions = [], onAdd, onDelete }) {
+export default function PaymentsPanel({ uid, payments, transactions = [], onDelete }) {
   const { t } = useI18n();
-  const [quickRaw, setQuickRaw] = useState("");
   const [notificationStatus, setNotificationStatus] = useState(getNotificationStatus());
-  const [notice, setNotice] = useState("");
-  const [open, setOpen] = useState(false);
 
   const upcomingAlertDateISO = useMemo(() => {
     const base = makeTashkentDate(getTzParts(new Date()));
@@ -32,24 +26,6 @@ export default function PaymentsPanel({ uid, payments, transactions = [], onAdd,
       .slice(0, 5);
   }, [transactions]);
 
-  const handleQuickAdd = () => {
-    if (!quickRaw.trim()) return;
-    const parsed = parsePaymentInput(quickRaw, new Date());
-    if (parsed.warnings.length) {
-      setNotice(t("noAmountText"));
-      return;
-    }
-    onAdd({
-      title: parsed.title,
-      amount: parsed.amount,
-      payDateISO: parsed.payDateISO,
-      recurrence: parsed.recurrence
-    });
-    setQuickRaw("");
-    setNotice("");
-    setOpen(false);
-  };
-
   const handleEnableNotifications = async () => {
     const result = await enableNotifications(uid);
     setNotificationStatus(result.status === "enabled" ? "granted" : result.status);
@@ -62,7 +38,6 @@ export default function PaymentsPanel({ uid, payments, transactions = [], onAdd,
           <div className="card-title">{t("paymentsTitle")}</div>
           <div className="muted">{t("paymentsHelp")}</div>
         </div>
-        <GlassButton onClick={() => setOpen(true)}>{t("addPayment")}</GlassButton>
       </div>
 
       {notificationStatus !== "granted" ? (
@@ -134,34 +109,6 @@ export default function PaymentsPanel({ uid, payments, transactions = [], onAdd,
         </div>
       )}
 
-      {open && (
-        <ModalPortal>
-          <div className="modal-backdrop" onClick={() => setOpen(false)}>
-            <div className="modal" onClick={(event) => event.stopPropagation()}>
-            <div className="modal-header">
-              <strong>{t("newPayment")}</strong>
-              <GlassButton variant="ghost" onClick={() => setOpen(false)}>
-                {t("close")}
-              </GlassButton>
-            </div>
-            {notice && (
-              <div className="alert alert-danger" style={{ marginTop: 10 }}>
-                {notice}
-              </div>
-            )}
-            <div className="stack" style={{ marginTop: 12 }}>
-              <GlassInput
-                placeholder={t("paymentPlaceholder")}
-                value={quickRaw}
-                onChange={(event) => setQuickRaw(event.target.value)}
-              />
-              <div className="helper-text">{t("paymentHint")}</div>
-              <GlassButton onClick={handleQuickAdd}>{t("add")}</GlassButton>
-            </div>
-            </div>
-          </div>
-        </ModalPortal>
-      )}
     </GlassCard>
   );
 }

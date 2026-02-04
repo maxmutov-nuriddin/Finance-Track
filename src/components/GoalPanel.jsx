@@ -1,10 +1,8 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { addMonthsInTz, formatDateISO, getTzParts, makeTashkentDate } from "../lib/timezone";
 import GlassCard from "./GlassCard";
 import GlassButton from "./GlassButton";
-import GlassInput from "./GlassInput";
 import { formatAmount } from "../lib/format";
-import ModalPortal from "./ModalPortal";
 import { useI18n } from "./I18nProvider";
 
 function formatRuDate(isoDate) {
@@ -20,9 +18,7 @@ function computeAutoDateISO(monthsToGoal) {
 
 export default function GoalPanel({
   goals,
-  monthlyNet,
   dailyNet,
-  onAdd,
   onDelete,
   onContribute,
   onComplete,
@@ -33,40 +29,6 @@ export default function GoalPanel({
   plannedMonthlySavings
 }) {
   const { t } = useI18n();
-  const [title, setTitle] = useState("");
-  const [targetAmount, setTargetAmount] = useState("");
-  const [targetDate, setTargetDate] = useState("");
-  const [notice, setNotice] = useState("");
-  const [open, setOpen] = useState(false);
-  const [manualDateEnabled, setManualDateEnabled] = useState(false);
-
-  const canAdd = title.trim();
-
-  const handleAdd = () => {
-    if (!canAdd) return;
-    const parsedTarget = Number(targetAmount);
-    const computedTarget =
-      !parsedTarget || Number.isNaN(parsedTarget)
-        ? Math.max(0, Math.round(monthlyNet))
-        : parsedTarget;
-    if (!computedTarget) {
-      setNotice(t("budgetWarnNegative"));
-      return;
-    }
-    onAdd({
-      title: title.trim(),
-      targetAmount: computedTarget,
-      manualTargetDateISO: manualDateEnabled ? targetDate || null : null,
-      isAutoDate: !manualDateEnabled,
-      targetDateISO: manualDateEnabled ? targetDate || null : null
-    });
-    setTitle("");
-    setTargetAmount("");
-    setTargetDate("");
-    setNotice("");
-    setOpen(false);
-    setManualDateEnabled(false);
-  };
 
   const renderedGoals = useMemo(
     () =>
@@ -159,7 +121,7 @@ export default function GoalPanel({
           progress
         };
       }),
-    [goals, monthlyNet, dailyNet, t, activeGoalId, targetSavingsMode, fixedMonthlySavings, plannedMonthlySavings]
+    [goals, dailyNet, t, activeGoalId, targetSavingsMode, fixedMonthlySavings, plannedMonthlySavings]
   );
 
   return (
@@ -169,7 +131,7 @@ export default function GoalPanel({
           <div className="card-title">{t("goalsTitle")}</div>
           <div className="muted">{t("goalsHelp")}</div>
         </div>
-        <GlassButton onClick={() => setOpen(true)}>{t("addGoal")}</GlassButton>
+        {/* add goal button removed: goals can be created from Quick Add */}
       </div>
 
       {targetSavingsMode === "goal_based" && !activeGoalId && (
@@ -221,62 +183,6 @@ export default function GoalPanel({
         ))}
         {!goals.length && <div className="muted">{t("noGoals")}</div>}
       </div>
-
-      {open && (
-        <ModalPortal>
-          <div className="modal-backdrop" onClick={() => setOpen(false)}>
-            <div className="modal" onClick={(event) => event.stopPropagation()}>
-            <div className="modal-header">
-              <strong>{t("newGoal")}</strong>
-              <GlassButton variant="ghost" onClick={() => setOpen(false)}>
-                {t("close")}
-              </GlassButton>
-            </div>
-            {notice && (
-              <div className="alert alert-danger" style={{ marginTop: 10 }}>
-                {notice}
-              </div>
-            )}
-            <div className="stack" style={{ marginTop: 12 }}>
-              <GlassInput
-                placeholder={t("goalTitlePlaceholder")}
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-              />
-              <GlassInput
-                placeholder={t("goalAmountPlaceholder")}
-                type="number"
-                value={targetAmount}
-                onChange={(event) => setTargetAmount(event.target.value)}
-              />
-              {targetAmount && (
-                <div className="helper-text">{formatAmount(targetAmount)}</div>
-              )}
-              <label className="row" style={{ gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={manualDateEnabled}
-                  onChange={(event) => setManualDateEnabled(event.target.checked)}
-                />
-                <span className="muted">{t("manualDate")}</span>
-              </label>
-              {manualDateEnabled && (
-                <GlassInput
-                  placeholder={t("goalDatePlaceholder")}
-                  type="date"
-                  value={targetDate}
-                  onChange={(event) => setTargetDate(event.target.value)}
-                />
-              )}
-              <GlassButton onClick={handleAdd} disabled={!canAdd}>
-                {t("add")}
-              </GlassButton>
-              <div className="helper-text">{t("goalHelper")}</div>
-            </div>
-            </div>
-          </div>
-        </ModalPortal>
-      )}
     </GlassCard>
   );
 }
