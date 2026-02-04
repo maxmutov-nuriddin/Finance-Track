@@ -1884,3 +1884,13 @@ select {
     line-height: 1.4;
   }
 }
+
+@media (max-width: 600px) {
+  input,
+  select,
+  textarea,
+  .glass-input,
+  .modal-select {
+    font-size: 16px;
+  }
+}
