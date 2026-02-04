@@ -334,24 +334,20 @@ export default function Dashboard() {
     const todayParts = getTzParts(nowInTashkent());
     const daysPassed = Math.max(1, todayParts.day);
     const avgDailyExpense = currentMonthExpense / daysPassed;
-    const remainingMoney =
-      monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpense;
+    const remainingMoney = monthlyIncome - plannedMonthlySavings - currentMonthExpense;
     const projectedFutureExpense = avgDailyExpense * remainingDaysInMonth;
     return remainingMoney - projectedFutureExpense;
   }, [
     monthlyIncome,
-    monthlyMandatory,
     plannedMonthlySavings,
     currentMonthExpense,
     remainingDaysInMonth
   ]);
   const dailyToZero = useMemo(() => {
-    const remainingMoney =
-      monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpense;
+    const remainingMoney = monthlyIncome - plannedMonthlySavings - currentMonthExpense;
     return remainingDaysInMonth > 0 ? remainingMoney / remainingDaysInMonth : remainingMoney;
   }, [
     monthlyIncome,
-    monthlyMandatory,
     plannedMonthlySavings,
     currentMonthExpense,
     remainingDaysInMonth

@@ -195,18 +195,29 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 30px;
-  background: #ffffff;
+  padding: 26px 32px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafb 100%);
   backdrop-filter: none;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #e8ecf2;
   position: sticky;
   top: 0;
   z-index: 10;
   border-radius: 0;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
 }
 
 .app-header .glass-button {
-  box-shadow: 0 10px 22px rgba(47, 107, 255, 0.28);
+  box-shadow: 0 8px 20px rgba(47, 107, 255, 0.32);
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  width: auto;
+}
+
+.app-header .glass-button:hover {
+  box-shadow: 0 12px 28px rgba(47, 107, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 .app-header::after {
@@ -220,18 +231,19 @@
 .brand-title {
   text-shadow: none;
   color: var(--ink);
-}
-
-.brand-title {
   font-family: inherit;
-  font-weight: 600;
-  font-size: 1.65rem;
-  letter-spacing: 0.01em;
+  font-weight: 700;
+  font-size: 1.75rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .brand-sub {
-  font-size: 0.95rem;
-  color: var(--muted);
+  font-size: 0.92rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin-top: 2px;
+  font-weight: 400;
 }
 
 .nav {
@@ -691,12 +703,15 @@ select {
 .modal-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .modal-section-title {
   font-weight: 600;
+  font-size: 0.95rem;
   color: var(--ink);
+  margin-bottom: 4px;
+  letter-spacing: 0.01em;
 }
 
 .modal-body {
@@ -707,13 +722,20 @@ select {
 }
 
 .modal-card {
-  background: #f8fafc;
-  border: 1px solid #e6ebf2;
+  background: linear-gradient(135deg, #f9fafb 0%, #f5f7fa 100%);
+  border: 1px solid #e3e8ef;
   border-radius: 16px;
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+}
+
+.modal-card:hover {
+  border-color: #d4dae3;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 .modal-card-header {
@@ -725,7 +747,9 @@ select {
 
 .modal-label {
   font-weight: 600;
+  font-size: 0.95rem;
   color: var(--ink);
+  letter-spacing: 0.01em;
 }
 
 .modal-hint {
@@ -807,18 +831,39 @@ select {
 .modal-check {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  line-height: 1.4;
+  gap: 12px;
+  line-height: 1.5;
   justify-content: flex-start;
   text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e8ecf2;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-.modal-check input {
-  margin-top: 2px;
+.modal-check:hover {
+  background: #f8fafb;
+  border-color: #d0d7e2;
+}
+
+.modal-check input[type="checkbox"] {
+  margin-top: 3px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+  flex-shrink: 0;
 }
 
 .modal-check span {
   flex: 1 1 auto;
+  font-size: 0.92rem;
+  color: var(--ink);
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .pill-tabs.compact {
@@ -1133,14 +1178,14 @@ select {
   }
 
   .sidebar-item.active {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.35);
-    color: #fff;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    background: #e8f0ff;
+    border-color: #cfe0ff;
+    color: #1d4ed8;
+    box-shadow: 0 4px 12px rgba(47, 107, 255, 0.15);
   }
 
   .sidebar-item.active .dot {
-    background: #fff;
+    background: var(--primary-color);
   }
 
   .app-content {
@@ -1148,29 +1193,32 @@ select {
   }
 
   .app-header {
-    margin: 12px 12px 0;
-    padding: 16px 16px;
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    background: #ffffff;
+    margin: 14px 14px 0;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #e8ecf2;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafb 100%);
     flex-direction: row;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
   }
 
   .app-main {
-    padding: 14px 12px 120px;
+    padding: 16px 14px 130px;
   }
 
   .grid-2,
   .grid-3,
   .grid-4 {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .hero-input {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
 
   .sidebar-nav {
@@ -1179,18 +1227,18 @@ select {
     justify-content: space-between;
     flex-direction: row;
     flex-wrap: nowrap;
-    gap: 6px;
+    gap: 8px;
   }
 
   .sidebar-item {
     flex: 1 1 0;
     justify-content: center;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px 4px;
+    gap: 6px;
+    padding: 10px 6px;
     border-radius: 14px;
-    font-size: 0.7rem;
-    min-height: 52px;
+    font-size: 0.75rem;
+    min-height: 56px;
   }
 
   .sidebar-item .dot {
@@ -1200,17 +1248,17 @@ select {
 
   .sidebar {
     position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: 10px;
+    left: 14px;
+    right: 14px;
+    bottom: 12px;
     top: auto;
     height: auto;
     z-index: 60;
     width: auto;
-    padding: 10px;
-    border-radius: 16px;
+    padding: 12px;
+    border-radius: 18px;
     border: 1px solid var(--border);
-    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.12);
     background: #ffffff;
     backdrop-filter: none;
   }
@@ -1227,16 +1275,22 @@ select {
 
   .plan-summary {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+    gap: 12px;
   }
 
   .glass-card {
     border-radius: 16px;
-    padding: 18px 16px;
+    padding: 20px 18px;
   }
 
   .plan-item .stat-value {
     white-space: nowrap;
+    font-size: 1.35rem;
+  }
+
+  .stat-tile {
+    min-height: 135px;
+    padding: 18px 16px;
   }
 }
 
@@ -1267,14 +1321,20 @@ select {
 @media (max-width: 700px) {
   .dashboard-tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .tile-value {
-    font-size: 1.05rem;
+    font-size: 1.15rem;
   }
 
   .tile-sub {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
+  }
+
+  .stat-tile {
+    min-height: 130px;
+    padding: 16px 14px;
   }
 }
 
@@ -1287,78 +1347,127 @@ select {
     width: auto !important;
     position: fixed !important;
     height: auto !important;
-    border-radius: 16px;
-    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    border-radius: 18px;
+    box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.15);
+    padding: 10px;
   }
 
   .app-header {
-    border-radius: 16px;
+    margin: 12px;
+    border-radius: 20px;
+    padding: 18px 16px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafb 100%);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  }
+
+  .app-header .glass-button {
+    padding: 9px 18px;
+    font-size: 0.88rem;
+  }
+
+  .app-main {
+    padding: 14px 12px 130px;
   }
 
   .sidebar-nav {
     flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    justify-content: space-between;
     gap: 8px;
   }
 
   .sidebar-item {
-    flex: 1 1 120px;
+    flex: 1 1 0;
     justify-content: center;
+    min-height: 54px;
+    padding: 9px 6px;
+    font-size: 0.72rem;
   }
 
   .plan-summary {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 14px;
+  }
+
+  .plan-item {
+    padding: 16px;
   }
 
   .plan-item .stat-value {
     white-space: normal;
     word-break: break-word;
+    font-size: 1.3rem;
+  }
+
+  .glass-card {
+    padding: 18px 16px;
   }
 }
 
 @media (max-width: 480px) {
   .app-header {
     margin: 0;
-    padding: 10px 12px;
-    gap: 6px;
+    padding: 12px 14px;
+    gap: 8px;
     position: fixed;
-    top: 8px;
-    left: 8px;
-    right: 8px;
+    top: 10px;
+    left: 10px;
+    right: 10px;
     z-index: 1200;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafb 100%);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.1);
+  }
+
+  .app-header .glass-button {
+    padding: 10px 0;
+    font-size: 0.9rem;
+    width: 40%;
+    min-width: 120px;
+    text-align: center;
+    justify-content: center;
   }
 
   .brand-title {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
+    line-height: 1.3;
   }
 
   .brand-sub {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    margin-top: 2px;
   }
 
   .app-main {
-    padding: 150px 10px 110px;
+    padding: 100px 12px 120px;
   }
 
   .glass-card {
-    padding: 14px 12px;
+    padding: 16px 14px;
+    border-radius: 16px;
   }
 
   .hero-amount {
-    font-size: 2.1rem;
+    font-size: 2.2rem;
+    line-height: 1.2;
   }
 
   .stat-value {
-    font-size: 1.3rem;
+    font-size: 1.35rem;
+    line-height: 1.3;
   }
 
   .sidebar {
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-    padding: 8px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 10px;
+    border-radius: 18px;
+    box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.15);
   }
 
   .sidebar-nav {
@@ -1372,10 +1481,11 @@ select {
 
   .sidebar-item {
     flex: 1 1 0;
-    min-height: 46px;
-    font-size: 0.66rem;
-    padding: 6px 4px;
+    min-height: 52px;
+    font-size: 0.7rem;
+    padding: 8px 6px;
     gap: 6px;
+    border-radius: 12px;
   }
 
   .sidebar-item.active::before {
@@ -1403,14 +1513,17 @@ select {
     flex: 1 1 0;
     min-width: 0;
     text-align: center;
-    font-size: 0.8rem;
-    padding: 8px 8px;
+    font-size: 0.85rem;
+    padding: 9px 10px;
     white-space: nowrap;
+    border-radius: 12px;
   }
 
   .glass-button {
-    padding: 8px 12px;
-    font-size: 0.85rem;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(47, 107, 255, 0.22);
   }
 
   .list-item {
@@ -1425,19 +1538,31 @@ select {
 
 @media (max-width: 360px) {
   .brand-title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .brand-sub {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    margin-top: 1px;
   }
 
   .hero-amount {
-    font-size: 1.9rem;
+    font-size: 2rem;
+    line-height: 1.2;
   }
 
   .glass-button {
     padding: 10px 14px;
+    font-size: 0.88rem;
   }
 
   .sidebar-item {
-    font-size: 0.85rem;
+    font-size: 0.68rem;
+    padding: 7px 5px;
+    min-height: 50px;
   }
 
   .plan-summary {
@@ -1446,29 +1571,59 @@ select {
   }
 
   .plan-item {
-    padding: 12px;
+    padding: 14px;
     min-height: auto;
   }
 
   .plan-item .stat-value {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
   }
 }
 
 @media (max-width: 320px) {
-  .app-header { top: 6px; left: 6px; right: 6px; padding: 8px 10px; }
-  .app-main { padding: 138px 8px 120px; }
-  .glass-card { padding: 12px 10px; }
+  .app-header { 
+    top: 8px; 
+    left: 8px; 
+    right: 8px; 
+    padding: 10px 12px;
+    border-radius: 18px;
+    gap: 10px;
+  }
+  
+  .brand-title {
+    font-size: 1.05rem;
+    line-height: 1.15;
+    font-weight: 700;
+  }
+  
+  .brand-sub {
+    font-size: 0.72rem;
+    line-height: 1.25;
+    margin-top: 0;
+  }
+  
+  .app-main { 
+    padding: 90px 10px 120px; 
+  }
+  
+  .glass-card { 
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
 
   .hero-amount {
-    font-size: 1.7rem;
+    font-size: 1.85rem;
   }
 
   .stat-value {
-    font-size: 1.15rem;
+    font-size: 1.2rem;
   }
 
-  .sidebar-item { font-size: 0.62rem; }
+  .sidebar-item { 
+    font-size: 0.64rem;
+    padding: 6px 4px;
+    min-height: 48px;
+  }
 
   .sidebar-icon {
     width: 18px;
@@ -1477,8 +1632,13 @@ select {
   }
 
   .pill-tab {
-    font-size: 0.7rem;
-    padding: 7px 6px;
+    font-size: 0.75rem;
+    padding: 8px 7px;
+  }
+  
+  .glass-button {
+    padding: 9px 12px;
+    font-size: 0.85rem;
   }
 }
 
@@ -1533,61 +1693,109 @@ select {
 /* Modal responsive */
 @media (max-width: 480px) {
   .modal-backdrop {
-    padding: 8px;
-    place-items: start;
+    padding: 12px;
+    place-items: center;
+    align-items: flex-start;
+    padding-top: 20px;
   }
 
   .modal {
     width: 100%;
-    max-height: calc(100vh - 16px);
-    padding: 12px;
-    border-radius: 14px;
+    max-height: calc(100vh - 40px);
+    padding: 18px 16px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
   }
 
   .modal-header {
     flex-direction: row;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    margin-bottom: 4px;
   }
 
   .modal-header strong {
-    font-size: 1rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.3;
   }
 
   .modal-hint {
-    display: none;
+    font-size: 0.8rem;
+    margin-top: 2px;
+    line-height: 1.4;
   }
 
   .modal-header .glass-button {
     width: auto;
-    padding: 6px 10px;
-    font-size: 0.82rem;
+    padding: 7px 12px;
+    font-size: 0.88rem;
+    min-width: 80px;
   }
 
   .modal-body {
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  .modal-section {
     gap: 10px;
   }
 
+  .modal-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
   .modal-card {
-    padding: 10px;
+    padding: 14px 12px;
+    border-radius: 14px;
+    background: #f9fafb;
+  }
+
+  .modal-label {
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .glass-input,
+  .modal-select {
+    padding: 12px 14px;
+    font-size: 0.95rem;
     border-radius: 12px;
   }
 
   .modal-grid {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .modal-check {
-    align-items: center;
+    align-items: flex-start;
     width: 100%;
     justify-content: flex-start;
+    gap: 12px;
+    padding: 14px 12px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #e8ecf2;
+  }
+
+  .modal-check input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: var(--primary-color);
   }
 
   .modal-check span {
     text-align: left;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--ink);
   }
 
   .modal-card .pill-tabs {
@@ -1596,14 +1804,31 @@ select {
     gap: 8px;
     width: 100%;
     border-radius: 16px;
+    padding: 6px;
   }
 
   .modal-card .pill-tab {
     width: 100%;
     justify-content: center;
+    padding: 10px 12px;
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+
+  .modal-footer {
+    margin-top: 6px;
   }
 
   .modal-footer .glass-button {
     width: 100%;
+    padding: 13px 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .helper-text,
+  .muted {
+    font-size: 0.82rem;
+    line-height: 1.4;
   }
 }
