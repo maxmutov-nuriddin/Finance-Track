@@ -3,6 +3,7 @@ import TransactionList from "../components/TransactionList";
 import { useUser } from "../lib/user";
 import { deleteTransaction, watchTransactions } from "../lib/store";
 import { useI18n } from "../components/I18nProvider";
+import { History as HistoryIcon } from "lucide-react";
 
 export default function History() {
   const user = useUser();
@@ -30,7 +31,9 @@ export default function History() {
     <div className="history-container">
       <div className="history-header">
         <div>
-          <h1 className="history-title">{t("historyTitle")}</h1>
+          <h1 className="history-title" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <HistoryIcon size={28} strokeWidth={2.5} /> {t("historyTitle")}
+          </h1>
           <p className="history-subtitle">{t("historyHelp")}</p>
         </div>
       </div>

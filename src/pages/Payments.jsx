@@ -4,6 +4,7 @@ import { useUser } from "../lib/user";
 import { deletePayment, watchPayments, watchTransactions } from "../lib/store";
 import { useI18n } from "../components/I18nProvider";
 import { formatAmount } from "../lib/format";
+import { CreditCard } from "lucide-react";
 
 export default function Payments() {
   const user = useUser();
@@ -30,7 +31,9 @@ export default function Payments() {
     <div className="payments-container">
       <div className="payments-header">
         <div>
-          <h1 className="payments-title">{t("monthlyPayments")}</h1>
+          <h1 className="payments-title" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <CreditCard size={28} strokeWidth={2.5} /> {t("monthlyPayments")}
+          </h1>
           <p className="payments-subtitle">{t("remind3days")}</p>
         </div>
       </div>

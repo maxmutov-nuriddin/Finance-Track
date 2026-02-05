@@ -9,6 +9,7 @@ import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../lib/firebase";
 import { useI18n } from "../components/I18nProvider";
+import { Settings as SettingsIcon } from "lucide-react";
 
 const savingsModes = [
   { value: "goal_based", labelRu: "По цели", labelUz: "Maqsad bo'yicha" },
@@ -89,10 +90,12 @@ export default function Settings() {
           <div className="loading-spinner" role="status" aria-label={t("clearing")} />
         </div>
       )}
-      
+
       <div className="settings-header">
         <div>
-          <h1 className="settings-title">{t("settingsTitle")}</h1>
+          <h1 className="settings-title" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <SettingsIcon size={28} strokeWidth={2.5} /> {t("settingsTitle")}
+          </h1>
           <p className="settings-subtitle">{t("settingsHelp")}</p>
         </div>
       </div>
@@ -122,7 +125,7 @@ export default function Settings() {
                 <h2 className="settings-card-title">💰 {t("budgetMode")}</h2>
               </div>
               <p className="settings-card-hint">{t("budgetModeHelp")}</p>
-              
+
               <div className="settings-mode-buttons">
                 <GlassButton
                   variant={budgetMode === "auto" ? "secondary" : "ghost"}
@@ -139,7 +142,7 @@ export default function Settings() {
                   MANUAL
                 </GlassButton>
               </div>
-              
+
               {budgetMode === "manual" && (
                 <div className="settings-input-wrapper">
                   <GlassInput
@@ -162,7 +165,7 @@ export default function Settings() {
                 <h2 className="settings-card-title">🎯 {t("activeGoal")}</h2>
               </div>
               <p className="settings-card-hint">{t("activeGoalHelp")}</p>
-              
+
               <div className="settings-input-wrapper">
                 <select
                   value={activeGoalId}
@@ -185,7 +188,7 @@ export default function Settings() {
               <div className="settings-card-header">
                 <h2 className="settings-card-title">🏦 {t("savingsTitle")}</h2>
               </div>
-              
+
               <div className="settings-mode-buttons">
                 {savingsModes.map((mode) => (
                   <GlassButton
@@ -198,7 +201,7 @@ export default function Settings() {
                   </GlassButton>
                 ))}
               </div>
-              
+
               {targetSavingsMode === "fixed" && (
                 <div className="settings-input-wrapper">
                   <GlassInput
@@ -221,7 +224,7 @@ export default function Settings() {
                 <h2 className="settings-card-title">💾 {t("saveChanges")}</h2>
               </div>
               <p className="settings-card-hint">{t("saveHelp")}</p>
-              
+
               <div className="settings-actions">
                 <GlassButton onClick={handleSave} className="settings-action-btn">
                   {t("save")}
@@ -239,7 +242,7 @@ export default function Settings() {
                 <h2 className="settings-card-title">👤 {t("account")}</h2>
               </div>
               <p className="settings-card-hint">{t("logout")}</p>
-              
+
               <GlassButton
                 variant="ghost"
                 onClick={() => signOut(auth).then(() => navigate("/", { replace: true }))}
@@ -254,7 +257,7 @@ export default function Settings() {
                 <h2 className="settings-card-title">🌐 {t("language")}</h2>
               </div>
               <p className="settings-card-hint">{t("languageHelp")}</p>
-              
+
               <div className="settings-lang-switch">
                 <GlassButton
                   variant={lang === "ru" ? "secondary" : "ghost"}
@@ -278,7 +281,7 @@ export default function Settings() {
                 <h2 className="settings-card-title">🗑️ {t("clearAll")}</h2>
               </div>
               <p className="settings-card-hint danger-hint">{t("clearAllHelp")}</p>
-              
+
               <div className="settings-actions">
                 <GlassButton
                   variant="ghost"

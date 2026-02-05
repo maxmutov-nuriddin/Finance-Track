@@ -22,6 +22,7 @@ import {
 } from "../lib/budgetCalc";
 import { filterByOccurredAtISO, getMonthKey, getMonthRange } from "../lib/utils";
 import { useI18n } from "../components/I18nProvider";
+import { Target } from "lucide-react";
 
 export default function Goals() {
   const user = useUser();
@@ -101,7 +102,9 @@ export default function Goals() {
     <div className="goals-container">
       <div className="goals-header">
         <div>
-          <h1 className="goals-title">{t("goalsTitle")}</h1>
+          <h1 className="goals-title" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <Target size={28} strokeWidth={2.5} /> {t("goalsTitle")}
+          </h1>
           <p className="goals-subtitle">{t("goalsHelp")}</p>
         </div>
       </div>
