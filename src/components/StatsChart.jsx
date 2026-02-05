@@ -7,27 +7,23 @@ import {
   Tooltip,
   Cell
 } from "recharts";
-
-function formatCompact(value) {
-  if (!Number.isFinite(value)) return "0";
-  if (value >= 1_000_000) {
-    const v = Math.round((value / 1_000_000) * 10) / 10;
-    return `${v}m`;
-  }
-  if (value >= 1_000) {
-    const v = Math.round(value / 1_000);
-    return `${v}k`;
-  }
-  return `${Math.round(value)}`;
-}
+import { formatCompact } from "../lib/format";
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   const value = payload[0].value;
   return (
-    <div className="chart-tooltip-light" style={{ background: "#2d3748", color: "#ffffff", border: "1px solid #404854" }}>
-      <div className="chart-tooltip-title" style={{ color: "#a0aec0" }}>{label}</div>
-      <div className="chart-tooltip-value">{formatCompact(value)}</div>
+    <div style={{
+      background: "#1a202c",
+      border: "1px solid #404854",
+      borderRadius: "8px",
+      padding: "10px 12px",
+      color: "#ffffff",
+      fontSize: "0.9rem",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
+    }}>
+      <div style={{ color: "#a0aec0", margin: 0, fontSize: "0.875rem" }}>{label}</div>
+      <div style={{ marginTop: "4px", fontWeight: "700", color: "#2f6bff" }}>{formatCompact(value)}</div>
     </div>
   );
 }

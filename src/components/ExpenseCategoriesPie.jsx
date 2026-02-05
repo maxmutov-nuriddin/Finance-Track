@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useI18n } from "./I18nProvider";
-import { formatAmount } from "../lib/format";
+import { formatAmount, formatCompact } from "../lib/format";
 
 const CATEGORY_COLORS = {
   food: "#ef4444",
@@ -74,7 +74,7 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
         }}>
           <p style={{ margin: 0, fontWeight: "600" }}>{data.name}</p>
           <p style={{ margin: "4px 0 0 0", color: "#2f6bff", fontWeight: "700" }}>
-            {formatAmount(data.value)}
+            {formatCompact(data.value)}
           </p>
         </div>
       );
@@ -84,25 +84,28 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
 
   return (
     <div style={{ background: "#1a202c", border: "1px solid #404854", borderRadius: "20px", padding: "28px", display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ marginBottom: "20px" }}>
+      <div style={{ marginBottom: "24px" }}>
         <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px" }}>
           💰 {t("expensesByCategory")}
         </h2>
-        <div style={{ fontSize: "0.875rem", color: "#a0aec0" }}>
-          {t("totalSpent")}: <span style={{ color: "#ffffff", fontWeight: "600" }}>{formatAmount(Math.round(totalExpenses))}</span>
+        <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "8px" }}>
+          {t("totalSpent")}
+        </div>
+        <div style={{ fontSize: "1.75rem", fontWeight: "700", color: "#ffffff" }}>
+          {formatAmount(Math.round(totalExpenses))}
         </div>
       </div>
 
-      <div style={{ marginBottom: "24px", flex: 1, display: "flex", alignItems: "center" }}>
-        <ResponsiveContainer width="100%" height={250}>
+      <div style={{ marginBottom: "24px" }}>
+        <ResponsiveContainer width="100%" height={220}>
           <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <Pie
               data={categoryData}
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-              outerRadius={80}
+              label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+              outerRadius={70}
               fill="#8884d8"
               dataKey="value"
               startAngle={90}
@@ -120,9 +123,9 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
         </ResponsiveContainer>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px" }}>
         {categoryData.slice(0, 4).map((item) => (
-          <div key={`summary-${item.category}`} style={{ paddingBottom: "12px", borderBottom: "1px solid rgba(64, 72, 84, 0.3)" }}>
+          <div key={`summary-${item.category}`}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
               <div
                 style={{
@@ -132,7 +135,7 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
                   backgroundColor: CATEGORY_COLORS[item.category] || CATEGORY_COLORS.other
                 }}
               />
-              <span style={{ fontSize: "0.9rem", color: "#ffffff", fontWeight: "500" }}>
+              <span style={{ fontSize: "0.875rem", color: "#a0aec0" }}>
                 {item.name}
               </span>
             </div>
