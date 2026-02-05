@@ -1,7 +1,8 @@
 import { useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart as PieChartRechart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useI18n } from "./I18nProvider";
 import { formatAmount, formatCompact } from "../lib/format";
+import { PieChart as PieChartIcon } from "lucide-react";
 
 const CATEGORY_COLORS = {
   food: "#ef4444",
@@ -21,7 +22,7 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
 
   const categoryData = useMemo(() => {
     const categoryMap = {};
-    
+
     transactions.forEach((tx) => {
       if (tx.type !== "expense") return;
       const category = tx.category || "other";
@@ -49,8 +50,8 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
   if (!categoryData || categoryData.length === 0) {
     return (
       <div style={{ background: "#1a202c", border: "1px solid #404854", borderRadius: "20px", padding: "28px" }}>
-        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px" }}>
-          📊 {t("expensesByCategory")}
+        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <PieChartIcon size={24} strokeWidth={2.5} /> {t("expensesByCategory")}
         </h2>
         <p style={{ marginTop: "12px", color: "#a0aec0" }}>
           {t("noData")}
@@ -85,8 +86,8 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
   return (
     <div style={{ background: "#1a202c", border: "1px solid #404854", borderRadius: "20px", padding: "28px", display: "flex", flexDirection: "column", height: "100%" }}>
       <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px" }}>
-          💰 {t("expensesByCategory")}
+        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <PieChartIcon size={24} strokeWidth={2.5} /> {t("expensesByCategory")}
         </h2>
         <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "8px" }}>
           {t("totalSpent")}
@@ -98,7 +99,7 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
 
       <div style={{ marginBottom: "24px" }}>
         <ResponsiveContainer width="100%" height={220}>
-          <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+          <PieChartRechart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <Pie
               data={categoryData}
               cx="50%"
@@ -119,7 +120,7 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "transparent" }} />
-          </PieChart>
+          </PieChartRechart>
         </ResponsiveContainer>
       </div>
 

@@ -345,19 +345,20 @@
   content: none;
 }
 
-.stat-tile::before {
-  content: "";
-  width: 36px;
-  height: 36px;
+.tile-icon {
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
-  background: #3a4556;
+  background-color: #3a4556;
   border: none;
   box-shadow: none;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 18px 18px;
   margin-bottom: 0;
   order: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #ffffff;
 }
 
 .stat-tile:hover {
@@ -373,54 +374,48 @@
   background: #1a202c;
 }
 
-.tile-green::before {
-  background: #22c55e;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/%3E%3Cpolyline points='3.27 6.96 12 12.01 20.73 6.96'/%3E%3Cline x1='12' y1='22.08' x2='12' y2='12'/%3E%3C/svg%3E");
+.tile-green .tile-icon {
+  background-color: #22c55e;
 }
 
 .tile-red {
   background: #1a202c;
 }
 
-.tile-red::before {
-  background: #ef4444;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3Cpolyline points='9 22 9 12 15 12 15 22'/%3E%3C/svg%3E");
+.tile-red .tile-icon {
+  background-color: #ef4444;
 }
 
 .tile-emerald {
   background: #1a202c;
 }
 
-.tile-emerald::before {
-  background: #06b6d4;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E");
+.tile-emerald .tile-icon {
+  background-color: #06b6d4;
 }
 
 .tile-blue {
   background: #1a202c;
 }
 
-.tile-blue::before {
-  background: #3b82f6;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2v20M2 12h20'/%3E%3C/svg%3E");
+.tile-blue .tile-icon {
+  background-color: #3b82f6;
 }
 
 .tile-orange {
   background: #1a202c;
 }
 
-.tile-orange::before {
-  background: #f97316;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/%3E%3Cpolyline points='3.27 6.96 12 12.01 20.73 6.96'/%3E%3Cline x1='12' y1='22.08' x2='12' y2='12'/%3E%3C/svg%3E");
+.tile-orange .tile-icon {
+  background-color: #f97316;
 }
 
 .tile-purple {
   background: #1a202c;
 }
 
-.tile-purple::before {
-  background: #a855f7;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 11.08V12a10 10 0 1 1-5.93-9.14'/%3E%3Cpolyline points='22 4 12 14.01 9 11.01'/%3E%3C/svg%3E");
+.tile-purple .tile-icon {
+  background-color: #a855f7;
 }
 
 .tile-label {

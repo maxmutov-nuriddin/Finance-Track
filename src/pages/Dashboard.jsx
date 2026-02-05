@@ -18,6 +18,8 @@ import { addDaysInTz, addMonthsInTz, formatDateISO, formatISOWithOffset, getTzPa
 import { useNavigate } from "react-router-dom";
 import { computeBudgetStatus } from "../lib/budget";
 import { filterByOccurredAtISO, getMonthKey, getMonthRange, getMonthRangeFor } from "../lib/utils";
+import { DollarSign, Calendar, Wallet, TrendingUp, CreditCard, Target } from "lucide-react";
+import { Banknote, CalendarClock, Wallet as WalletIcon, TrendingDown, Receipt, Crosshair } from "lucide-react";
 import { computeStats } from "../lib/calcs";
 import { formatAmount } from "../lib/format";
 import { useI18n } from "../components/I18nProvider";
@@ -793,11 +795,13 @@ export default function Dashboard() {
       <div className="dashboard-main">
         <div className="dashboard-tiles">
           <div className="stat-tile tile-green">
+            <div className="tile-icon"><Banknote size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("monthlySalary")}</div>
             <div className="tile-value">{formatAmount(Math.round(monthlyIncome))}</div>
             <div className="tile-sub">{t("monthlySalary")}</div>
           </div>
           <div className="stat-tile tile-red">
+            <div className="tile-icon"><CalendarClock size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("endMonthBalance")}</div>
             <div className="tile-value">{formatAmount(Math.round(projectedEndBalance))}</div>
             <div className="tile-sub">{t("endMonthForecast")}</div>
@@ -806,11 +810,13 @@ export default function Dashboard() {
             )}
           </div>
           <div className="stat-tile tile-emerald">
+            <div className="tile-icon"><WalletIcon size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("wallet")}</div>
             <div className="tile-value">{formatAmount(walletBalance)}</div>
             <div className="tile-sub">{t("wallet")}</div>
           </div>
           <div className="stat-tile tile-blue">
+            <div className="tile-icon"><TrendingDown size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("dailyAllowed")}</div>
             <div className="tile-value">{formatAmount(Math.round(dailyLimitRemaining))}</div>
             <div className="tile-sub">{t("dailyLimitLabel", { days: periodDays })}</div>
@@ -819,11 +825,13 @@ export default function Dashboard() {
             )}
           </div>
           <div className="stat-tile tile-orange">
+            <div className="tile-icon"><Receipt size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("mandatory")}</div>
             <div className="tile-value">{formatAmount(Math.round(monthlyMandatory))}</div>
             <div className="tile-sub">{t("monthlyMandatoryPayments")}</div>
           </div>
           <div className="stat-tile tile-purple">
+            <div className="tile-icon"><Crosshair size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("goalAmount")}</div>
             <div className="tile-value">
               {formatAmount(Math.round(totalGoalsSaved))}{" "}
