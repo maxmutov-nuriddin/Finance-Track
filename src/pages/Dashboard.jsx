@@ -804,9 +804,6 @@ export default function Dashboard() {
             {Number.isFinite(daysUntilSalary) && (
               <div className="tile-meta">{t("salaryDaysLeft", { days: daysUntilSalary })}</div>
             )}
-            <div className="tile-corner">
-              {formatAmount(Math.round(dailyToZero))}
-            </div>
           </div>
           <div className="stat-tile tile-emerald">
             <div className="tile-label">{t("wallet")}</div>
@@ -817,6 +814,9 @@ export default function Dashboard() {
             <div className="tile-label">{t("dailyAllowed")}</div>
             <div className="tile-value">{formatAmount(Math.round(dailyLimitRemaining))}</div>
             <div className="tile-sub">{t("dailyLimitLabel", { days: periodDays })}</div>
+            {Number.isFinite(dailyToZero) && (
+              <div className="tile-meta">{t("endMonthZeroHint", { amount: formatAmount(Math.round(dailyToZero)) })}</div>
+            )}
           </div>
           <div className="stat-tile tile-orange">
             <div className="tile-label">{t("mandatory")}</div>
