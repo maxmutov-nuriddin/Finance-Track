@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   font-variant-numeric: tabular-nums;
   --primary-color: #2f6bff;
@@ -11,16 +11,16 @@
   --chart-target: rgba(110, 122, 140, 0.65);
   --chart-grid: rgba(148, 163, 184, 0.25);
   --chart-label: rgba(71, 85, 105, 0.7);
-  --chart-bar: #5a7bff;
+  --chart-bar: #2f2f2f;
   --chart-bar-last: rgba(90, 123, 255, 0.45);
   --chart-line: rgba(255, 120, 120, 0.9);
-  --bg-gradient: #f3f4f6;
-  --ink: #1f2937;
-  --muted: #667085;
-  --surface: #ffffff;
-  --surface-2: #f5f7fb;
-  --border: #e4e7ec;
-  --shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  --bg-gradient: #1a1a2e;
+  --ink: #ffffff;
+  --muted: #a0aec0;
+  --surface: #2d3748;
+  --surface-2: #1a202c;
+  --border: #404854;
+  --shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
   --radius-lg: 24px;
   --radius-md: 18px;
   --radius-sm: 12px;
@@ -33,7 +33,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: #d1d5db;
+  background: #0f1419;
   color: var(--ink);
   padding: 0;
 }

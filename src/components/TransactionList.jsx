@@ -26,6 +26,7 @@ export default function TransactionList({ items, onDelete }) {
   const [type, setType] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
   const categoryLabel = (key) => {
     if (key === "food") return t("categoryFood");
     if (key === "transport") return t("categoryTransport");
@@ -33,6 +34,18 @@ export default function TransactionList({ items, onDelete }) {
     if (key === "rent") return t("categoryRent");
     if (key === "health") return t("categoryHealth");
     return t("categoryOther");
+  };
+
+  const getCategoryIcon = (category) => {
+    const icons = {
+      food: "🍔",
+      transport: "🚗",
+      credit: "💳",
+      rent: "🏠",
+      health: "🏥",
+      other: "📌"
+    };
+    return icons[category] || "📌";
   };
 
   const filtered = useMemo(() => {
@@ -46,46 +59,107 @@ export default function TransactionList({ items, onDelete }) {
   }, [items, category, type, from, to]);
 
   return (
-    <GlassCard>
-      <div className="card-title">{t("allRecords")}</div>
-      <div className="row" style={{ marginBottom: 12 }}>
-        <select value={category} onChange={(event) => setCategory(event.target.value)}>
-          {categoryOptions.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-        <select value={type} onChange={(event) => setType(event.target.value)}>
-          {typeOptions.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-        <GlassInput type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
-        <GlassInput type="date" value={to} onChange={(event) => setTo(event.target.value)} />
-      </div>
-      <div className="list">
-        {filtered.map((item) => (
-          <div className="list-item" key={item.id}>
-            <div className="list-item-meta">
-              <strong>{item.description || item.raw || t("record")}</strong>
-              <span className="muted">
-                {item.type === "income" ? t("typeIncome") : t("typeExpense")} • {categoryLabel(item.category)}
-              </span>
-              <span className="muted">{item.occurredAtISO}</span>
-            </div>
-            <div className="row">
-              <span className="badge">{formatAmount(item.amount || 0)}</span>
-              <GlassButton variant="ghost" onClick={() => onDelete(item.id)}>
-                {t("delete")}
-              </GlassButton>
-            </div>
+    <div className="transaction-list-wrapper">
+      <GlassCard>
+        <div className="transaction-header">
+          <div className="transaction-title">{t("allRecords")}</div>
+          <div className="transaction-count">{filtered.length}</div>
+        </div>
+
+        <div className="transaction-filters">
+          <div className="filter-group">
+            <label className="filter-label">{t("categorySelect")}</label>
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className="filter-select"
+            >
+              {categoryOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
           </div>
-        ))}
-        {!filtered.length && <div className="muted">{t("noRecords")}</div>}
-      </div>
-    </GlassCard>
+
+          <div className="filter-group">
+            <label className="filter-label">{t("typeLabel")}</label>
+            <select
+              value={type}
+              onChange={(event) => setType(event.target.value)}
+              className="filter-select"
+            >
+              {typeOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">{t("dateLabel")} {t("from")}</label>
+            <GlassInput
+              type="date"
+              value={from}
+              onChange={(event) => setFrom(event.target.value)}
+            />
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">{t("dateLabel")} {t("to")}</label>
+            <GlassInput
+              type="date"
+              value={to}
+              onChange={(event) => setTo(event.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="transactions-list">
+          {filtered.length > 0 ? (
+            filtered.map((item) => (
+              <div className="transaction-item" key={item.id}>
+                <div className="transaction-item-left">
+                  <div className="transaction-icon">{getCategoryIcon(item.category)}</div>
+                  <div className="transaction-info">
+                    <div className="transaction-description">
+                      {item.description || item.raw || t("record")}
+                    </div>
+                    <div className="transaction-meta">
+                      <span className="transaction-category">{categoryLabel(item.category)}</span>
+                      <span className="transaction-date">
+                        {new Date(item.occurredAtISO).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="transaction-item-right">
+                  <div
+                    className={`transaction-amount ${item.type === "income" ? "income" : "expense"}`}
+                  >
+                    {item.type === "income" ? "+" : "-"}
+                    {formatAmount(item.amount || 0)}
+                  </div>
+                  <GlassButton
+                    variant="ghost"
+                    onClick={() => onDelete(item.id)}
+                    className="transaction-delete"
+                  >
+                    ✕
+                  </GlassButton>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="transaction-empty">
+              <div className="empty-icon">📭</div>
+              <div className="empty-text">{t("noRecords")}</div>
+            </div>
+          )}
+        </div>
+      </GlassCard>
+    </div>
   );
 }

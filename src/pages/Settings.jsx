@@ -83,58 +83,65 @@ export default function Settings() {
   };
 
   return (
-    <div className="stack">
+    <div className="settings-container">
       {clearing && (
         <div className="blocking-overlay" aria-live="polite" aria-busy="true">
           <div className="loading-spinner" role="status" aria-label={t("clearing")} />
         </div>
       )}
-      <div>
-        <div className="card-title">{t("settingsTitle")}</div>
-        <div className="helper-text">{t("settingsHelp")}</div>
+      
+      <div className="settings-header">
+        <div>
+          <h1 className="settings-title">{t("settingsTitle")}</h1>
+          <p className="settings-subtitle">{t("settingsHelp")}</p>
+        </div>
       </div>
 
-      {!clearing && clearMessage && <div className="toast">{clearMessage}</div>}
+      {!clearing && clearMessage && <div className="toast" style={{ marginBottom: 16 }}>{clearMessage}</div>}
 
-      <div className="row settings-tabs">
-        <GlassButton
-          className="settings-tab"
-          variant={activeTab === "budget" ? "secondary" : "ghost"}
+      <div className="settings-tabs-container">
+        <button
+          className={`settings-tab-btn ${activeTab === "budget" ? "active" : ""}`}
           onClick={() => setActiveTab("budget")}
         >
-          {t("settingsTabBudget")}
-        </GlassButton>
-        <GlassButton
-          className="settings-tab"
-          variant={activeTab === "account" ? "secondary" : "ghost"}
+          ⚙️ {t("settingsTabBudget")}
+        </button>
+        <button
+          className={`settings-tab-btn ${activeTab === "account" ? "active" : ""}`}
           onClick={() => setActiveTab("account")}
         >
-          {t("settingsTabAccount")}
-        </GlassButton>
+          👤 {t("settingsTabAccount")}
+        </button>
       </div>
 
       {activeTab === "budget" ? (
-        <>
-          <div className="grid-2">
+        <div className="settings-content budget-tab">
+          <div className="settings-grid">
             <GlassCard>
-              <div className="card-title">{t("budgetMode")}</div>
-              <div className="helper-text">{t("budgetModeHelp")}</div>
-              <div className="row" style={{ marginTop: 10 }}>
+              <div className="settings-card-header">
+                <h2 className="settings-card-title">💰 {t("budgetMode")}</h2>
+              </div>
+              <p className="settings-card-hint">{t("budgetModeHelp")}</p>
+              
+              <div className="settings-mode-buttons">
                 <GlassButton
                   variant={budgetMode === "auto" ? "secondary" : "ghost"}
                   onClick={() => setBudgetMode("auto")}
+                  className="mode-btn"
                 >
                   AUTO
                 </GlassButton>
                 <GlassButton
                   variant={budgetMode === "manual" ? "secondary" : "ghost"}
                   onClick={() => setBudgetMode("manual")}
+                  className="mode-btn"
                 >
                   MANUAL
                 </GlassButton>
               </div>
+              
               {budgetMode === "manual" && (
-                <div style={{ marginTop: 12 }}>
+                <div className="settings-input-wrapper">
                   <GlassInput
                     placeholder={t("monthlyBudget")}
                     type="number"
@@ -142,7 +149,7 @@ export default function Settings() {
                     onChange={(event) => setManualMonthlyBudget(event.target.value)}
                   />
                   {manualMonthlyBudget && (
-                    <div className="helper-text" style={{ marginTop: 6 }}>
+                    <div className="settings-preview">
                       {formatAmount(manualMonthlyBudget)}
                     </div>
                   )}
@@ -151,12 +158,16 @@ export default function Settings() {
             </GlassCard>
 
             <GlassCard>
-              <div className="card-title">{t("activeGoal")}</div>
-              <div className="helper-text">{t("activeGoalHelp")}</div>
-              <div style={{ marginTop: 12 }}>
+              <div className="settings-card-header">
+                <h2 className="settings-card-title">🎯 {t("activeGoal")}</h2>
+              </div>
+              <p className="settings-card-hint">{t("activeGoalHelp")}</p>
+              
+              <div className="settings-input-wrapper">
                 <select
                   value={activeGoalId}
                   onChange={(event) => setActiveGoalId(event.target.value)}
+                  className="settings-select"
                 >
                   <option value="">{t("chooseGoal")}</option>
                   {goals.map((goal) => (
@@ -169,22 +180,27 @@ export default function Settings() {
             </GlassCard>
           </div>
 
-          <div className="grid-2">
+          <div className="settings-grid">
             <GlassCard>
-              <div className="card-title">{t("savingsTitle")}</div>
-              <div className="row" style={{ marginTop: 10 }}>
+              <div className="settings-card-header">
+                <h2 className="settings-card-title">🏦 {t("savingsTitle")}</h2>
+              </div>
+              
+              <div className="settings-mode-buttons">
                 {savingsModes.map((mode) => (
                   <GlassButton
                     key={mode.value}
                     variant={targetSavingsMode === mode.value ? "secondary" : "ghost"}
                     onClick={() => setTargetSavingsMode(mode.value)}
+                    className="mode-btn"
                   >
                     {lang === "uz" ? mode.labelUz : mode.labelRu}
                   </GlassButton>
                 ))}
               </div>
+              
               {targetSavingsMode === "fixed" && (
-                <div style={{ marginTop: 12 }}>
+                <div className="settings-input-wrapper">
                   <GlassInput
                     placeholder={t("fixedMonthlyPlaceholder")}
                     type="number"
@@ -192,7 +208,7 @@ export default function Settings() {
                     onChange={(event) => setFixedMonthlySavings(event.target.value)}
                   />
                   {fixedMonthlySavings && (
-                    <div className="helper-text" style={{ marginTop: 6 }}>
+                    <div className="settings-preview">
                       {formatAmount(fixedMonthlySavings)}
                     </div>
                   )}
@@ -201,66 +217,87 @@ export default function Settings() {
             </GlassCard>
 
             <GlassCard>
-              <div className="card-title">{t("saveChanges")}</div>
-              <div className="helper-text">{t("saveHelp")}</div>
-              <div className="row" style={{ marginTop: 12 }}>
-                <GlassButton onClick={handleSave}>{t("save")}</GlassButton>
-                {savedMessage && <span className="toast">{savedMessage}</span>}
+              <div className="settings-card-header">
+                <h2 className="settings-card-title">💾 {t("saveChanges")}</h2>
+              </div>
+              <p className="settings-card-hint">{t("saveHelp")}</p>
+              
+              <div className="settings-actions">
+                <GlassButton onClick={handleSave} className="settings-action-btn">
+                  {t("save")}
+                </GlassButton>
+                {savedMessage && <div className="settings-success">{savedMessage}</div>}
               </div>
             </GlassCard>
           </div>
-        </>
+        </div>
       ) : (
-        <div className="grid-2">
-          <GlassCard>
-            <div className="card-title">{t("account")}</div>
-            <div className="helper-text">{t("logout")}</div>
-            <GlassButton
-              variant="ghost"
-              onClick={() => signOut(auth).then(() => navigate("/", { replace: true }))}
-              style={{ marginTop: 12 }}
-            >
-              {t("logout")}
-            </GlassButton>
-          </GlassCard>
-
-          <GlassCard>
-            <div className="card-title">{t("language")}</div>
-            <div className="helper-text">{t("languageHelp")}</div>
-            <div className="lang-switch" style={{ marginTop: 10 }}>
+        <div className="settings-content account-tab">
+          <div className="settings-grid">
+            <GlassCard>
+              <div className="settings-card-header">
+                <h2 className="settings-card-title">👤 {t("account")}</h2>
+              </div>
+              <p className="settings-card-hint">{t("logout")}</p>
+              
               <GlassButton
-                variant={lang === "ru" ? "secondary" : "ghost"}
-                onClick={() => setLang("ru")}
+                variant="ghost"
+                onClick={() => signOut(auth).then(() => navigate("/", { replace: true }))}
+                className="settings-action-btn danger"
               >
-                Русский
+                {t("logout")}
               </GlassButton>
-              <GlassButton
-                variant={lang === "uz" ? "secondary" : "ghost"}
-                onClick={() => setLang("uz")}
-              >
-                O'zbek
-              </GlassButton>
-            </div>
-          </GlassCard>
+            </GlassCard>
 
-          <GlassCard>
-            <div className="card-title">{t("clearAll")}</div>
-            <div className="helper-text">{t("clearAllHelp")}</div>
-            <div className="row" style={{ marginTop: 12 }}>
-          <GlassButton variant="ghost" onClick={handleClearAll} disabled={clearing}>
-            {t("clearAll")}
-          </GlassButton>
-              {clearing ? (
-                <span className="inline-loader" role="status" aria-label={t("clearing")}>
-                  <span className="loading-dot" />
-                  <span className="loading-dot" />
-                  <span className="loading-dot" />
-                </span>
-              ) : (
-                clearMessage && <span className="toast">{clearMessage}</span>
-              )}
-            </div>
-          </GlassCard>
+            <GlassCard>
+              <div className="settings-card-header">
+                <h2 className="settings-card-title">🌐 {t("language")}</h2>
+              </div>
+              <p className="settings-card-hint">{t("languageHelp")}</p>
+              
+              <div className="settings-lang-switch">
+                <GlassButton
+                  variant={lang === "ru" ? "secondary" : "ghost"}
+                  onClick={() => setLang("ru")}
+                  className="lang-btn"
+                >
+                  🇷🇺 Русский
+                </GlassButton>
+                <GlassButton
+                  variant={lang === "uz" ? "secondary" : "ghost"}
+                  onClick={() => setLang("uz")}
+                  className="lang-btn"
+                >
+                  🇺🇿 O'zbek
+                </GlassButton>
+              </div>
+            </GlassCard>
+
+            <GlassCard>
+              <div className="settings-card-header">
+                <h2 className="settings-card-title">🗑️ {t("clearAll")}</h2>
+              </div>
+              <p className="settings-card-hint danger-hint">{t("clearAllHelp")}</p>
+              
+              <div className="settings-actions">
+                <GlassButton
+                  variant="ghost"
+                  onClick={handleClearAll}
+                  disabled={clearing}
+                  className="settings-action-btn danger"
+                >
+                  {t("clearAll")}
+                </GlassButton>
+                {clearing ? (
+                  <span className="inline-loader" role="status" aria-label={t("clearing")}>
+                    <span className="loading-dot" />
+                    <span className="loading-dot" />
+                    <span className="loading-dot" />
+                  </span>
+                ) : null}
+              </div>
+            </GlassCard>
+          </div>
         </div>
       )}
     </div>

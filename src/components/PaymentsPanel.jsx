@@ -33,82 +33,95 @@ export default function PaymentsPanel({ uid, payments, transactions = [], onDele
 
   return (
     <GlassCard>
-      <div className="footer-row">
-        <div>
-          <div className="card-title">{t("paymentsTitle")}</div>
-          <div className="muted">{t("paymentsHelp")}</div>
-        </div>
+      <div className="payments-list-header">
+        <div className="payments-list-title">{t("paymentsTitle")}</div>
+        <div className="payments-badge">{payments.length}</div>
       </div>
 
       {notificationStatus !== "granted" ? (
-        <div className="alert" style={{ marginTop: 12 }}>
-          {t("notificationsOff")}
-          <div style={{ marginTop: 8 }}>
-            <GlassButton variant="secondary" onClick={handleEnableNotifications}>
-              {t("enableNotifications")}
-            </GlassButton>
-          </div>
+        <div className="alert" style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: 8 }}>{t("notificationsOff")}</div>
+          <GlassButton variant="secondary" onClick={handleEnableNotifications}>
+            {t("enableNotifications")}
+          </GlassButton>
         </div>
       ) : (
-        <div className="alert" style={{ marginTop: 12 }}>
-          {t("notificationsOn")}
+        <div className="alert" style={{ marginBottom: 20 }}>
+          ✓ {t("notificationsOn")}
         </div>
       )}
 
-      <div className="list" style={{ marginTop: 14 }}>
-        {recurringFromTransactions.map((tx) => (
-          <div className="list-item" key={`rtx-${tx.id}`}>
-            <div className="list-item-meta">
-              <strong>{tx.description || t("monthlyExpense")}</strong>
-              <span className="muted">{tx.occurredAtISO?.slice(0, 10)}</span>
-              <span className="badge">{t("monthlyInBudget")}</span>
-            </div>
-            <div className="row">
-              <span className="badge">{formatAmount(tx.amount)}</span>
-            </div>
-          </div>
-        ))}
-        {payments.map((payment) => (
-          <div className="list-item" key={payment.id}>
-            <div className="list-item-meta">
-              <strong>{payment.title}</strong>
-              <span className="muted">{payment.payDateISO}</span>
-              {payment.recurrence === "monthly" ? (
-                <span className="badge">{t("monthlyInBudget")}</span>
-              ) : (
-                <span className="badge">{t("oneTimeNotBudget")}</span>
-              )}
-            </div>
-            <div className="row">
-              <span className="badge">{formatAmount(payment.amount)}</span>
-              <GlassButton variant="ghost" onClick={() => onDelete(payment.id)}>
-                {t("delete")}
-              </GlassButton>
-            </div>
-          </div>
-        ))}
-        {!payments.length && recurringFromTransactions.length === 0 && (
-          <div className="muted">{t("noPaymentsYet")}</div>
-        )}
-      </div>
-
-      {upcoming.length > 0 && (
-        <div style={{ marginTop: 14 }}>
-          <div className="card-title">{t("in3days")}</div>
-          <div className="list">
-            {upcoming.map((payment) => (
-              <div className="list-item" key={`up-${payment.id}`}>
-                <div className="list-item-meta">
-                  <strong>{payment.title}</strong>
-                  <span className="muted">{formatAmount(payment.amount)}</span>
+      <div className="payments-items">
+        {upcoming.length > 0 && (
+          <div className="upcoming-payments">
+            <div className="upcoming-title">⏰ {t("in3days")}</div>
+            <div className="upcoming-list">
+              {upcoming.map((payment) => (
+                <div className="upcoming-item" key={`up-${payment.id}`}>
+                  <div className="upcoming-info">
+                    <div className="upcoming-name">{payment.title}</div>
+                    <div className="upcoming-date">{payment.payDateISO}</div>
+                  </div>
+                  <div className="upcoming-amount">{formatAmount(payment.amount)}</div>
                 </div>
-                <span className="badge">{payment.payDateISO}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="payments-section">
+          <div className="payments-section-title">📋 {t("allRecords")}</div>
+          <div className="payment-list">
+            {recurringFromTransactions.map((tx) => (
+              <div className="payment-item" key={`rtx-${tx.id}`}>
+                <div className="payment-item-left">
+                  <div className="payment-icon">🔄</div>
+                  <div className="payment-info">
+                    <div className="payment-name">{tx.description || t("monthlyExpense")}</div>
+                    <div className="payment-meta">
+                      <span className="payment-category">{t("monthlyInBudget")}</span>
+                      <span className="payment-date">{tx.occurredAtISO?.slice(0, 10)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="payment-amount">{formatAmount(tx.amount)}</div>
               </div>
             ))}
+            {payments.map((payment) => (
+              <div className="payment-item" key={payment.id}>
+                <div className="payment-item-left">
+                  <div className="payment-icon">{payment.recurrence === "monthly" ? "📅" : "⏱️"}</div>
+                  <div className="payment-info">
+                    <div className="payment-name">{payment.title}</div>
+                    <div className="payment-meta">
+                      <span className={`payment-category ${payment.recurrence === "monthly" ? "monthly" : "onetime"}`}>
+                        {payment.recurrence === "monthly" ? t("monthlyInBudget") : t("oneTimeNotBudget")}
+                      </span>
+                      <span className="payment-date">{payment.payDateISO}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="payment-item-right">
+                  <div className="payment-amount">{formatAmount(payment.amount)}</div>
+                  <GlassButton
+                    variant="ghost"
+                    onClick={() => onDelete(payment.id)}
+                    className="payment-delete-btn"
+                  >
+                    ✕
+                  </GlassButton>
+                </div>
+              </div>
+            ))}
+            {!payments.length && recurringFromTransactions.length === 0 && (
+              <div className="payments-empty">
+                <div className="empty-icon">💳</div>
+                <div className="empty-text">{t("noPaymentsYet")}</div>
+              </div>
+            )}
           </div>
         </div>
-      )}
-
+      </div>
     </GlassCard>
   );
 }

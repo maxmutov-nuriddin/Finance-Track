@@ -98,12 +98,37 @@ export default function Goals() {
   const factMonthlyNet = useMemo(() => stats.net, [stats.net]);
 
   return (
-    <div className="stack">
-      <div>
-        <div className="card-title">{t("goalsTitle")}</div>
-        <div className="helper-text">{t("goalsHelp")}</div>
+    <div className="goals-container">
+      <div className="goals-header">
+        <div>
+          <h1 className="goals-title">{t("goalsTitle")}</h1>
+          <p className="goals-subtitle">{t("goalsHelp")}</p>
+        </div>
       </div>
-      {deleteMessage && <div className="toast">{deleteMessage}</div>}
+
+      {deleteMessage && <div className="toast" style={{ marginBottom: 16 }}>{deleteMessage}</div>}
+
+      <div className="goals-stats">
+        <div className="stat-card">
+          <div className="stat-card-label">{t("totalGoals")}</div>
+          <div className="stat-card-value" style={{ color: "#3b82f6" }}>
+            {goals.length}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-label">{t("goalCompleted")}</div>
+          <div className="stat-card-value" style={{ color: "#22c55e" }}>
+            {goals.filter(g => g.isCompleted || g.completedAt).length}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-label">{t("totalSaved")}</div>
+          <div className="stat-card-value" style={{ color: "#a855f7" }}>
+            {(goals.reduce((sum, g) => sum + (Number(g.currentAmount || 0)), 0)).toLocaleString()}
+          </div>
+        </div>
+      </div>
+
       <GoalPanel
         goals={goals}
         dailyNet={dailyNet}
@@ -135,12 +160,6 @@ export default function Goals() {
           addGoalContribution(user.uid, goal.id, plannedMonthlySavings, goal.title)
         }
         onComplete={(goal) => completeGoal(user.uid, goal.id)}
-      />
-      <StatsCard
-        stats={stats}
-        periodLabel={t("periodMonth")}
-        monthlyNet={factMonthlyNet}
-        series={[]}
       />
     </div>
   );

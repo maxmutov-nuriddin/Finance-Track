@@ -40,7 +40,7 @@ export default function BudgetCard({
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#1f2937" }}>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff" }}>
           {t("budgetTitle")}
         </h2>
         <button
@@ -50,7 +50,7 @@ export default function BudgetCard({
             alignItems: "center",
             gap: "8px",
             fontSize: "0.875rem",
-            color: "#6b7280",
+            color: "#a0aec0",
             background: "none",
             border: "none",
             cursor: "pointer",
@@ -58,8 +58,8 @@ export default function BudgetCard({
             borderRadius: "8px",
             transition: "color 0.2s"
           }}
-          onMouseEnter={(e) => e.currentTarget.style.color = "#1f2937"}
-          onMouseLeave={(e) => e.currentTarget.style.color = "#6b7280"}
+          onMouseEnter={(e) => e.currentTarget.style.color = "#ffffff"}
+          onMouseLeave={(e) => e.currentTarget.style.color = "#a0aec0"}
         >
           <span>{t("configure")}</span>
           <svg style={{ width: "16px", height: "16px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,7 +75,8 @@ export default function BudgetCard({
       ) : (
         <>
           <div style={{
-            background: "#2b2d3a",
+            background: "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)",
+            border: "1px solid #404854",
             borderRadius: "20px",
             padding: "32px",
             position: "relative",
@@ -86,7 +87,7 @@ export default function BudgetCard({
             <div style={{
               position: "absolute",
               inset: 0,
-              opacity: 0.1,
+              opacity: 0.08,
               pointerEvents: "none"
             }}>
               {[...Array(20)].map((_, i) => (
@@ -119,7 +120,7 @@ export default function BudgetCard({
                       cy="64"
                       r={radius}
                       fill="none"
-                      stroke="#374151"
+                      stroke="#3a4556"
                       strokeWidth="12"
                     />
                     <circle
@@ -135,7 +136,7 @@ export default function BudgetCard({
                     />
                     <defs>
                       <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#60a5fa" />
+                        <stop offset="0%" stopColor="#4b7bff" />
                         <stop offset="100%" stopColor="#ec4899" />
                       </linearGradient>
                     </defs>
@@ -166,7 +167,7 @@ export default function BudgetCard({
 
                 {/* Balance Info */}
                 <div style={{ color: "white" }}>
-                  <div style={{ fontSize: "0.875rem", color: "#9ca3af", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "4px" }}>
                     {t("remainingSpendLabel")}
                   </div>
                   <div style={{ fontSize: "2.5rem", fontWeight: "700", marginBottom: "8px" }}>
@@ -174,7 +175,7 @@ export default function BudgetCard({
                   </div>
                   <div style={{
                     fontSize: "0.875rem",
-                    color: "#9ca3af"
+                    color: "#a0aec0"
                   }}>
                     {t("budgetHelper")}
                   </div>
@@ -186,7 +187,7 @@ export default function BudgetCard({
                 color: "white",
                 fontSize: "3rem",
                 fontWeight: "700",
-                opacity: 0.5
+                opacity: 0.3
               }}>
                 »
               </div>

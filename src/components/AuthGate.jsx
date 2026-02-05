@@ -108,45 +108,26 @@ export default function AuthGate({ children }) {
     return (
       <div className="auth-shell">
         <GlassCard className="auth-card">
-          <h1 className="auth-title">
-            {mode === "login" ? t("authLogin") : t("authRegister")}
-          </h1>
-          <p className="muted">
-            {mode === "login" ? t("authLoginHelp") : t("authRegisterHelp")}
-          </p>
-          <div className="stack" style={{ marginTop: 16 }}>
-            <GlassButton onClick={handleGoogle}>{t("signInGoogle")}</GlassButton>
-            <GlassInput
-              type="email"
-              placeholder={t("email")}
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-            <GlassInput
-              type="password"
-              placeholder={t("password")}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
+          <div className="auth-header">
+            <h1 className="auth-title">
+              {mode === "login" ? "🔐 Finance Track" : "✨ Finance Track"}
+            </h1>
+            <p className="auth-subtitle">
+              {mode === "login" ? t("authLoginHelp") : t("authRegisterHelp")}
+            </p>
           </div>
-          {mode === "login" ? (
-            <div className="stack" style={{ marginTop: 12 }}>
-              <GlassButton onClick={handleEmailSignIn}>{t("login")}</GlassButton>
-              <GlassButton variant="secondary" onClick={() => setMode("register")}
-              >
-                {t("createAccount")}
-              </GlassButton>
-            </div>
-          ) : (
-            <div className="stack" style={{ marginTop: 12 }}>
-              <GlassButton onClick={handleEmailRegister}>{t("register")}</GlassButton>
-              <GlassButton variant="secondary" onClick={() => setMode("login")}>
-                {t("haveAccount")}
-              </GlassButton>
-            </div>
-          )}
+
+          <div className="auth-social">
+            <GlassButton 
+              onClick={handleGoogle}
+              className="auth-google-btn"
+            >
+              🔑 {t("signInGoogle")}
+            </GlassButton>
+          </div>
+
           {error && (
-            <div className="alert alert-danger" style={{ marginTop: 12 }}>
+            <div className="alert alert-danger auth-error" style={{ marginTop: 16 }}>
               {error}
             </div>
           )}

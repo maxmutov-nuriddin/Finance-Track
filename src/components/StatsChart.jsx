@@ -25,8 +25,8 @@ function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   const value = payload[0].value;
   return (
-    <div className="chart-tooltip-light">
-      <div className="chart-tooltip-title">{label}</div>
+    <div className="chart-tooltip-light" style={{ background: "#2d3748", color: "#ffffff", border: "1px solid #404854" }}>
+      <div className="chart-tooltip-title" style={{ color: "#a0aec0" }}>{label}</div>
       <div className="chart-tooltip-value">{formatCompact(value)}</div>
     </div>
   );
@@ -51,20 +51,20 @@ export default function StatsChart({ series = [], height = 240 }) {
         <BarChart data={data} margin={{ top: 10, right: 10, left: 4, bottom: 4 }}>
           <XAxis
             dataKey="label"
-            tick={{ fill: "#9ca3af", fontSize: 11 }}
+            tick={{ fill: "#a0aec0", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
           />
           <YAxis
-            tick={{ fill: "#9ca3af", fontSize: 11 }}
+            tick={{ fill: "#a0aec0", fontSize: 11 }}
             tickFormatter={formatCompact}
             axisLine={false}
             tickLine={false}
             width={50}
             domain={[0, maxValue * 1.1]}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.02)" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(75, 123, 255, 0.08)" }} />
           <Bar
             dataKey="value"
             radius={[12, 12, 12, 12]}
@@ -73,7 +73,7 @@ export default function StatsChart({ series = [], height = 240 }) {
             {data.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={entry.value > threshold ? "#1f2937" : "#e5e7eb"}
+                fill={entry.value > threshold ? "#2f2f2f" : "#3a4556"}
               />
             ))}
           </Bar>

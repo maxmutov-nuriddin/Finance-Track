@@ -126,48 +126,70 @@ export default function GoalPanel({
 
   return (
     <GlassCard>
-      <div className="footer-row">
-        <div>
-          <div className="card-title">{t("goalsTitle")}</div>
-          <div className="muted">{t("goalsHelp")}</div>
-        </div>
-        {/* add goal button removed: goals can be created from Quick Add */}
+      <div className="goals-list-header">
+        <div className="goals-list-title">{t("allGoals")}</div>
+        <div className="goals-count">{goals.length}</div>
       </div>
 
       {targetSavingsMode === "goal_based" && !activeGoalId && (
-        <div className="alert" style={{ marginTop: 12 }}>
+        <div className="alert" style={{ marginBottom: 20 }}>
           {t("chooseMainGoal")}
         </div>
       )}
 
-      <div className="list" style={{ marginTop: 12 }}>
+      <div className="goals-items">
         {renderedGoals.map((goal) => (
-          <div className="list-item" key={goal.id}>
-            <div className="list-item-meta">
-              <strong>{goal.title}</strong>
-              <div className="progress" style={{ marginTop: 6, marginBottom: 6 }}>
-                <span style={{ width: `${goal.progress}%` }} />
+          <div className={`goal-item ${goal.isActive ? "active" : ""} ${goal.isCompleted ? "completed" : ""}`} key={goal.id}>
+            <div className="goal-item-header">
+              <div className="goal-item-title">
+                {goal.title}
+                {goal.isCompleted && <span className="goal-badge-completed">✓ {t("goalCompleted")}</span>}
+                {goal.isActive && !goal.isCompleted && <span className="goal-badge-active">⭐ {t("active")}</span>}
               </div>
-              <span className="muted">{t("progress")}: {goal.progress}%</span>
-              <span className="muted">
-                {t("savedAmount")}: {formatAmount(goal.saved)}
-              </span>
-              <span className="muted">{t("remaining")}: {formatAmount(goal.remaining)}</span>
-              {goal.isCompleted && <span className="badge">{t("goalCompleted")}</span>}
-              {goal.perMonth && <span className="muted">{goal.perMonth}</span>}
-              {goal.perDay && <span className="muted">{goal.perDay}</span>}
-              {goal.autoLabel && <span className="muted">{goal.autoLabel}</span>}
-              {!goal.autoLabel && goal.forecast && <span className="muted">{goal.forecast}</span>}
-              {goal.autoHint && <span className="helper-text">{goal.autoHint}</span>}
+              <div className="goal-item-progress-percent">{goal.progress}%</div>
             </div>
-            <div className="row" style={{ gap: 10 }}>
+
+            <div className="goal-progress-bar">
+              <div className="goal-progress-fill" style={{ width: `${goal.progress}%` }} />
+            </div>
+
+            <div className="goal-item-stats">
+              <div className="goal-stat">
+                <span className="goal-stat-label">{t("savedAmount")}</span>
+                <span className="goal-stat-value">{formatAmount(goal.saved)}</span>
+              </div>
+              <div className="goal-stat">
+                <span className="goal-stat-label">{t("remaining")}</span>
+                <span className="goal-stat-value" style={{ color: goal.remaining > 0 ? "#ef4444" : "#22c55e" }}>
+                  {formatAmount(goal.remaining)}
+                </span>
+              </div>
+              <div className="goal-stat">
+                <span className="goal-stat-label">{t("targetAmount")}</span>
+                <span className="goal-stat-value">{formatAmount(goal.targetAmount)}</span>
+              </div>
+            </div>
+
+            <div className="goal-item-hints">
+              {goal.perMonth && <div className="goal-hint">📅 {goal.perMonth}</div>}
+              {goal.perDay && <div className="goal-hint">⏱️ {goal.perDay}</div>}
+              {goal.autoLabel && (
+                <div className="goal-hint">
+                  🎯 {goal.autoLabel}
+                  {goal.autoHint && <div style={{ fontSize: "0.8rem", marginTop: 4 }}>{goal.autoHint}</div>}
+                </div>
+              )}
+              {!goal.autoLabel && goal.forecast && <div className="goal-hint">📈 {goal.forecast}</div>}
+            </div>
+
+            <div className="goal-item-actions">
               {goal.canContribute && (
-                <GlassButton onClick={() => onContribute?.(goal)}>
+                <GlassButton onClick={() => onContribute?.(goal)} className="goal-action-btn">
                   {t("goalContribute", { amount: formatAmount(goal.contributionAmount) })}
                 </GlassButton>
               )}
               {goal.canComplete && (
-                <GlassButton onClick={() => onComplete?.(goal)}>
+                <GlassButton onClick={() => onComplete?.(goal)} className="goal-action-btn">
                   {t("goalComplete")}
                 </GlassButton>
               )}
@@ -175,13 +197,19 @@ export default function GoalPanel({
                 variant="ghost"
                 onClick={() => onDelete(goal.id)}
                 disabled={deletingIds?.has(goal.id)}
+                className="goal-delete-btn"
               >
-                {t("delete")}
+                ✕
               </GlassButton>
             </div>
           </div>
         ))}
-        {!goals.length && <div className="muted">{t("noGoals")}</div>}
+        {!goals.length && (
+          <div className="goals-empty">
+            <div className="empty-icon">🎯</div>
+            <div className="empty-text">{t("noGoals")}</div>
+          </div>
+        )}
       </div>
     </GlassCard>
   );
