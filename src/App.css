@@ -3668,59 +3668,69 @@ select option {
   padding: 28px;
   width: 100%;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .stats-card-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 20px;
   flex-wrap: wrap;
+}
+
+.stats-card-title-block {
+  flex: 1;
+  min-width: 200px;
 }
 
 .stats-card-title {
   font-size: 1.5rem;
   font-weight: 700;
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   color: #ffffff;
+  letter-spacing: -0.01em;
 }
 
 .stats-card-legend {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
 }
 
 .stats-card-legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .stats-card-legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
+  width: 10px;
+  height: 10px;
+  border-radius: 4px;
   display: inline-block;
 }
 
 .stats-card-legend-high {
-  background: #4b7bff;
+  background: #2f6bff;
+  box-shadow: 0 0 8px rgba(47, 107, 255, 0.4);
 }
 
 .stats-card-legend-low {
-  background: #3a4556;
+  background: #a0aec0;
 }
 
 .stats-card-legend-label {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #a0aec0;
+  font-weight: 500;
 }
 
 .stats-card-tabs {
   flex-shrink: 0;
-  width: 100%;
+  margin-left: auto;
 }
 
 .stats-card-chart {
@@ -3729,18 +3739,32 @@ select option {
 
 .stats-card-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
 .stats-card .pill-tabs {
-  width: 100%;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+  width: auto;
+  display: inline-flex;
+  background: rgba(45, 55, 72, 0.4);
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid #404854;
 }
 
 .stats-card .pill-tab {
-  flex: 1 1 90px;
+  flex: none;
+  min-width: 80px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  border-radius: 10px;
+}
+
+.stats-card .pill-tab-active {
+  background: #2f6bff;
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(47, 107, 255, 0.3);
 }
 
 .stats-card-metric-label {
@@ -3750,9 +3774,10 @@ select option {
 }
 
 .stats-card-metric-value {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #ffffff;
+  letter-spacing: -0.01em;
 }
 
 .stats-card-foot {
@@ -4152,24 +4177,18 @@ select option {
 
 @media (max-width: 700px) {
   .stats-card .pill-tabs {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    border-radius: 14px;
-    background: #2d3748;
-    border: 1px solid #404854;
-    padding: 4px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
     width: 100%;
+    display: flex;
   }
 
   .stats-card .pill-tab {
-    width: 100%;
-    text-align: center;
-    border-radius: 8px;
-    padding: 4px 8px;
-    font-size: 0.7rem;
-    line-height: 1.1;
-    flex: none !important;
+    flex: 1;
+    min-width: 0;
+    font-size: 0.85rem;
+    padding: 10px 4px;
   }
 }
 
