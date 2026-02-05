@@ -1506,6 +1506,11 @@ select option {
     overflow-y: visible;
   }
 
+  .page-wrap {
+    max-width: 100%;
+    margin: 0;
+  }
+
   .page-wrap,
   .dashboard-grid,
   .dashboard-main,
@@ -1548,7 +1553,7 @@ select option {
   }
 
   .app-main {
-    padding: 14px 12px 130px;
+    padding: 110px 12px 130px;
   }
 
   .sidebar-nav {
@@ -1719,7 +1724,7 @@ select option {
 
 @media (max-width: 360px) {
   .app-main {
-    padding: 100px 14px 120px;
+    padding: 100px 10px 120px;
   }
 
   .brand-title {
@@ -1778,8 +1783,8 @@ select option {
 @media (max-width: 320px) {
   .app-header { 
     top: 8px; 
-    left: 12px; 
-    right: 12px; 
+    left: 8px; 
+    right: 8px; 
     padding: 10px 12px;
     border-radius: 18px;
     gap: 10px;
@@ -1804,7 +1809,7 @@ select option {
   }
   
   .app-main { 
-    padding: 96px 14px 120px; 
+    padding: 94px 8px 120px; 
   }
 
   .dashboard-tiles {
@@ -3655,6 +3660,411 @@ select option {
   text-align: right;
 }
 
+/* Stats Card */
+.stats-card {
+  background: #1a202c;
+  border: 1px solid #404854;
+  border-radius: 20px;
+  padding: 28px;
+  width: 100%;
+  min-width: 0;
+}
+
+.stats-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.stats-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: #ffffff;
+}
+
+.stats-card-legend {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.stats-card-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stats-card-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.stats-card-legend-high {
+  background: #4b7bff;
+}
+
+.stats-card-legend-low {
+  background: #3a4556;
+}
+
+.stats-card-legend-label {
+  font-size: 0.75rem;
+  color: #a0aec0;
+}
+
+.stats-card-tabs {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.stats-card-chart {
+  margin-bottom: 24px;
+}
+
+.stats-card-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+}
+
+.stats-card .pill-tabs {
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.stats-card .pill-tab {
+  flex: 1 1 90px;
+}
+
+.stats-card-metric-label {
+  font-size: 0.875rem;
+  color: #a0aec0;
+  margin-bottom: 8px;
+}
+
+.stats-card-metric-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.stats-card-foot {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #404854;
+}
+
+.stats-card-foot-row {
+  font-size: 0.875rem;
+  color: #a0aec0;
+  margin-bottom: 8px;
+}
+
+.stats-card-foot-row:last-child {
+  margin-bottom: 0;
+}
+
+.stats-card-foot-muted {
+  color: #6b7280;
+}
+
+/* Budget Card */
+.budget-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.budget-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.budget-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.budget-card-settings {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #a0aec0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: color 0.2s ease;
+}
+
+.budget-card-settings:hover {
+  color: #ffffff;
+}
+
+.budget-card-panel {
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  border: 1px solid #404854;
+  border-radius: 20px;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.budget-card-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.budget-card-pattern-line {
+  position: absolute;
+  height: 100%;
+  width: 1px;
+  background: #ffffff;
+  transform: rotate(45deg);
+}
+
+.budget-card-panel-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+}
+
+.budget-card-panel-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.budget-card-ring {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  flex-shrink: 0;
+}
+
+.budget-card-ring-svg {
+  width: 128px;
+  height: 128px;
+  transform: rotate(-90deg);
+  display: block;
+}
+
+.budget-card-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.budget-card-ring-percent {
+  color: #ffffff;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.budget-card-info {
+  color: #ffffff;
+}
+
+.budget-card-label {
+  font-size: 0.875rem;
+  color: #a0aec0;
+  margin-bottom: 4px;
+}
+
+.budget-card-amount {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.budget-card-helper {
+  font-size: 0.875rem;
+  color: #a0aec0;
+}
+
+.budget-card-logo {
+  color: #ffffff;
+  font-size: 3rem;
+  font-weight: 700;
+  opacity: 0.3;
+}
+
+@media (max-width: 700px) {
+  .budget-card-panel {
+    padding: 26px;
+  }
+}
+
+@media (max-width: 480px) {
+  .budget-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .budget-card-title {
+    font-size: 1.3rem;
+    line-height: 1.2;
+  }
+
+  .budget-card-settings {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    border: 1px solid #404854;
+    background: rgba(26, 32, 44, 0.6);
+    border-radius: 999px;
+  }
+
+  .budget-card-panel {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .budget-card-panel-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .budget-card-panel-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .budget-card-ring,
+  .budget-card-ring-svg {
+    width: 84px;
+    height: 84px;
+  }
+
+  .budget-card-amount {
+    font-size: 1.9rem;
+    line-height: 1.1;
+  }
+
+  .budget-card-logo {
+    display: none;
+  }
+
+  .budget-card-helper {
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .budget-card-panel {
+    padding: 16px;
+  }
+
+  .budget-card-title {
+    font-size: 1.2rem;
+  }
+
+  .budget-card-settings {
+    font-size: 0.75rem;
+  }
+
+  .budget-card-ring,
+  .budget-card-ring-svg {
+    width: 76px;
+    height: 76px;
+  }
+
+  .budget-card-amount {
+    font-size: 1.7rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .budget-card-panel {
+    padding: 14px;
+  }
+
+  .budget-card-ring,
+  .budget-card-ring-svg {
+    width: 68px;
+    height: 68px;
+  }
+
+  .budget-card-amount {
+    font-size: 1.55rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-card {
+    padding: 18px 14px;
+  }
+
+  .stats-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .stats-card-tabs {
+    width: 100%;
+  }
+
+  .stats-card-summary {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .stats-card-metric-value {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .stats-card {
+    padding: 16px 12px;
+  }
+
+  .stats-card-legend {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .stats-card-title {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .stats-card {
+    padding: 14px 10px;
+  }
+
+  .stats-card-metric-value {
+    font-size: 1.35rem;
+  }
+}
+
 /* Responsive Pie Chart */
 @media (max-width: 900px) {
   .pie-container {
@@ -3672,6 +4082,33 @@ select option {
 
   .legend-value {
     font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .stats-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+
+  .stats-card-tabs {
+    width: 100% !important;
+  }
+
+  .stats-card-legend {
+    flex-wrap: wrap !important;
+    gap: 12px;
+  }
+
+  .pill-tabs {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+
+  .pill-tab {
+    flex: 1 1 100px !important;
   }
 }
 
@@ -3710,6 +4147,29 @@ select option {
 
   .legend-value {
     font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .stats-card .pill-tabs {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    border-radius: 14px;
+    background: #2d3748;
+    border: 1px solid #404854;
+    padding: 4px;
+    width: 100%;
+  }
+
+  .stats-card .pill-tab {
+    width: 100%;
+    text-align: center;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    line-height: 1.1;
+    flex: none !important;
   }
 }
 

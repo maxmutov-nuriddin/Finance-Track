@@ -16,25 +16,23 @@ export default function StatsCard({
 }) {
   const { t } = useI18n();
   return (
-    <div style={{ background: "#1a202c", border: "1px solid #404854", borderRadius: "20px", padding: "28px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-        <div>
-          <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px" }}>
-            {t("moneyNow")}
-          </h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#4b7bff" }}></div>
-              <span style={{ fontSize: "0.75rem", color: "#a0aec0" }}>Higher</span>
+    <div className="stats-card">
+      <div className="stats-card-header">
+        <div className="stats-card-title-block">
+          <h2 className="stats-card-title">{t("moneyNow")}</h2>
+          <div className="stats-card-legend">
+            <div className="stats-card-legend-item">
+              <span className="stats-card-legend-dot stats-card-legend-high" />
+              <span className="stats-card-legend-label">Higher</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3a4556" }}></div>
-              <span style={{ fontSize: "0.75rem", color: "#a0aec0" }}>Lower</span>
+            <div className="stats-card-legend-item">
+              <span className="stats-card-legend-dot stats-card-legend-low" />
+              <span className="stats-card-legend-label">Lower</span>
             </div>
           </div>
         </div>
         {onRangeChange && (
-          <div className="pill-tabs">
+          <div className="pill-tabs stats-card-tabs">
             <button
               type="button"
               className={`pill-tab ${range === "day" ? "pill-tab-active" : ""}`}
@@ -60,48 +58,36 @@ export default function StatsCard({
         )}
       </div>
 
-      <div style={{ marginBottom: "24px" }}>
+      <div className="stats-card-chart">
         <StatsChart series={series} targetValue={dailyLimit} formatValue={formatAmount} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "32px" }}>
-        <div>
-          <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "8px" }}>
-            {t("came")}
-          </div>
-          <div style={{ fontSize: "1.75rem", fontWeight: "700", color: "#ffffff" }}>
-            {formatAmount(stats.income)}
-          </div>
+      <div className="stats-card-summary">
+        <div className="stats-card-metric">
+          <div className="stats-card-metric-label">{t("came")}</div>
+          <div className="stats-card-metric-value">{formatAmount(stats.income)}</div>
         </div>
-        <div>
-          <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "8px" }}>
-            {t("spent")}
-          </div>
-          <div style={{ fontSize: "1.75rem", fontWeight: "700", color: "#ffffff" }}>
-            {formatAmount(stats.expense)}
-          </div>
+        <div className="stats-card-metric">
+          <div className="stats-card-metric-label">{t("spent")}</div>
+          <div className="stats-card-metric-value">{formatAmount(stats.expense)}</div>
         </div>
-        <div>
-          <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "8px" }}>
-            {t("left")}
-          </div>
-          <div style={{ fontSize: "1.75rem", fontWeight: "700", color: "#ffffff" }}>
-            {formatAmount(stats.net)}
-          </div>
+        <div className="stats-card-metric">
+          <div className="stats-card-metric-label">{t("left")}</div>
+          <div className="stats-card-metric-value">{formatAmount(stats.net)}</div>
         </div>
       </div>
 
-      <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid #404854" }}>
-        <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "8px" }}>
+      <div className="stats-card-foot">
+        <div className="stats-card-foot-row">
           {t("monthFact")}: {formatAmount(Math.round(monthlyNet))}.
         </div>
         {Number.isFinite(dailyLimit) && Number.isFinite(daysInMonth) && (
-          <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "4px" }}>
+          <div className="stats-card-foot-row">
             {t("dailyLimitLabel", { days: daysInMonth })}: {formatAmount(Math.round(dailyLimit))}.
           </div>
         )}
         {Number.isFinite(dailyRemaining) && (
-          <div style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+          <div className="stats-card-foot-row stats-card-foot-muted">
             {t("dailyRemainingLabel")}: {formatAmount(Math.round(dailyRemaining))}.
           </div>
         )}

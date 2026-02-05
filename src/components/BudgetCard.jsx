@@ -38,28 +38,12 @@ export default function BudgetCard({
   const offset = circumference - (progressPercent / 100) * circumference;
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff" }}>
-          {t("budgetTitle")}
-        </h2>
+    <div className="budget-card">
+      <div className="budget-card-header">
+        <h2 className="budget-card-title">{t("budgetTitle")}</h2>
         <button
           onClick={onOpenSettings}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "0.875rem",
-            color: "#a0aec0",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "8px 12px",
-            borderRadius: "8px",
-            transition: "color 0.2s"
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.color = "#ffffff"}
-          onMouseLeave={(e) => e.currentTarget.style.color = "#a0aec0"}
+          className="budget-card-settings"
         >
           <span>{t("configure")}</span>
           <svg style={{ width: "16px", height: "16px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,47 +58,23 @@ export default function BudgetCard({
         </div>
       ) : (
         <>
-          <div style={{
-            background: "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)",
-            border: "1px solid #404854",
-            borderRadius: "20px",
-            padding: "32px",
-            position: "relative",
-            overflow: "hidden",
-            marginBottom: "20px"
-          }}>
+          <div className="budget-card-panel">
             {/* Diagonal Pattern Background */}
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              opacity: 0.08,
-              pointerEvents: "none"
-            }}>
+            <div className="budget-card-pattern">
               {[...Array(20)].map((_, i) => (
                 <div
                   key={i}
-                  style={{
-                    position: "absolute",
-                    height: "100%",
-                    width: "1px",
-                    background: "white",
-                    transform: "rotate(45deg)",
-                    left: `${i * 5}%`
-                  }}
+                  className="budget-card-pattern-line"
+                  style={{ left: `${i * 5}%` }}
                 />
               ))}
             </div>
 
-            <div style={{
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+            <div className="budget-card-panel-inner">
+              <div className="budget-card-panel-left">
                 {/* Circular Progress */}
-                <div style={{ position: "relative", width: "128px", height: "128px" }}>
-                  <svg style={{ width: "128px", height: "128px", transform: "rotate(-90deg)" }}>
+                <div className="budget-card-ring">
+                  <svg className="budget-card-ring-svg">
                     <circle
                       cx="64"
                       cy="64"
@@ -141,56 +101,26 @@ export default function BudgetCard({
                       </linearGradient>
                     </defs>
                   </svg>
-                  <div style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{
-                        color: "white",
-                        fontSize: "0.875rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px"
-                      }}>
-                        <svg style={{ width: "12px", height: "12px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="budget-card-ring-center">
+                    <div className="budget-card-ring-percent">
+                      <svg style={{ width: "12px", height: "12px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={overspent ? "M19 14l-7 7m0 0l-7-7m7 7V3" : "M5 10l7-7m0 0l7 7m-7-7v18"} />
-                        </svg>
-                        <span style={{ fontWeight: "700" }}>{progressPercent}%</span>
-                      </div>
+                      </svg>
+                      <span>{progressPercent}%</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Balance Info */}
-                <div style={{ color: "white" }}>
-                  <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "4px" }}>
-                    {t("remainingSpendLabel")}
-                  </div>
-                  <div style={{ fontSize: "2.5rem", fontWeight: "700", marginBottom: "8px" }}>
-                    {formatAmount(remaining)}
-                  </div>
-                  <div style={{
-                    fontSize: "0.875rem",
-                    color: "#a0aec0"
-                  }}>
-                    {t("budgetHelper")}
-                  </div>
+                <div className="budget-card-info">
+                  <div className="budget-card-label">{t("remainingSpendLabel")}</div>
+                  <div className="budget-card-amount">{formatAmount(remaining)}</div>
+                  <div className="budget-card-helper">{t("budgetHelper")}</div>
                 </div>
               </div>
 
               {/* Logo */}
-              <div style={{
-                color: "white",
-                fontSize: "3rem",
-                fontWeight: "700",
-                opacity: 0.3
-              }}>
-                »
-              </div>
+              <div className="budget-card-logo">»</div>
             </div>
           </div>
 
@@ -213,4 +143,3 @@ export default function BudgetCard({
     </div>
   );
 }
-
