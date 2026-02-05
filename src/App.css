@@ -4,13 +4,13 @@
   flex-direction: row;
   position: relative;
   z-index: 1;
-  max-width: 1400px;
-  margin: 40px auto;
+  width: 100%;
+  margin: 0;
   background: #ffffff;
   backdrop-filter: none;
-  border-radius: 24px;
+  border-radius: 0;
   border: none;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -23,6 +23,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  margin-left: 210px;
 }
 
 .sidebar {
@@ -34,8 +35,13 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
-  position: relative;
-  border-radius: 24px 0 0 24px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  height: 100vh;
+  border-radius: 0;
+  overflow-y: auto;
 }
 
 .sidebar::after {
@@ -193,11 +199,13 @@
   background: #ffffff;
   backdrop-filter: none;
   border-bottom: none;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 210px;
+  right: 0;
   z-index: 10;
-  border-radius: 0;
-  box-shadow: none;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .app-header .glass-button {
@@ -259,7 +267,7 @@
 }
 
 .app-main {
-  padding: 30px 30px 90px;
+  padding: 130px 30px 90px;
   display: flex;
   flex-direction: column;
   gap: 26px;
