@@ -1362,6 +1362,7 @@ select option {
 
   .app-content {
     width: 100%;
+    margin-left: 0;
   }
 
   .app-header {
@@ -1374,6 +1375,8 @@ select option {
     align-items: center;
     gap: 14px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    left: 0;
+    right: 0;
   }
 
   .app-main {
