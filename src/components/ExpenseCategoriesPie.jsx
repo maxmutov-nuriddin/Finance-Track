@@ -1,18 +1,19 @@
 import { useMemo } from "react";
-import GlassCard from "./GlassCard";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useI18n } from "./I18nProvider";
+import { formatAmount } from "../lib/format";
 
 const CATEGORY_COLORS = {
-  food: "#ef4444",      // Red - пища
-  transport: "#f97316",  // Orange - транспорт
-  utilities: "#eab308",  // Yellow - коммунальные
-  shopping: "#ec4899",   // Pink - покупки
-  entertainment: "#a855f7", // Purple - развлечения
-  health: "#06b6d4",    // Cyan - здоровье
-  education: "#3b82f6", // Blue - образование
-  personal: "#84cc16",   // Lime - личное
-  credit: "#ef4444",     // Red - кредит
-  other: "#64748b"       // Slate - другое
+  food: "#ef4444",
+  transport: "#f97316",
+  utilities: "#eab308",
+  shopping: "#ec4899",
+  entertainment: "#a855f7",
+  health: "#06b6d4",
+  education: "#3b82f6",
+  personal: "#84cc16",
+  credit: "#ef4444",
+  other: "#64748b"
 };
 
 export default function ExpenseCategoriesPie({ transactions = [] }) {
@@ -24,114 +25,123 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
     transactions.forEach((tx) => {
       if (tx.type !== "expense") return;
       const category = tx.category || "other";
-      categoryMap[category] = (categoryMap[category] || 0) + Number(tx.amount || 0);
+      if (!categoryMap[category]) {
+        categoryMap[category] = 0;
+      }
+      categoryMap[category] += Number(tx.amount || 0);
     });
 
-    const sortedData = Object.entries(categoryMap)
-      .map(([category, amount]) => ({
-        category,
-        amount,
-        percentage: 0,
-        label: t(`category_${category}`) || category
+    const data = Object.entries(categoryMap)
+      .map(([category, value]) => ({
+        name: t(`category_${category}`) || category,
+        value: Math.round(value),
+        category
       }))
-      .sort((a, b) => b.amount - a.amount);
+      .sort((a, b) => b.value - a.value);
 
-    const total = sortedData.reduce((sum, item) => sum + item.amount, 0);
-    
-    return sortedData.map((item) => ({
-      ...item,
-      percentage: total > 0 ? Math.round((item.amount / total) * 100) : 0
-    }));
+    return data;
   }, [transactions, t]);
 
-  const topCategories = useMemo(() => {
-    return categoryData.slice(0, 4);
+  const totalExpenses = useMemo(() => {
+    return categoryData.reduce((sum, item) => sum + item.value, 0);
   }, [categoryData]);
 
-  const drawPie = useMemo(() => {
-    if (categoryData.length === 0) return null;
-
-    const size = 180;
-    const radius = 70;
-    let currentAngle = -90;
-
-    const segments = categoryData.map((item) => {
-      const sliceAngle = (item.percentage / 100) * 360;
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + sliceAngle;
-      
-      const startRad = (startAngle * Math.PI) / 180;
-      const endRad = (endAngle * Math.PI) / 180;
-      
-      const x1 = size / 2 + radius * Math.cos(startRad);
-      const y1 = size / 2 + radius * Math.sin(startRad);
-      const x2 = size / 2 + radius * Math.cos(endRad);
-      const y2 = size / 2 + radius * Math.sin(endRad);
-      
-      const largeArc = sliceAngle > 180 ? 1 : 0;
-      
-      const path = `M ${size / 2} ${size / 2} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-      
-      currentAngle = endAngle;
-      
-      return {
-        path,
-        color: CATEGORY_COLORS[item.category] || CATEGORY_COLORS.other,
-        category: item.category,
-        percentage: item.percentage
-      };
-    });
-
-    return segments;
-  }, [categoryData]);
-
-  if (categoryData.length === 0) {
+  if (!categoryData || categoryData.length === 0) {
     return (
-      <GlassCard>
-        <h3 className="card-title">📊 {t("expenses")}</h3>
-        <p className="card-hint" style={{ marginTop: "12px", color: "#a0aec0" }}>
+      <div style={{ background: "#1a202c", border: "1px solid #404854", borderRadius: "20px", padding: "28px" }}>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px" }}>
+          📊 {t("expensesByCategory")}
+        </h2>
+        <p style={{ marginTop: "12px", color: "#a0aec0" }}>
           {t("noData")}
         </p>
-      </GlassCard>
+      </div>
     );
   }
 
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      return (
+        <div style={{
+          background: "#1a202c",
+          border: "1px solid #404854",
+          borderRadius: "8px",
+          padding: "10px 12px",
+          color: "#ffffff",
+          fontSize: "0.9rem",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
+        }}>
+          <p style={{ margin: 0, fontWeight: "600" }}>{data.name}</p>
+          <p style={{ margin: "4px 0 0 0", color: "#2f6bff", fontWeight: "700" }}>
+            {formatAmount(data.value)}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <GlassCard>
-      <div className="pie-header">
-        <h3 className="card-title">📊 {t("expensesByCategory")}</h3>
+    <div style={{ background: "#1a202c", border: "1px solid #404854", borderRadius: "20px", padding: "28px", display: "flex", flexDirection: "column", height: "100%" }}>
+      <div style={{ marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px" }}>
+          💰 {t("expensesByCategory")}
+        </h2>
+        <div style={{ fontSize: "0.875rem", color: "#a0aec0" }}>
+          {t("totalSpent")}: <span style={{ color: "#ffffff", fontWeight: "600" }}>{formatAmount(Math.round(totalExpenses))}</span>
+        </div>
       </div>
 
-      <div className="pie-container">
-        <div className="pie-chart-wrapper">
-          <svg width="200" height="200" viewBox="0 0 200 200" style={{ filter: "drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2))" }}>
-            {drawPie && drawPie.map((segment, index) => (
-              <path
-                key={index}
-                d={segment.path}
-                fill={segment.color}
-                opacity="0.9"
-                style={{ transition: "opacity 0.2s ease" }}
-              />
-            ))}
-          </svg>
-        </div>
+      <div style={{ marginBottom: "24px", flex: 1, display: "flex", alignItems: "center" }}>
+        <ResponsiveContainer width="100%" height={250}>
+          <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+            <Pie
+              data={categoryData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+              startAngle={90}
+              endAngle={450}
+            >
+              {categoryData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other}
+                />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "transparent" }} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
 
-        <div className="pie-legend">
-          {topCategories.map((item) => (
-            <div key={item.category} className="legend-item">
-              <div 
-                className="legend-dot" 
-                style={{ backgroundColor: CATEGORY_COLORS[item.category] || CATEGORY_COLORS.other }}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px" }}>
+        {categoryData.slice(0, 4).map((item) => (
+          <div key={`summary-${item.category}`} style={{ paddingBottom: "12px", borderBottom: "1px solid rgba(64, 72, 84, 0.3)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+              <div
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  backgroundColor: CATEGORY_COLORS[item.category] || CATEGORY_COLORS.other
+                }}
               />
-              <div className="legend-content">
-                <div className="legend-label">{item.label}</div>
-                <div className="legend-value">{item.percentage}%</div>
-              </div>
+              <span style={{ fontSize: "0.9rem", color: "#ffffff", fontWeight: "500" }}>
+                {item.name}
+              </span>
             </div>
-          ))}
-        </div>
+            <div style={{ fontSize: "1.125rem", fontWeight: "700", color: "#ffffff", marginLeft: "16px" }}>
+              {formatAmount(Math.round(item.value))}
+            </div>
+          </div>
+        ))}
       </div>
-    </GlassCard>
+    </div>
   );
 }

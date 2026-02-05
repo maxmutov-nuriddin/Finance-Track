@@ -842,21 +842,27 @@ export default function Dashboard() {
           warning={status.message}
           onOpenSettings={() => navigate("/settings")}
         />
-        <StatsCard
-          stats={stats}
-          periodLabel={t("periodMonth")}
-          monthlyNet={factMonthlyNet}
-          series={chartSeries}
-          dailyLimit={dailyLimitFixed}
-          dailyRemaining={dailyLimitRemaining}
-          daysInMonth={periodDays}
-          range={chartRange}
-          onRangeChange={setChartRange}
-        />
+        <div className="stats-split-container">
+          <div className="stats-split-main">
+            <StatsCard
+              stats={stats}
+              periodLabel={t("periodMonth")}
+              monthlyNet={factMonthlyNet}
+              series={chartSeries}
+              dailyLimit={dailyLimitFixed}
+              dailyRemaining={dailyLimitRemaining}
+              daysInMonth={periodDays}
+              range={chartRange}
+              onRangeChange={setChartRange}
+            />
+          </div>
+          <div className="stats-split-side">
+            <ExpenseCategoriesPie transactions={periodTransactions} />
+          </div>
+        </div>
       </div>
       <div className="dashboard-side">
         <PaymentsOverview payments={payments} />
-        <ExpenseCategoriesPie transactions={periodTransactions} />
         {import.meta.env.DEV && (
           <details className="glass-card">
             <summary className="card-title dev-summary">Проверка расчётов (dev)</summary>
