@@ -10,6 +10,7 @@
   limit,
   serverTimestamp,
   setDoc,
+  runTransaction,
   writeBatch,
   increment
 } from "firebase/firestore";
@@ -22,6 +23,35 @@ export function addTransaction(uid, payload) {
     ...payload,
     amount: Math.round(Number(payload.amount || 0)),
     createdAt: serverTimestamp()
+  });
+}
+
+export async function addTransfer(uid, payload) {
+  const amount = Math.round(Number(payload?.amount || 0));
+  if (!amount || amount <= 0) return;
+  const direction = payload?.direction === "spend_to_wallet" ? "spend_to_wallet" : "wallet_to_spend";
+  const settingsRef = doc(db, `users/${uid}/settings/main`);
+  const txRef = doc(collection(db, `users/${uid}/transactions`));
+  return runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(settingsRef);
+    const current = Number(snap.exists() ? snap.data()?.walletBalance || 0 : 0);
+    const delta = direction === "wallet_to_spend" ? -amount : amount;
+    if (direction === "wallet_to_spend" && current < amount) {
+      throw new Error("wallet_insufficient");
+    }
+    const nextBalance = Math.max(0, current + delta);
+    transaction.set(settingsRef, { walletBalance: nextBalance }, { merge: true });
+    transaction.set(txRef, {
+      amount,
+      createdAt: serverTimestamp(),
+      occurredAt: payload?.occurredAt || nowInTashkent(),
+      occurredAtISO: payload?.occurredAtISO || formatISOWithOffset(getTzParts(nowInTashkent())),
+      category: "carryover",
+      type: direction === "wallet_to_spend" ? "income" : "expense",
+      description: payload?.description || "Перевод",
+      raw: payload?.raw || "",
+      meta: { kind: "transfer", direction }
+    });
   });
 }
 
@@ -43,6 +73,7 @@ export function deleteTransaction(uid, id) {
 export function addGoal(uid, payload) {
   return addDoc(collection(db, `users/${uid}/goals`), {
     ...payload,
+    savedAmount: Math.round(Number(payload.currentAmount || payload.savedAmount || 0)),
     createdAt: serverTimestamp()
   });
 }
@@ -114,11 +145,15 @@ export function updateDebt(uid, id, payload) {
 }
 
 export function adjustWalletBalance(uid, delta) {
-  return setDoc(
-    doc(db, `users/${uid}/settings/main`),
-    { walletBalance: increment(Math.round(Number(delta || 0))) },
-    { merge: true }
-  );
+  const change = Math.round(Number(delta || 0));
+  if (!change) return Promise.resolve();
+  const ref = doc(db, `users/${uid}/settings/main`);
+  return runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(ref);
+    const current = Number(snap.exists() ? snap.data()?.walletBalance || 0 : 0);
+    const nextBalance = Math.max(0, current + change);
+    transaction.set(ref, { walletBalance: nextBalance }, { merge: true });
+  });
 }
 
 export function watchPayments(uid, callback) {
@@ -144,6 +179,7 @@ export async function addGoalContribution(uid, goalId, amount, goalTitle = "") {
     goalRef,
     {
       currentAmount: increment(safeAmount),
+      savedAmount: increment(safeAmount),
       updatedAt: serverTimestamp()
     },
     { merge: true }
@@ -157,7 +193,8 @@ export async function addGoalContribution(uid, goalId, amount, goalTitle = "") {
     category: "other",
     type: "expense",
     description: goalTitle ? `Накопление: ${goalTitle}` : "Накопление",
-    raw: goalTitle ? `накопить ${safeAmount} ${goalTitle}` : `накопить ${safeAmount}`
+    raw: goalTitle ? `накопить ${safeAmount} ${goalTitle}` : `накопить ${safeAmount}`,
+    meta: { goalId, kind: "goal_contribution" }
   });
   await batch.commit();
 }
@@ -172,6 +209,28 @@ export function completeGoal(uid, goalId) {
     },
     { merge: true }
   );
+}
+
+export async function withdrawGoalAmount(uid, goalId, amount) {
+  const safeAmount = Math.round(Number(amount || 0));
+  if (!safeAmount || safeAmount <= 0) return;
+  const goalRef = doc(db, `users/${uid}/goals/${goalId}`);
+  const settingsRef = doc(db, `users/${uid}/settings/main`);
+  return runTransaction(db, async (transaction) => {
+    const goalSnap = await transaction.get(goalRef);
+    if (!goalSnap.exists()) return;
+    const data = goalSnap.data() || {};
+    const current = Math.max(0, Number(data.currentAmount ?? data.savedAmount ?? 0));
+    const withdraw = Math.min(current, safeAmount);
+    if (withdraw <= 0) return;
+    const nextAmount = current - withdraw;
+    transaction.set(
+      goalRef,
+      { currentAmount: nextAmount, savedAmount: nextAmount, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+    transaction.set(settingsRef, { walletBalance: increment(withdraw) }, { merge: true });
+  });
 }
 
 export function watchLast14Or30(uid, days, callback) {

@@ -1,127 +1,127 @@
-import { useMemo } from "react";
-import { addMonthsInTz, formatDateISO, getTzParts, makeTashkentDate } from "../lib/timezone";
+﻿import { useMemo, useState } from "react";
 import GlassCard from "./GlassCard";
 import GlassButton from "./GlassButton";
 import { formatAmount } from "../lib/format";
 import { useI18n } from "./I18nProvider";
+import ModalPortal from "./ModalPortal";
 
-function formatRuDate(isoDate) {
-  const [year, month, day] = isoDate.split("-");
-  return `${day}.${month}.${year}`;
-}
-
-function computeAutoDateISO(monthsToGoal) {
-  const base = makeTashkentDate(getTzParts(new Date()));
-  const parts = addMonthsInTz(base, monthsToGoal);
-  return formatDateISO(parts);
+function formatShortDate(isoDate, lang) {
+  if (!isoDate) return "";
+  const date = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return isoDate;
+  const locale = lang === "uz" ? "uz-UZ" : "ru-RU";
+  return date.toLocaleDateString(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
 }
 
 export default function GoalPanel({
   goals,
-  dailyNet,
   onDelete,
   onContribute,
+  onWithdraw,
   onComplete,
   deletingIds,
-  activeGoalId,
-  targetSavingsMode,
-  fixedMonthlySavings,
-  plannedMonthlySavings
+  activeGoalId
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const [editGoalId, setEditGoalId] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+
+  const closeEdit = () => {
+    setEditGoalId("");
+    setEditAmount("");
+  };
+
+  const handleWithdraw = (goal) => {
+    const amount = Math.round(Number(editAmount || 0));
+    if (!amount || amount <= 0) return;
+    onWithdraw?.(goal, amount);
+    closeEdit();
+  };
 
   const renderedGoals = useMemo(
     () =>
       goals.map((goal) => {
-        const contributionAmount = Math.max(0, Math.round(plannedMonthlySavings || 0));
-        const isActive = activeGoalId ? goal.id === activeGoalId : false;
-        const saved = Number(goal.currentAmount || 0);
-        const remaining = Math.max(0, goal.targetAmount - saved);
+        const title = goal.title || goal.name || goal.goalTitle || t("goalDefaultTitle");
+        const saved = Number(
+          goal.saved ?? goal.currentAmount ?? goal.savedAmount ?? 0
+        );
+        const targetAmount = Number(goal.targetAmount || 0);
+        const remaining = Number.isFinite(goal.remaining)
+          ? goal.remaining
+          : Math.max(0, targetAmount - saved);
         const isCompleted = Boolean(goal.isCompleted || goal.completedAt) || remaining <= 0;
-        const canContribute = isActive && contributionAmount > 0 && !isCompleted;
+        const progress = Number.isFinite(goal.progress)
+          ? goal.progress
+          : targetAmount
+            ? Math.min(100, Math.round((saved / targetAmount) * 100))
+            : 0;
+        const recommendedMonthly = Math.max(0, Math.round(Number(goal.recommendedMonthly || 0)));
+        const monthsLeft = typeof goal.monthsLeft === "number" ? goal.monthsLeft : null;
+        const forecastDate = goal.forecastDateISO ? formatShortDate(goal.forecastDateISO, lang) : "";
+        const status = goal.status || (isCompleted ? "done" : recommendedMonthly > 0 ? "ok" : "paused");
+        const statusLabel =
+          status === "risk"
+            ? t("goalStatusRisk")
+            : status === "paused"
+              ? t("goalStatusPaused")
+              : t("goalStatusOk");
+        const statusClass =
+          status === "risk"
+            ? "goal-badge-risk"
+            : status === "paused"
+              ? "goal-badge-paused"
+              : "goal-badge-ok";
+        const isActive = activeGoalId ? goal.id === activeGoalId : false;
+        const canContribute = isActive && recommendedMonthly > 0 && !isCompleted;
         const canComplete = remaining <= 0 && !goal.isCompleted;
-        let forecast = "";
-        let perMonth = "";
-        let perDay = "";
-        let autoLabel = "";
-        let autoHint = "";
-        const progress = goal.targetAmount
-          ? Math.min(100, Math.round((saved / goal.targetAmount) * 100))
-          : 0;
+        const canWithdraw = saved > 0;
+        const isEditing = editGoalId === goal.id;
 
-        const manualDateISO = goal.manualTargetDateISO || goal.targetDateISO;
-
-        if (manualDateISO) {
-          const target = new Date(`${manualDateISO}T00:00:00`);
-          const today = new Date();
-          const diffDays = Math.max(
-            1,
-            Math.ceil((target.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
-          );
-          const needed = Math.ceil(remaining / diffDays);
-          perDay = t("goalNeedPerDay", { amount: formatAmount(needed) });
-        } else if (dailyNet <= 0) {
-          autoLabel = t("goalNoProgress");
-          autoHint = t("goalAutoHintNew");
-        } else {
-          const isActiveGoal = activeGoalId && goal.id === activeGoalId;
-          const monthlyContribution = isActiveGoal
-            ? Math.max(1, Math.round(plannedMonthlySavings || 0))
-            : Math.max(1, Math.ceil(remaining / 6));
-          const monthsToGoal = Math.max(1, Math.ceil(remaining / monthlyContribution));
-          const autoDateISO = computeAutoDateISO(monthsToGoal);
-          autoLabel = t("goalBuyBy", { date: formatRuDate(autoDateISO) });
-          autoHint = t("goalAutoHintChange");
-          forecast = t("goalBuyIn", { months: monthsToGoal });
-          const perMonthNeeded = isActiveGoal
-            ? monthlyContribution
-            : Math.ceil(remaining / Math.max(1, monthsToGoal));
-          perMonth = t("goalNeedPerMonth", { amount: formatAmount(perMonthNeeded) });
-        }
-
-        if (targetSavingsMode === "fixed" && fixedMonthlySavings) {
-          if (activeGoalId && goal.id === activeGoalId) {
-            perMonth = t("goalFixedActive", { amount: formatAmount(fixedMonthlySavings) });
-          } else if (activeGoalId) {
-            perMonth = t("goalFixedQueue");
-          } else {
-            perMonth = t("goalFixed", { amount: formatAmount(fixedMonthlySavings) });
-          }
-        } else {
-          const monthsRaw = manualDateISO
-            ? Math.ceil((new Date(manualDateISO) - new Date()) / (1000 * 60 * 60 * 24 * 30))
-            : 6;
-          const months = Math.max(1, monthsRaw);
-          const needed = Math.ceil(remaining / months);
-
-          if (!activeGoalId) {
-            perMonth = t("goalIfActive", { amount: formatAmount(needed) });
-          } else if (goal.id !== activeGoalId) {
-            perMonth = t("goalIfActive", { amount: formatAmount(needed) });
-          } else {
-            perMonth = t("goalFixedActive", { amount: formatAmount(plannedMonthlySavings) });
+        const hints = [];
+        if (!isCompleted) {
+          hints.push(t("goalRecommendedMonthly", { amount: formatAmount(recommendedMonthly) }));
+          if (monthsLeft === null) {
+            hints.push(t("goalForecastUnavailable"));
+          } else if (monthsLeft > 0) {
+            hints.push(t("goalMonthsLeft", { months: monthsLeft }));
+            if (forecastDate) {
+              hints.push(t("goalFinishDate", { date: forecastDate }));
+            }
           }
         }
 
         return {
           ...goal,
-          contributionAmount,
-          canContribute,
-          isActive,
-          isCompleted,
-          canComplete,
+          title,
           saved,
+          targetAmount,
           remaining,
-          forecast,
-          perMonth,
-          perDay,
-          autoLabel,
-          autoHint,
-          manualDateISO,
-          progress
+          isCompleted,
+          progress,
+          recommendedMonthly,
+          monthsLeft,
+          forecastDate,
+          status,
+          statusLabel,
+          statusClass,
+          isActive,
+          canContribute,
+          canComplete,
+          canWithdraw,
+          isEditing,
+          hints
         };
       }),
-    [goals, dailyNet, t, activeGoalId, targetSavingsMode, fixedMonthlySavings, plannedMonthlySavings]
+    [goals, t, lang, activeGoalId, editGoalId]
+  );
+
+  const editingGoal = useMemo(
+    () => renderedGoals.find((goal) => goal.id === editGoalId) || null,
+    [renderedGoals, editGoalId]
   );
 
   return (
@@ -131,20 +131,21 @@ export default function GoalPanel({
         <div className="goals-count">{goals.length}</div>
       </div>
 
-      {targetSavingsMode === "goal_based" && !activeGoalId && (
-        <div className="alert" style={{ marginBottom: 20 }}>
-          {t("chooseMainGoal")}
-        </div>
-      )}
-
       <div className="goals-items">
         {renderedGoals.map((goal) => (
           <div className={`goal-item ${goal.isActive ? "active" : ""} ${goal.isCompleted ? "completed" : ""}`} key={goal.id}>
             <div className="goal-item-header">
               <div className="goal-item-title">
-                {goal.title}
-                {goal.isCompleted && <span className="goal-badge-completed">✓ {t("goalCompleted")}</span>}
-                {goal.isActive && !goal.isCompleted && <span className="goal-badge-active">⭐ {t("active")}</span>}
+                <span className="goal-title-text">{goal.title}</span>
+                {goal.isCompleted && (
+                  <span className="goal-badge-completed">{t("goalCompleted")}</span>
+                )}
+                {!goal.isCompleted && (
+                  <span className={goal.statusClass}>{goal.statusLabel}</span>
+                )}
+                {goal.isActive && !goal.isCompleted && (
+                  <span className="goal-badge-active">{t("active")}</span>
+                )}
               </div>
               <div className="goal-item-progress-percent">{goal.progress}%</div>
             </div>
@@ -170,22 +171,32 @@ export default function GoalPanel({
               </div>
             </div>
 
-            <div className="goal-item-hints">
-              {goal.perMonth && <div className="goal-hint">📅 {goal.perMonth}</div>}
-              {goal.perDay && <div className="goal-hint">⏱️ {goal.perDay}</div>}
-              {goal.autoLabel && (
-                <div className="goal-hint">
-                  🎯 {goal.autoLabel}
-                  {goal.autoHint && <div style={{ fontSize: "0.8rem", marginTop: 4 }}>{goal.autoHint}</div>}
-                </div>
-              )}
-              {!goal.autoLabel && goal.forecast && <div className="goal-hint">📈 {goal.forecast}</div>}
-            </div>
+            {goal.hints.length > 0 && (
+              <div className="goal-item-hints">
+                {goal.hints.map((hint, index) => (
+                  <div className="goal-hint" key={`${goal.id}-hint-${index}`}>
+                    {hint}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="goal-item-actions">
               {goal.canContribute && (
                 <GlassButton onClick={() => onContribute?.(goal)} className="goal-action-btn">
-                  {t("goalContribute", { amount: formatAmount(goal.contributionAmount) })}
+                  {t("goalContribute", { amount: formatAmount(goal.recommendedMonthly) })}
+                </GlassButton>
+              )}
+              {goal.canWithdraw && (
+                <GlassButton
+                  variant="ghost"
+                  onClick={() => {
+                    setEditGoalId(goal.id);
+                    setEditAmount("");
+                  }}
+                  className="goal-edit-btn"
+                >
+                  {t("goalEdit")}
                 </GlassButton>
               )}
               {goal.canComplete && (
@@ -199,18 +210,64 @@ export default function GoalPanel({
                 disabled={deletingIds?.has(goal.id)}
                 className="goal-delete-btn"
               >
-                ✕
+                x
               </GlassButton>
             </div>
+
           </div>
         ))}
         {!goals.length && (
           <div className="goals-empty">
-            <div className="empty-icon">🎯</div>
+            <div className="empty-icon">-</div>
             <div className="empty-text">{t("noGoals")}</div>
           </div>
         )}
       </div>
+
+      {editingGoal && (
+        <ModalPortal>
+          <div className="modal-backdrop" onClick={closeEdit}>
+            <div className="modal" onClick={(event) => event.stopPropagation()}>
+              <div className="modal-header">
+                <div>
+                  <strong>{t("goalEdit")}</strong>
+                  <div className="modal-hint">{editingGoal.title}</div>
+                </div>
+                <GlassButton variant="ghost" onClick={closeEdit}>
+                  {t("close")}
+                </GlassButton>
+              </div>
+              <div className="modal-body">
+                <div className="modal-card">
+                  <div className="modal-label">{t("amount")}</div>
+                  <input
+                    className="glass-input"
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    placeholder={t("amount")}
+                    value={editAmount}
+                    onChange={(event) => setEditAmount(event.target.value)}
+                  />
+                  <div className="helper-text">
+                    {t("savedAmount")}: {formatAmount(editingGoal.saved)}
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <GlassButton onClick={() => handleWithdraw(editingGoal)}>
+                    {t("goalWithdraw")}
+                  </GlassButton>
+                  <GlassButton variant="ghost" onClick={closeEdit}>
+                    {t("close")}
+                  </GlassButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </GlassCard>
   );
 }
+
+

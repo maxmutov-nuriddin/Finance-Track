@@ -9,11 +9,29 @@ export default function TransactionList({ items, onDelete }) {
   const { t } = useI18n();
   const categoryOptions = [
     { value: "all", label: t("categoryAll") },
+    { value: "cafe", label: t("categoryCafe") },
+    { value: "groceries", label: t("categoryGroceries") },
     { value: "food", label: t("categoryFood") },
     { value: "transport", label: t("categoryTransport") },
+    { value: "clothes", label: t("categoryClothes") },
+    { value: "beauty", label: t("categoryBeauty") },
+    { value: "kids", label: t("categoryKids") },
+    { value: "gifts", label: t("categoryGifts") },
+    { value: "pets", label: t("categoryPets") },
+    { value: "travel", label: t("categoryTravel") },
+    { value: "home", label: t("categoryHome") },
+    { value: "subscriptions", label: t("categorySubscriptions") },
+    { value: "taxes", label: t("categoryTaxes") },
+    { value: "utilities", label: t("categoryUtilities") },
+    { value: "shopping", label: t("categoryShopping") },
+    { value: "entertainment", label: t("categoryEntertainment") },
+    { value: "education", label: t("categoryEducation") },
+    { value: "personal", label: t("categoryPersonal") },
     { value: "credit", label: t("categoryCredit") },
+    { value: "debt", label: t("categoryDebt") },
     { value: "rent", label: t("categoryRent") },
     { value: "health", label: t("categoryHealth") },
+    { value: "carryover", label: t("categoryCarryover") },
     { value: "other", label: t("categoryOther") }
   ];
   const typeOptions = [
@@ -28,21 +46,57 @@ export default function TransactionList({ items, onDelete }) {
   const [to, setTo] = useState("");
 
   const categoryLabel = (key) => {
+    if (key === "cafe") return t("categoryCafe");
+    if (key === "groceries") return t("categoryGroceries");
     if (key === "food") return t("categoryFood");
     if (key === "transport") return t("categoryTransport");
+    if (key === "clothes") return t("categoryClothes");
+    if (key === "beauty") return t("categoryBeauty");
+    if (key === "kids") return t("categoryKids");
+    if (key === "gifts") return t("categoryGifts");
+    if (key === "pets") return t("categoryPets");
+    if (key === "travel") return t("categoryTravel");
+    if (key === "home") return t("categoryHome");
+    if (key === "subscriptions") return t("categorySubscriptions");
+    if (key === "taxes") return t("categoryTaxes");
+    if (key === "utilities") return t("categoryUtilities");
+    if (key === "shopping") return t("categoryShopping");
+    if (key === "entertainment") return t("categoryEntertainment");
+    if (key === "education") return t("categoryEducation");
+    if (key === "personal") return t("categoryPersonal");
     if (key === "credit") return t("categoryCredit");
+    if (key === "debt") return t("categoryDebt");
     if (key === "rent") return t("categoryRent");
     if (key === "health") return t("categoryHealth");
+    if (key === "carryover") return t("categoryCarryover");
     return t("categoryOther");
   };
 
   const getCategoryIcon = (category) => {
     const icons = {
+      cafe: "☕",
+      groceries: "🛒",
       food: "🍔",
       transport: "🚗",
+      clothes: "👕",
+      beauty: "💄",
+      kids: "🧸",
+      gifts: "🎁",
+      pets: "🐾",
+      travel: "✈️",
+      home: "🏠",
+      subscriptions: "🔔",
+      taxes: "🧾",
+      utilities: "💡",
+      shopping: "🛍️",
+      entertainment: "🎬",
+      education: "🎓",
+      personal: "🙂",
       credit: "💳",
+      debt: "🧾",
       rent: "🏠",
       health: "🏥",
+      carryover: "🔁",
       other: "📌"
     };
     return icons[category] || "📌";

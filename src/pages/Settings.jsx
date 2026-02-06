@@ -48,6 +48,24 @@ export default function Settings() {
     };
   }, [user]);
 
+  const isGoalCompleted = (goal) => {
+    if (goal?.isCompleted || goal?.completedAt) return true;
+    const saved = Number(goal?.currentAmount ?? goal?.savedAmount ?? 0);
+    const target = Number(goal?.targetAmount ?? 0);
+    if (!Number.isFinite(target) || target <= 0) return false;
+    return saved >= target;
+  };
+
+  const activeGoalOptions = goals.filter((goal) => !isGoalCompleted(goal));
+
+  useEffect(() => {
+    if (!activeGoalId) return;
+    const exists = activeGoalOptions.some((goal) => goal.id === activeGoalId);
+    if (!exists) {
+      setActiveGoalId("");
+    }
+  }, [activeGoalId, activeGoalOptions]);
+
   const handleSave = async () => {
     await saveSettings(user.uid, {
       budgetMode,
@@ -173,7 +191,7 @@ export default function Settings() {
                   className="settings-select"
                 >
                   <option value="">{t("chooseGoal")}</option>
-                  {goals.map((goal) => (
+                  {activeGoalOptions.map((goal) => (
                     <option key={goal.id} value={goal.id}>
                       {goal.title}
                     </option>

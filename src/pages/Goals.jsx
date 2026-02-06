@@ -1,37 +1,32 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import GoalPanel from "../components/GoalPanel";
-import StatsCard from "../components/StatsCard";
 import { useUser } from "../lib/user";
 import {
   addGoalContribution,
   completeGoal,
   deleteGoalWithRefund,
-  saveSettings,
+  withdrawGoalAmount,
+  watchDebts,
   watchGoals,
   watchPayments,
   watchSettings,
   watchTransactions
 } from "../lib/store";
-import { computeStats } from "../lib/calcs";
-import {
-  computeMandatoryMonthly,
-  computeMonthlyExpense,
-  computeMonthlyIncome,
-  computeRequiredMonthlySavings,
-  getActiveGoal
-} from "../lib/budgetCalc";
-import { filterByOccurredAtISO, getMonthKey, getMonthRange } from "../lib/utils";
+import { buildMonthlyPlan, computeGoalPlan } from "../lib/budgetPlan";
+import { formatDateISO, getTzParts, nowInTashkent } from "../lib/timezone";
 import { useI18n } from "../components/I18nProvider";
 import { Target } from "lucide-react";
+import { formatAmount } from "../lib/format";
 
 export default function Goals() {
   const user = useUser();
   const { t } = useI18n();
   const [goals, setGoals] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [debts, setDebts] = useState([]);
   const [settings, setSettings] = useState(null);
   const [allTransactions, setAllTransactions] = useState([]);
-  const [monthTick, setMonthTick] = useState(getMonthKey(new Date()));
+  const [dayTick, setDayTick] = useState(() => formatDateISO(getTzParts(nowInTashkent())));
   const [deletingIds, setDeletingIds] = useState(() => new Set());
   const [deleteMessage, setDeleteMessage] = useState("");
 
@@ -47,6 +42,11 @@ export default function Goals() {
 
   useEffect(() => {
     if (!user) return;
+    return watchDebts(user.uid, setDebts);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
     return watchSettings(user.uid, setSettings);
   }, [user]);
 
@@ -57,46 +57,39 @@ export default function Goals() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const nextKey = getMonthKey(new Date());
-      setMonthTick((prev) => (prev === nextKey ? prev : nextKey));
+      const nextKey = formatDateISO(getTzParts(nowInTashkent()));
+      setDayTick((prev) => (prev === nextKey ? prev : nextKey));
     }, 60000);
     return () => clearInterval(timer);
   }, []);
 
-  const periodRange = useMemo(() => getMonthRange(), [allTransactions.length, monthTick]);
-  const statsTransactions = useMemo(
-    () => filterByOccurredAtISO(allTransactions, periodRange.start, periodRange.end),
-    [allTransactions, periodRange]
+  const plan = useMemo(
+    () =>
+      buildMonthlyPlan({
+        wallet: Number(settings?.walletBalance || 0),
+        transactions: allTransactions,
+        payments,
+        debts,
+        settings,
+        now: nowInTashkent()
+      }),
+    [allTransactions, payments, debts, settings, dayTick]
   );
-  const stats = useMemo(() => computeStats(statsTransactions), [statsTransactions]);
-  const periodDays = periodRange.days;
-  const monthlyIncome = useMemo(
-    () => computeMonthlyIncome(statsTransactions, periodDays),
-    [statsTransactions, periodDays]
+
+  const computedGoals = useMemo(
+    () => goals.map((goal) => ({ ...goal, ...computeGoalPlan(goal, plan, settings) })),
+    [goals, plan, settings]
   );
-  const monthlyExpense = useMemo(
-    () => computeMonthlyExpense(statsTransactions, periodDays),
-    [statsTransactions, periodDays]
-  );
-  const monthlyMandatory = useMemo(
-    () => computeMandatoryMonthly(payments, new Date()),
-    [payments]
-  );
-  const activeGoal = useMemo(() => getActiveGoal(goals, settings), [goals, settings]);
+
   const activeGoalId = useMemo(
     () => settings?.activeGoalId || (goals[0]?.id || ""),
     [settings, goals]
   );
-  const plannedMonthlySavings = useMemo(
-    () => computeRequiredMonthlySavings(activeGoal, stats.net, settings),
-    [activeGoal, settings, stats.net]
+
+  const totalSaved = useMemo(
+    () => goals.reduce((sum, g) => sum + Number(g.currentAmount || 0), 0),
+    [goals]
   );
-  const plannedMonthlyNet = useMemo(
-    () => monthlyIncome - monthlyMandatory - plannedMonthlySavings,
-    [monthlyIncome, monthlyMandatory, plannedMonthlySavings]
-  );
-  const dailyNet = useMemo(() => plannedMonthlyNet / 30, [plannedMonthlyNet]);
-  const factMonthlyNet = useMemo(() => stats.net, [stats.net]);
 
   return (
     <div className="goals-container">
@@ -121,24 +114,20 @@ export default function Goals() {
         <div className="stat-card">
           <div className="stat-card-label">{t("goalCompleted")}</div>
           <div className="stat-card-value" style={{ color: "#22c55e" }}>
-            {goals.filter(g => g.isCompleted || g.completedAt).length}
+            {goals.filter((g) => g.isCompleted || g.completedAt).length}
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-card-label">{t("totalSaved")}</div>
           <div className="stat-card-value" style={{ color: "#a855f7" }}>
-            {(goals.reduce((sum, g) => sum + (Number(g.currentAmount || 0)), 0)).toLocaleString()}
+            {formatAmount(totalSaved)}
           </div>
         </div>
       </div>
 
       <GoalPanel
-        goals={goals}
-        dailyNet={dailyNet}
-        plannedMonthlySavings={plannedMonthlySavings}
+        goals={computedGoals}
         activeGoalId={activeGoalId}
-        targetSavingsMode={settings?.targetSavingsMode || "goal_based"}
-        fixedMonthlySavings={settings?.fixedMonthlySavings || 0}
         deletingIds={deletingIds}
         onDelete={async (id) => {
           if (deletingIds.has(id)) return;
@@ -159,11 +148,19 @@ export default function Goals() {
             setTimeout(() => setDeleteMessage(""), 2000);
           }
         }}
-        onContribute={(goal) =>
-          addGoalContribution(user.uid, goal.id, plannedMonthlySavings, goal.title)
-        }
+        onContribute={(goal) => {
+          if (!user) return;
+          const amount = Math.max(0, Math.round(Number(goal.recommendedMonthly || 0)));
+          const title = goal.title || goal.name || goal.goalTitle || t("goalDefaultTitle");
+          return addGoalContribution(user.uid, goal.id, amount, title);
+        }}
+        onWithdraw={(goal, amount) => {
+          if (!user) return;
+          return withdrawGoalAmount(user.uid, goal.id, amount);
+        }}
         onComplete={(goal) => completeGoal(user.uid, goal.id)}
       />
     </div>
   );
 }
+

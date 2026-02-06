@@ -391,7 +391,7 @@ export default function Dashboard() {
       const description = (item.description || "").toLowerCase();
       const raw = (item.raw || "").toLowerCase();
       const isGoal = description.includes("накоп") || raw.includes("накоп");
-      const isDebt = category === "credit" || raw.includes("долг") || raw.includes("кредит");
+      const isDebt = category === "credit" || category === "debt" || raw.includes("долг") || raw.includes("кредит");
       if (isGoal || isDebt) {
         return sum + Number(item.amount || 0);
       }
@@ -554,6 +554,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user || !settings) return;
+    if (walletBalance < 0) {
+      saveSettings(user.uid, { walletBalance: 0 });
+      return;
+    }
     const currentMonthKey = getMonthKey(new Date());
     if (walletMonthKey === currentMonthKey) return;
 
@@ -612,8 +616,10 @@ export default function Dashboard() {
     const appliedForMonth = overspendAppliedMonthKey === currentMonthKey ? overspendAppliedAmount : 0;
     const delta = Math.max(0, overspend - appliedForMonth);
     if (delta <= 0) return;
+    const safeWallet = Math.max(0, Number(walletBalance || 0));
+    const nextBalance = Math.max(0, safeWallet - delta);
     saveSettings(user.uid, {
-      walletBalance: walletBalance - delta,
+      walletBalance: nextBalance,
       overspendAppliedMonthKey: currentMonthKey,
       overspendAppliedAmount: appliedForMonth + delta
     });

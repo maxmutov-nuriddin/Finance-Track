@@ -6,10 +6,13 @@ import {
   addDebt,
   addGoal,
   addPayment,
+  addTransfer,
   addTransaction,
   adjustWalletBalance,
   updateDebt,
   watchDebts,
+  watchPayments,
+  watchTransactions,
   watchSettings
 } from "../lib/store";
 import GlassButton from "./GlassButton";
@@ -18,6 +21,7 @@ import { formatAmount } from "../lib/format";
 import ModalPortal from "./ModalPortal";
 import { useI18n } from "./I18nProvider";
 import { getMonthRangeFor } from "../lib/utils";
+import { computeMandatoryMonthly, computeRecommendedSpend } from "../lib/budgetCalc";
 
 export default function QuickAddModal() {
   const user = useUser();
@@ -34,16 +38,36 @@ export default function QuickAddModal() {
   const [useCustomDate, setUseCustomDate] = useState(false);
   const [customDateISO, setCustomDateISO] = useState("");
   const [debtMode, setDebtMode] = useState("none");
+  const [transferMode, setTransferMode] = useState("none");
   const [debts, setDebts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [selectedDebtId, setSelectedDebtId] = useState("");
   const [settings, setSettings] = useState(null);
   const categoryLabel = (key) => {
     if (key === "income") return t("typeIncome");
+    if (key === "cafe") return t("categoryCafe");
+    if (key === "groceries") return t("categoryGroceries");
     if (key === "food") return t("categoryFood");
     if (key === "transport") return t("categoryTransport");
+    if (key === "clothes") return t("categoryClothes");
+    if (key === "beauty") return t("categoryBeauty");
+    if (key === "kids") return t("categoryKids");
+    if (key === "gifts") return t("categoryGifts");
+    if (key === "pets") return t("categoryPets");
+    if (key === "travel") return t("categoryTravel");
+    if (key === "home") return t("categoryHome");
+    if (key === "subscriptions") return t("categorySubscriptions");
+    if (key === "taxes") return t("categoryTaxes");
+    if (key === "entertainment") return t("categoryEntertainment");
+    if (key === "shopping") return t("categoryShopping");
+    if (key === "utilities") return t("categoryUtilities");
     if (key === "credit") return t("categoryCredit");
+    if (key === "debt") return t("categoryDebt");
     if (key === "rent") return t("categoryRent");
     if (key === "health") return t("categoryHealth");
+    if (key === "education") return t("categoryEducation");
+    if (key === "personal") return t("categoryPersonal");
     if (key === "carryover") return t("categoryCarryover");
     return t("categoryOther");
   };
@@ -60,6 +84,7 @@ export default function QuickAddModal() {
       setCustomDateISO("");
       setDebtMode("none");
       setSelectedDebtId("");
+      setTransferMode("none");
       return;
     }
     setPreview(parseInput(raw, nowInTashkent()));
@@ -68,6 +93,16 @@ export default function QuickAddModal() {
   useEffect(() => {
     if (!open || !user) return;
     return watchDebts(user.uid, setDebts);
+  }, [open, user]);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    return watchTransactions(user.uid, setTransactions);
+  }, [open, user]);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    return watchPayments(user.uid, setPayments);
   }, [open, user]);
 
   useEffect(() => {
@@ -84,6 +119,37 @@ export default function QuickAddModal() {
     return settings ? Number(settings.walletBalance || 0) : null;
   }, [settings]);
 
+  const remainingSpend = useMemo(() => {
+    if (!open || !settings) return null;
+    const nowParts = getTzParts(nowInTashkent());
+    const monthIncome = transactions.reduce((sum, tx) => {
+      if (!tx?.occurredAtISO || tx.type !== "income") return sum;
+      const parts = getTzParts(new Date(tx.occurredAtISO));
+      if (parts.year !== nowParts.year || parts.month !== nowParts.month) return sum;
+      return sum + Number(tx.amount || 0);
+    }, 0);
+    const monthExpenseNonRecurring = transactions.reduce((sum, tx) => {
+      if (!tx?.occurredAtISO || tx.type !== "expense" || tx.isRecurring) return sum;
+      const parts = getTzParts(new Date(tx.occurredAtISO));
+      if (parts.year !== nowParts.year || parts.month !== nowParts.month) return sum;
+      return sum + Number(tx.amount || 0);
+    }, 0);
+    const monthlyMandatory = computeMandatoryMonthly(payments, nowInTashkent());
+    const recommendedMaxSpend = computeRecommendedSpend({
+      monthlyIncome: monthIncome,
+      monthlyMandatory,
+      plannedMonthlySavings: 0,
+      settings
+    });
+    const remaining = Number(recommendedMaxSpend || 0) - Number(monthExpenseNonRecurring || 0);
+    return Math.max(0, Math.round(remaining));
+  }, [open, settings, transactions, payments]);
+
+  const formatMaybeAmount = (value) => {
+    if (value === null || value === undefined) return "—";
+    return formatAmount(value);
+  };
+
   useEffect(() => {
     if (!preview) return;
     if (!typeTouched) {
@@ -95,21 +161,25 @@ export default function QuickAddModal() {
   }, [preview, typeTouched, categoryTouched]);
 
   const isDebtType = debtMode !== "none";
+  const isTransfer = transferMode !== "none";
   const effectiveTypeForUi = useMemo(() => {
+    if (transferMode === "wallet_to_spend") return "income";
+    if (transferMode === "spend_to_wallet") return "expense";
     if (debtMode === "borrow" || debtMode === "collect") return "income";
     if (debtMode === "repay" || debtMode === "lend") return "expense";
     return typeOverride === "auto" ? preview?.type || "expense" : typeOverride;
-  }, [debtMode, typeOverride, preview]);
+  }, [debtMode, transferMode, typeOverride, preview]);
   const hasAmountWarning = useMemo(
     () => preview?.warnings?.includes("amount_not_found"),
     [preview]
   );
+  const isManualExpense = typeOverride === "expense";
+  const isAutoExpenseNeedsCategory =
+    typeOverride === "auto" && preview?.type === "expense" && !preview?.categoryDetected;
   const showCategorySelect =
-    preview &&
     debtMode === "none" &&
-    !preview.categoryDetected &&
-    effectiveTypeForUi !== "income" &&
-    effectiveTypeForUi !== "goal";
+    transferMode === "none" &&
+    (isManualExpense || isAutoExpenseNeedsCategory);
   const showDebtSelect = debtMode === "repay" || debtMode === "collect";
 
   const monthRange = useMemo(() => getMonthRangeFor(nowInTashkent()), []);
@@ -150,7 +220,7 @@ export default function QuickAddModal() {
         : preview.categoryDetected
           ? preview.category
           : categoryOverride || "other";
-    if (effectiveType !== "income" && effectiveType !== "goal" && !effectiveCategory) return;
+    if (!isTransfer && effectiveType !== "income" && effectiveType !== "goal" && !effectiveCategory) return;
 
     const customDate = useCustomDate ? buildCustomDate(customDateISO) : null;
     const occurredAtISO = customDate?.occurredAtISO || preview.occurredAtISO;
@@ -173,18 +243,47 @@ export default function QuickAddModal() {
         return;
       }
     }
-    const closeModalAfterSave = () => {
+    const finalizeSuccess = () => {
       setOpen(false);
       setRaw("");
       setPreview(null);
       setDebtMode("none");
       setSelectedDebtId("");
       setIsRecurring(false);
+      setTransferMode("none");
     };
-    closeModalAfterSave();
     let success = false;
     try {
-      if (effectiveType === "goal" && debtMode === "none") {
+      if (transferMode !== "none") {
+        const amount = Number(preview.amount || 0);
+        if (!amount || amount <= 0) {
+          setSavedNotice(t("noAmountText"));
+          return;
+        }
+        const transferToSpend = transferMode === "wallet_to_spend";
+        const walletBalance = Number(settings?.walletBalance || 0);
+        if (transferToSpend && walletDebug !== null && amount > walletBalance) {
+          setSavedNotice(t("walletNotEnough"));
+          return;
+        }
+        if (!transferToSpend && remainingSpend !== null && amount > remainingSpend) {
+          setSavedNotice(t("spendNotEnough"));
+          return;
+        }
+        await addTransfer(user.uid, {
+          amount,
+          occurredAt: occurredAtDate,
+          occurredAtISO,
+          direction: transferMode,
+          description: transferToSpend ? t("transferToSpend") : t("transferToWallet"),
+          raw
+        });
+        setSavedNotice(t("recordAdded"));
+        setTimeout(() => setSavedNotice(""), 1500);
+        success = true;
+        finalizeSuccess();
+        return;
+      } else if (effectiveType === "goal" && debtMode === "none") {
         const amount = Number(preview.amount || 0);
         if (!amount || amount <= 0) {
           setSavedNotice(t("noAmountText"));
@@ -209,6 +308,8 @@ export default function QuickAddModal() {
         setSavedNotice(t("recordAdded"));
         setTimeout(() => setSavedNotice(""), 1500);
         success = true;
+        finalizeSuccess();
+        return;
       } else if (debtMode !== "none") {
         const amount = Number(preview.amount || 0);
         if (debtMode === "borrow" || debtMode === "lend") {
@@ -223,7 +324,7 @@ export default function QuickAddModal() {
             amount,
             occurredAt: occurredAtDate,
             occurredAtISO,
-            category: "credit",
+            category: "debt",
             type: debtMode === "borrow" ? "income" : "expense",
             incomePeriod: debtMode === "borrow" ? preview.incomePeriod || null : null,
             description: preview.description || t("debtTitle"),
@@ -233,6 +334,8 @@ export default function QuickAddModal() {
           setSavedNotice(t("recordAdded"));
           setTimeout(() => setSavedNotice(""), 1500);
           success = true;
+          finalizeSuccess();
+          return;
         } else {
           const debt = debts.find((d) => d.id === selectedDebtId);
           const remaining = Math.max(0, Number(debt.remaining || 0) - amount);
@@ -245,7 +348,7 @@ export default function QuickAddModal() {
             amount,
             occurredAt: occurredAtDate,
             occurredAtISO,
-            category: "credit",
+            category: "debt",
             type: debtMode === "repay" ? "expense" : "income",
             incomePeriod: debtMode === "collect" ? preview.incomePeriod || null : null,
             description: debt.title || t("debtTitle"),
@@ -255,6 +358,8 @@ export default function QuickAddModal() {
           setSavedNotice(t("recordAdded"));
           setTimeout(() => setSavedNotice(""), 1500);
           success = true;
+          finalizeSuccess();
+          return;
         }
       } else {
         await addTransaction(user.uid, {
@@ -283,9 +388,15 @@ export default function QuickAddModal() {
         }
         setTimeout(() => setSavedNotice(""), 2500);
         success = true;
+        finalizeSuccess();
+        return;
       }
     } catch (err) {
-      setSavedNotice(`${t("saveFailed")}${err?.message ? `: ${err.message}` : ""}`);
+      if (err?.message === "wallet_insufficient") {
+        setSavedNotice(t("walletNotEnough"));
+      } else {
+        setSavedNotice(`${t("saveFailed")}${err?.message ? `: ${err.message}` : ""}`);
+      }
       setTimeout(() => setSavedNotice(""), 2000);
     }
     if (!success) {
@@ -336,63 +447,142 @@ export default function QuickAddModal() {
                       <div className="modal-hint">{t("typeHint")}</div>
                     </div>
                   </div>
-                  <div className="pill-tabs compact">
+                <div className="pill-tabs compact">
+                  <button
+                    type="button"
+                    className={`pill-tab compact ${!isDebtType && !isTransfer && typeOverride === "auto" ? "pill-tab-active" : ""}`}
+                    onClick={() => {
+                      setDebtMode("none");
+                      setTransferMode("none");
+                      setTypeOverride("auto");
+                      setTypeTouched(true);
+                    }}
+                  >
+                    {t("typeAuto")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`pill-tab compact ${!isDebtType && !isTransfer && typeOverride === "income" ? "pill-tab-active" : ""}`}
+                    onClick={() => {
+                      setDebtMode("none");
+                      setTransferMode("none");
+                      setTypeOverride("income");
+                      setTypeTouched(true);
+                    }}
+                  >
+                    {t("typeIncome")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`pill-tab compact ${!isDebtType && !isTransfer && typeOverride === "expense" ? "pill-tab-active" : ""}`}
+                    onClick={() => {
+                      setDebtMode("none");
+                      setTransferMode("none");
+                      setTypeOverride("expense");
+                      setTypeTouched(true);
+                    }}
+                  >
+                    {t("typeExpense")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`pill-tab compact ${!isDebtType && !isTransfer && typeOverride === "goal" ? "pill-tab-active" : ""}`}
+                    onClick={() => {
+                      setDebtMode("none");
+                      setTransferMode("none");
+                      setTypeOverride("goal");
+                      setTypeTouched(true);
+                    }}
+                  >
+                    {t("typeGoal")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`pill-tab compact ${isTransfer ? "pill-tab-active" : ""}`}
+                    onClick={() => {
+                      setDebtMode("none");
+                      setTypeOverride("auto");
+                      setTypeTouched(true);
+                      setIsRecurring(false);
+                      setTransferMode((current) => (current === "none" ? "wallet_to_spend" : "none"));
+                    }}
+                  >
+                    {t("typeTransfer")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`pill-tab compact ${isDebtType ? "pill-tab-active" : ""}`}
+                    onClick={() => {
+                      setTransferMode("none");
+                      setDebtMode((current) => (current === "none" ? "borrow" : current));
+                      setTypeTouched(true);
+                    }}
+                  >
+                    {t("typeDebt")}
+                  </button>
+                </div>
+              </div>
+              {isTransfer && (
+                <div className="modal-card">
+                  <div className="modal-card-header">
+                    <div>
+                      <div className="modal-label">{t("transferLabel")}</div>
+                      <div className="modal-hint">{t("transferHint")}</div>
+                    </div>
+                  </div>
+                  <div className="transfer-balance">
+                    <div className="transfer-balance-item">
+                      <div className="transfer-balance-label">{t("wallet")}</div>
+                      <div className="transfer-balance-value">
+                        {formatMaybeAmount(walletDebug)}
+                      </div>
+                    </div>
+                    <div className="transfer-balance-item">
+                      <div className="transfer-balance-label">{t("remainingSpendLabel")}</div>
+                      <div className="transfer-balance-value">
+                        {formatMaybeAmount(remainingSpend)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="transfer-direction">
+                    {transferMode === "wallet_to_spend"
+                      ? t("transferFromWallet")
+                      : transferMode === "spend_to_wallet"
+                        ? t("transferFromSpend")
+                        : t("transferPickDirection")}
+                  </div>
+                  <div className="debt-grid">
                     <button
                       type="button"
-                      className={`pill-tab compact ${!isDebtType && typeOverride === "auto" ? "pill-tab-active" : ""}`}
-                      onClick={() => {
-                        setDebtMode("none");
-                        setTypeOverride("auto");
-                        setTypeTouched(true);
+                      className={`debt-button ${transferMode === "wallet_to_spend" ? "active" : ""}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setTransferMode("wallet_to_spend");
                       }}
                     >
-                      {t("typeAuto")}
+                      <span className="debt-button-title">{t("transferToSpendShort")}</span>
+                      <span className="debt-button-sub">
+                        {formatMaybeAmount(remainingSpend)}
+                      </span>
                     </button>
                     <button
                       type="button"
-                      className={`pill-tab compact ${!isDebtType && typeOverride === "income" ? "pill-tab-active" : ""}`}
-                      onClick={() => {
-                        setDebtMode("none");
-                        setTypeOverride("income");
-                        setTypeTouched(true);
+                      className={`debt-button ${transferMode === "spend_to_wallet" ? "active" : ""}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setTransferMode("spend_to_wallet");
                       }}
                     >
-                      {t("typeIncome")}
-                    </button>
-                    <button
-                      type="button"
-                      className={`pill-tab compact ${!isDebtType && typeOverride === "expense" ? "pill-tab-active" : ""}`}
-                      onClick={() => {
-                        setDebtMode("none");
-                        setTypeOverride("expense");
-                        setTypeTouched(true);
-                      }}
-                    >
-                      {t("typeExpense")}
-                    </button>
-                    <button
-                      type="button"
-                      className={`pill-tab compact ${!isDebtType && typeOverride === "goal" ? "pill-tab-active" : ""}`}
-                      onClick={() => {
-                        setDebtMode("none");
-                        setTypeOverride("goal");
-                        setTypeTouched(true);
-                      }}
-                    >
-                      {t("typeGoal")}
-                    </button>
-                    <button
-                      type="button"
-                      className={`pill-tab compact ${isDebtType ? "pill-tab-active" : ""}`}
-                      onClick={() => {
-                        setDebtMode((current) => (current === "none" ? "borrow" : current));
-                        setTypeTouched(true);
-                      }}
-                    >
-                      {t("typeDebt")}
+                      <span className="debt-button-title">{t("transferToWalletShort")}</span>
+                      <span className="debt-button-sub">
+                        {formatMaybeAmount(walletDebug)}
+                      </span>
                     </button>
                   </div>
                 </div>
+              )}
                 {isDebtType && (
                   <div className="modal-card">
                     <div className="modal-card-header">
@@ -513,9 +703,26 @@ export default function QuickAddModal() {
                       className="modal-select"
                     >
                       <option value="">{t("categoryChoose")}</option>
+                      <option value="cafe">{t("categoryCafe")}</option>
+                      <option value="groceries">{t("categoryGroceries")}</option>
                       <option value="food">{t("categoryFood")}</option>
                       <option value="transport">{t("categoryTransport")}</option>
+                      <option value="clothes">{t("categoryClothes")}</option>
+                      <option value="beauty">{t("categoryBeauty")}</option>
+                      <option value="kids">{t("categoryKids")}</option>
+                      <option value="gifts">{t("categoryGifts")}</option>
+                      <option value="pets">{t("categoryPets")}</option>
+                      <option value="travel">{t("categoryTravel")}</option>
+                      <option value="home">{t("categoryHome")}</option>
+                      <option value="subscriptions">{t("categorySubscriptions")}</option>
+                      <option value="taxes">{t("categoryTaxes")}</option>
+                      <option value="entertainment">{t("categoryEntertainment")}</option>
+                      <option value="shopping">{t("categoryShopping")}</option>
+                      <option value="utilities">{t("categoryUtilities")}</option>
+                      <option value="education">{t("categoryEducation")}</option>
+                      <option value="personal">{t("categoryPersonal")}</option>
                       <option value="credit">{t("categoryCredit")}</option>
+                      <option value="debt">{t("categoryDebt")}</option>
                       <option value="rent">{t("categoryRent")}</option>
                       <option value="health">{t("categoryHealth")}</option>
                       <option value="other">{t("categoryOther")}</option>
@@ -525,7 +732,7 @@ export default function QuickAddModal() {
                 <div className="modal-card">
                   <div className="modal-label">{t("optionsLabel")}</div>
                   <div className="modal-grid">
-                    {effectiveTypeForUi === "expense" && (
+                    {effectiveTypeForUi === "expense" && !isTransfer && (
                       <label className="modal-check">
                         <input
                           type="checkbox"
@@ -578,15 +785,17 @@ export default function QuickAddModal() {
                         <div className="summary-row">
                           <span className="summary-label">{t("summaryType")}</span>
                           <span className="summary-value">
-                            {effectiveTypeForUi === "income"
-                              ? t("typeIncome")
-                              : effectiveTypeForUi === "goal"
-                                ? t("typeGoal")
-                                : t("typeExpense")}
+                            {isTransfer
+                              ? t("typeTransfer")
+                              : effectiveTypeForUi === "income"
+                                ? t("typeIncome")
+                                : effectiveTypeForUi === "goal"
+                                  ? t("typeGoal")
+                                  : t("typeExpense")}
                           </span>
                         </div>
                       )}
-                      {!hasAmountWarning && effectiveTypeForUi !== "goal" && (
+                      {!hasAmountWarning && effectiveTypeForUi !== "goal" && !isTransfer && (
                         <div className="summary-row">
                           <span className="summary-label">{t("summaryCategory")}</span>
                           <span className="summary-value">
