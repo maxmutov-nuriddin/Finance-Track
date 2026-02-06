@@ -2156,6 +2156,8 @@ select option {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 0 0 20px 0;
   border-bottom: 1px solid rgba(64, 72, 84, 0.3);
 }
@@ -2248,7 +2250,7 @@ select option {
 
 .transaction-filters {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   margin-bottom: 24px;
   padding: 16px;
