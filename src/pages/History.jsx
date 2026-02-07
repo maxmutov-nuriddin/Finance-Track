@@ -6,9 +6,9 @@ import { useI18n } from "../components/I18nProvider";
 import { deleteTransaction, watchTransactions } from "../lib/store";
 import { useUser } from "../lib/user";
 
-function escapeCsvValue(value) {
+function escapeCsvValue(value, delimiter = ";") {
   const text = String(value ?? "");
-  if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+  if (text.includes(delimiter) || text.includes('"') || text.includes("\n") || text.includes("\r")) {
     return `"${text.replace(/"/g, '""')}"`;
   }
   return text;
@@ -70,6 +70,7 @@ export default function History() {
 
   const handleExportCsv = () => {
     if (!exportRows.length) return;
+    const delimiter = ";";
 
     const headers = [
       t("exportDateCol"),
@@ -81,6 +82,7 @@ export default function History() {
       t("exportRecurringCol"),
       t("exportDebtModeCol")
     ];
+    const buildCsvLine = (values) => values.map((value) => escapeCsvValue(value, delimiter)).join(delimiter);
 
     const lines = exportRows.map((row) =>
       [
@@ -93,11 +95,11 @@ export default function History() {
         row.recurring,
         row.debtMode
       ]
-        .map(escapeCsvValue)
-        .join(",")
+        .map((value) => escapeCsvValue(value, delimiter))
+        .join(delimiter)
     );
 
-    const content = `\uFEFF${headers.map(escapeCsvValue).join(",")}\n${lines.join("\n")}`;
+    const content = `\uFEFFsep=${delimiter}\r\n${buildCsvLine(headers)}\r\n${lines.join("\r\n")}`;
     const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
     downloadBlob(blob, `finance-track-${new Date().toISOString().slice(0, 10)}.csv`);
   };
