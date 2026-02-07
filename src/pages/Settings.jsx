@@ -29,8 +29,20 @@ export default function Settings() {
   const [targetSavingsMode, setTargetSavingsMode] = useState("goal_based");
   const [fixedMonthlySavings, setFixedMonthlySavings] = useState("");
   const [activeGoalId, setActiveGoalId] = useState("");
+  const [savedBudgetState, setSavedBudgetState] = useState({
+    budgetMode: "auto",
+    manualMonthlyBudget: "",
+    salaryDayOfMonth: "",
+    targetSavingsMode: "goal_based",
+    fixedMonthlySavings: "",
+    activeGoalId: ""
+  });
   const [savedMessage, setSavedMessage] = useState("");
   const [reminderMessage, setReminderMessage] = useState("");
+  const [telegramChatId, setTelegramChatId] = useState("");
+  const [savedTelegramChatId, setSavedTelegramChatId] = useState("");
+  const [telegramMessage, setTelegramMessage] = useState("");
+  const [telegramBusy, setTelegramBusy] = useState(false);
   const [allRemindersEnabled, setAllRemindersEnabled] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
   const [reminderPermission, setReminderPermission] = useState(getNotificationStatus());
@@ -41,13 +53,31 @@ export default function Settings() {
   useEffect(() => {
     if (!user) return;
     const unsubSettings = watchSettings(user.uid, (data) => {
-      setBudgetMode(data?.budgetMode || "auto");
-      setManualMonthlyBudget(data?.manualMonthlyBudget ? String(data.manualMonthlyBudget) : "");
-      setSalaryDayOfMonth(data?.salaryDayOfMonth ? String(data.salaryDayOfMonth) : "");
-      setTargetSavingsMode(data?.targetSavingsMode || "goal_based");
-      setFixedMonthlySavings(data?.fixedMonthlySavings ? String(data.fixedMonthlySavings) : "");
-      setActiveGoalId(data?.activeGoalId || "");
+      const nextBudgetMode = data?.budgetMode || "auto";
+      const nextManualMonthlyBudget = data?.manualMonthlyBudget ? String(data.manualMonthlyBudget) : "";
+      const nextSalaryDay = data?.salaryDayOfMonth ? String(data.salaryDayOfMonth) : "";
+      const nextTargetSavingsMode = data?.targetSavingsMode || "goal_based";
+      const nextFixedMonthlySavings = data?.fixedMonthlySavings ? String(data.fixedMonthlySavings) : "";
+      const nextActiveGoalId = data?.activeGoalId || "";
+
+      setBudgetMode(nextBudgetMode);
+      setManualMonthlyBudget(nextManualMonthlyBudget);
+      setSalaryDayOfMonth(nextSalaryDay);
+      setTargetSavingsMode(nextTargetSavingsMode);
+      setFixedMonthlySavings(nextFixedMonthlySavings);
+      setActiveGoalId(nextActiveGoalId);
+      setSavedBudgetState({
+        budgetMode: nextBudgetMode,
+        manualMonthlyBudget: nextManualMonthlyBudget,
+        salaryDayOfMonth: nextSalaryDay,
+        targetSavingsMode: nextTargetSavingsMode,
+        fixedMonthlySavings: nextFixedMonthlySavings,
+        activeGoalId: nextActiveGoalId
+      });
       setAllRemindersEnabled(Boolean(data?.remindersEnabled));
+      const nextTelegramId = data?.telegramChatId ? String(data.telegramChatId) : "";
+      setTelegramChatId(nextTelegramId);
+      setSavedTelegramChatId(nextTelegramId);
     });
     const unsubGoals = watchGoals(user.uid, setGoals);
     return () => {
@@ -78,7 +108,23 @@ export default function Settings() {
     setReminderPermission(getNotificationStatus());
   }, [activeTab]);
 
+  const normalizeNumberInput = (value) => {
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    const number = Number(text);
+    return Number.isFinite(number) ? String(number) : text;
+  };
+
+  const isBudgetSettingsChanged =
+    budgetMode !== savedBudgetState.budgetMode ||
+    normalizeNumberInput(manualMonthlyBudget) !== normalizeNumberInput(savedBudgetState.manualMonthlyBudget) ||
+    normalizeNumberInput(salaryDayOfMonth) !== normalizeNumberInput(savedBudgetState.salaryDayOfMonth) ||
+    targetSavingsMode !== savedBudgetState.targetSavingsMode ||
+    normalizeNumberInput(fixedMonthlySavings) !== normalizeNumberInput(savedBudgetState.fixedMonthlySavings) ||
+    activeGoalId !== savedBudgetState.activeGoalId;
+
   const handleSave = async () => {
+    if (!user || !isBudgetSettingsChanged) return;
     const normalizedSalaryDay = Math.round(Number(salaryDayOfMonth || 0));
     const safeSalaryDay =
       Number.isFinite(normalizedSalaryDay) && normalizedSalaryDay >= 1 && normalizedSalaryDay <= 31
@@ -92,6 +138,14 @@ export default function Settings() {
       targetSavingsMode,
       fixedMonthlySavings: fixedMonthlySavings ? Number(fixedMonthlySavings) : null,
       activeGoalId: activeGoalId || null
+    });
+    setSavedBudgetState({
+      budgetMode,
+      manualMonthlyBudget: manualMonthlyBudget ? String(Number(manualMonthlyBudget)) : "",
+      salaryDayOfMonth: safeSalaryDay ? String(safeSalaryDay) : "",
+      targetSavingsMode,
+      fixedMonthlySavings: fixedMonthlySavings ? String(Number(fixedMonthlySavings)) : "",
+      activeGoalId: activeGoalId || ""
     });
     setSavedMessage(t("saved"));
     setTimeout(() => setSavedMessage(""), 2000);
@@ -109,7 +163,8 @@ export default function Settings() {
       if (allRemindersEnabled) {
         await saveSettings(user.uid, {
           remindersEnabled: false,
-          debtReminderEnabled: false
+          debtReminderEnabled: false,
+          telegramEnabled: false
         });
         showReminderMessage(t("allRemindersOff"));
         return;
@@ -132,13 +187,79 @@ export default function Settings() {
 
       await saveSettings(user.uid, {
         remindersEnabled: true,
-        debtReminderEnabled: true
+        debtReminderEnabled: true,
+        telegramEnabled: Boolean(telegramChatId.trim())
       });
       showReminderMessage(t("allRemindersOn"));
     } catch (error) {
       showReminderMessage(`${t("saveFailed")}${error?.message ? `: ${error.message}` : ""}`);
     } finally {
       setReminderBusy(false);
+    }
+  };
+
+  const handleSaveTelegramId = async () => {
+    if (!user) return;
+    if (telegramBusy) return;
+    if (!isTelegramIdChanged) return;
+    const value = telegramChatId.trim();
+
+    if (!value) {
+      await saveSettings(user.uid, { telegramChatId: null, telegramEnabled: false });
+      setSavedTelegramChatId("");
+      setTelegramMessage(t("telegramIdCleared"));
+      setTimeout(() => setTelegramMessage(""), 2500);
+      return;
+    }
+
+    if (!/^-?\d+$/.test(value)) {
+      setTelegramMessage(t("telegramIdInvalid"));
+      setTimeout(() => setTelegramMessage(""), 2500);
+      return;
+    }
+
+    setTelegramBusy(true);
+    try {
+      await saveSettings(user.uid, {
+        telegramChatId: value,
+        telegramEnabled: true
+      });
+      setSavedTelegramChatId(value);
+
+      const token = String(import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "").trim();
+      if (!token) {
+        setTelegramMessage(t("telegramBotTokenMissing"));
+        setTimeout(() => setTelegramMessage(""), 3000);
+        return;
+      }
+
+      const welcomeText =
+        lang === "uz"
+          ? "Xush kelibsiz! Siz Finance Track botini muvaffaqiyatli uladingiz."
+          : "Добро пожаловать! Вы успешно подключили бота Finance Track.";
+
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: value,
+          text: welcomeText,
+          disable_web_page_preview: true
+        })
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (response.ok && payload?.ok) {
+        setTelegramMessage(t("telegramWelcomeSent"));
+      } else {
+        setTelegramMessage(t("telegramWelcomeFailed"));
+      }
+      setTimeout(() => setTelegramMessage(""), 3000);
+    } catch {
+      setTelegramMessage(t("telegramWelcomeFailed"));
+      setTimeout(() => setTelegramMessage(""), 3000);
+    } finally {
+      setTelegramBusy(false);
     }
   };
 
@@ -164,6 +285,27 @@ export default function Settings() {
     setClearing(false);
     setTimeout(() => setClearMessage(""), 2000);
   };
+
+  const telegramConnected = Boolean(telegramChatId.trim());
+  const telegramReportsEnabled = telegramConnected && allRemindersEnabled;
+  const isTelegramIdChanged = telegramChatId.trim() !== savedTelegramChatId.trim();
+  const permissionState =
+    reminderPermission === "unsupported"
+      ? "unsupported"
+      : reminderPermission === "denied"
+        ? "denied"
+        : reminderPermission === "granted"
+          ? "granted"
+          : "default";
+  const permissionLabel =
+    permissionState === "unsupported"
+      ? t("notificationPermissionUnsupported")
+      : permissionState === "denied"
+        ? t("notificationPermissionDenied")
+        : permissionState === "granted"
+          ? t("notificationPermissionGranted")
+          : t("notificationPermissionDefault");
+  const permissionIsGood = permissionState === "granted";
 
   return (
     <div className="settings-container">
@@ -325,7 +467,7 @@ export default function Settings() {
               <p className="settings-card-hint">{t("saveHelp")}</p>
 
               <div className="settings-actions">
-                <GlassButton onClick={handleSave} className="settings-action-btn">
+                <GlassButton onClick={handleSave} disabled={!isBudgetSettingsChanged} className="settings-action-btn">
                   {t("save")}
                 </GlassButton>
                 {savedMessage && <div className="settings-success">{savedMessage}</div>}
@@ -377,9 +519,63 @@ export default function Settings() {
 
             <GlassCard>
               <div className="settings-card-header">
+                <h2 className="settings-card-title">🤖 {t("telegramBotTitle")}</h2>
+              </div>
+              <p className="settings-card-hint">{t("telegramBotHelp")}</p>
+              <div className="settings-status-grid">
+                <div className={`settings-status-item ${telegramConnected ? "is-on" : "is-off"}`}>
+                  <span className="settings-status-label">{t("telegramConnectionStatusTitle")}</span>
+                  <span className="settings-status-value">
+                    {telegramConnected ? t("telegramConnectionConnected") : t("telegramConnectionNotConnected")}
+                  </span>
+                </div>
+                <div className={`settings-status-item ${telegramReportsEnabled ? "is-on" : "is-off"}`}>
+                  <span className="settings-status-label">{t("telegramReportsStatusTitle")}</span>
+                  <span className="settings-status-value">
+                    {telegramReportsEnabled ? t("statusEnabled") : t("statusDisabled")}
+                  </span>
+                </div>
+              </div>
+              {!allRemindersEnabled && telegramConnected ? (
+                <p className="settings-status-note">{t("telegramEnableHint")}</p>
+              ) : null}
+              <div className="settings-input-wrapper">
+                <label className="filter-label">{t("telegramIdLabel")}</label>
+                <GlassInput
+                  placeholder={t("telegramIdPlaceholder")}
+                  value={telegramChatId}
+                  onChange={(event) => setTelegramChatId(event.target.value)}
+                />
+              </div>
+              <div className="settings-actions">
+                <GlassButton
+                  onClick={handleSaveTelegramId}
+                  disabled={telegramBusy || !isTelegramIdChanged}
+                  className="settings-action-btn"
+                >
+                  {t("saveTelegramId")}
+                </GlassButton>
+              </div>
+              {telegramMessage && <div className="settings-success" style={{ marginTop: 12 }}>{telegramMessage}</div>}
+            </GlassCard>
+
+            <GlassCard>
+              <div className="settings-card-header">
                 <h2 className="settings-card-title">🔔 {t("allRemindersTitle")}</h2>
               </div>
               <p className="settings-card-hint">{t("allRemindersHelp")}</p>
+              <div className="settings-status-grid">
+                <div className={`settings-status-item ${allRemindersEnabled ? "is-on" : "is-off"}`}>
+                  <span className="settings-status-label">{t("allRemindersStatusTitle")}</span>
+                  <span className="settings-status-value">
+                    {allRemindersEnabled ? t("statusEnabled") : t("statusDisabled")}
+                  </span>
+                </div>
+                <div className={`settings-status-item ${permissionIsGood ? "is-on" : "is-off"}`}>
+                  <span className="settings-status-label">{t("notificationPermissionTitle")}</span>
+                  <span className="settings-status-value">{permissionLabel}</span>
+                </div>
+              </div>
 
               <div className="settings-actions">
                 <GlassButton

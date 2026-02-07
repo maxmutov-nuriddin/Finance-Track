@@ -3659,9 +3659,61 @@ select option {
   font-weight: 600;
 }
 
+.settings-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.settings-status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(64, 72, 84, 0.45);
+  background: rgba(26, 32, 44, 0.55);
+}
+
+.settings-status-item.is-on {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.settings-status-item.is-off {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.settings-status-label {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a0aec0;
+}
+
+.settings-status-value {
+  font-size: 0.9rem;
+  line-height: 1.3;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.settings-status-note {
+  margin: 0 0 10px 0;
+  font-size: 0.83rem;
+  color: #fbbf24;
+}
+
 /* Responsive Settings */
 @media (max-width: 700px) {
   .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-status-grid {
     grid-template-columns: 1fr;
   }
 
