@@ -53,6 +53,20 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function createUtf16LeBlob(text, mimeType) {
+  const content = String(text ?? "");
+  const bytes = new Uint8Array(2 + content.length * 2);
+  // UTF-16 LE BOM
+  bytes[0] = 0xff;
+  bytes[1] = 0xfe;
+  for (let i = 0; i < content.length; i += 1) {
+    const code = content.charCodeAt(i);
+    bytes[2 + i * 2] = code & 0xff;
+    bytes[3 + i * 2] = code >> 8;
+  }
+  return new Blob([bytes], { type: mimeType });
+}
+
 function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -130,8 +144,8 @@ export default function History() {
         .join(delimiter)
     );
 
-    const content = `\uFEFFsep=${delimiter}\r\n${buildCsvLine(headers)}\r\n${lines.join("\r\n")}`;
-    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+    const content = `sep=${delimiter}\r\n${buildCsvLine(headers)}\r\n${lines.join("\r\n")}`;
+    const blob = createUtf16LeBlob(content, "text/csv;charset=utf-16le;");
     downloadBlob(blob, `finance-track-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
