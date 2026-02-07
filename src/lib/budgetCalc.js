@@ -1,13 +1,35 @@
 ﻿import { getTzParts } from "./timezone";
 
-function isDebtIncomeTransaction(tx) {
-  return tx?.type === "income" && tx?.category === "debt";
+const SALARY_HINTS = ["зп", "зарплат", "зарплата", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
+const BORROW_HINTS = ["взял", "взяла", "занял", "заняла", "borrow", "qarz ol", "долг взял", "одолжил у"];
+const COLLECT_HINTS = ["забрал", "забрала", "вернули", "возврат", "collect", "undird", "qaytarib old"];
+
+function getIncomeText(tx) {
+  return `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+}
+
+function isSalaryIncomeTransaction(tx) {
+  if (tx?.type !== "income") return false;
+  if (tx?.category === "debt") return false;
+  if (tx?.incomePeriod === "monthly") return true;
+  const text = getIncomeText(tx);
+  return SALARY_HINTS.some((word) => text.includes(word));
+}
+
+function isBorrowDebtIncomeTransaction(tx) {
+  if (tx?.type !== "income") return false;
+  if (tx?.meta?.kind === "debt") {
+    return tx?.meta?.mode === "borrow";
+  }
+  if (tx?.category !== "debt") return false;
+  const text = getIncomeText(tx);
+  if (COLLECT_HINTS.some((word) => text.includes(word))) return false;
+  return BORROW_HINTS.some((word) => text.includes(word));
 }
 
 export function computeMonthlyIncome(transactions, days) {
   const totalIncome = transactions
-    .filter((t) => t.type === "income")
-    .filter((t) => !isDebtIncomeTransaction(t))
+    .filter((t) => isSalaryIncomeTransaction(t) || isBorrowDebtIncomeTransaction(t))
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
   if (!days || days <= 0) return Math.round(totalIncome);
   return Math.round(totalIncome);
