@@ -9,6 +9,11 @@ import { t as translate } from "../lib/i18n";
 import { Sparkles, ShieldCheck, Clock3 } from "lucide-react";
 
 function isEmbeddedInAppBrowser() {
+  if (typeof window !== "undefined") {
+    if (window?.Telegram?.WebApp) return true;
+    if (window?.TelegramWebviewProxy) return true;
+    if (String(document?.referrer || "").includes("t.me")) return true;
+  }
   if (typeof navigator === "undefined") return false;
   const ua = String(navigator.userAgent || "").toLowerCase();
   const markers = [
@@ -105,18 +110,18 @@ export default function AuthGate({ children }) {
   const handleOpenInBrowser = async () => {
     if (typeof window === "undefined") return;
     const url = window.location.href;
+    const cleanUrl = url.split("#")[0];
 
     const telegramOpenLink = window?.Telegram?.WebApp?.openLink;
     if (typeof telegramOpenLink === "function") {
-      telegramOpenLink(url);
-      return;
+      telegramOpenLink(cleanUrl, { try_instant_view: false });
     }
 
-    window.open(url, "_blank", "noopener,noreferrer");
+    window.open(cleanUrl, "_blank", "noopener,noreferrer");
 
     try {
       if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(cleanUrl);
         setLinkCopied(true);
         setTimeout(() => setLinkCopied(false), 1800);
       }
@@ -159,7 +164,7 @@ export default function AuthGate({ children }) {
           </div>
 
           <div className="auth-social">
-            <GlassButton onClick={handleGoogle} className="auth-google-btn">
+            <GlassButton onClick={handleGoogle} className="auth-google-btn" disabled={inAppBrowser}>
               <span className="auth-google-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" focusable="false">
                   <path
