@@ -1,5 +1,12 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
+import {
+  initializeAuth,
+  GoogleAuthProvider,
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+  browserSessionPersistence,
+  indexedDBLocalPersistence
+} from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getMessaging, isSupported } from "firebase/messaging";
 
@@ -13,11 +20,14 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-setPersistence(auth, browserLocalPersistence).catch(() => {});
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+  popupRedirectResolver: browserPopupRedirectResolver
+});
 export const db = getFirestore(app);
 enableIndexedDbPersistence(db).catch(() => {});
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
 export async function getMessagingIfSupported() {
   const supported = await isSupported();

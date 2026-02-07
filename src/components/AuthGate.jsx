@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, signInWithPopup } from "firebase/auth";
+import { getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { auth, googleProvider } from "../lib/firebase";
 import { storeUserProfile } from "../lib/store";
 import { UserContext } from "../lib/user";
@@ -10,6 +10,15 @@ import { Sparkles, ShieldCheck, Clock3 } from "lucide-react";
 
 const mapAuthError = (err, t) => {
   const code = err?.code || "";
+  const message = String(err?.message || "").toLowerCase();
+  if (code.includes("auth/operation-not-allowed")) return t("authGoogleDisabled");
+  if (code.includes("auth/unauthorized-domain")) return t("authUnauthorizedDomain");
+  if (code.includes("auth/popup-closed-by-user")) return t("authPopupClosed");
+  if (code.includes("auth/popup-blocked")) return t("authPopupBlocked");
+  if (code.includes("auth/network-request-failed")) return t("authNetworkError");
+  if (code.includes("auth/missing-initial-state")) return t("authStorageBlocked");
+  if (code.includes("auth/web-storage-unsupported")) return t("authStorageBlocked");
+  if (message.includes("missing initial state")) return t("authStorageBlocked");
   if (code.includes("auth/invalid-email")) return t("authInvalidEmail");
   if (code.includes("auth/missing-email")) return t("authMissingEmail");
   if (code.includes("auth/missing-password")) return t("authMissingPassword");
@@ -27,6 +36,10 @@ export default function AuthGate({ children }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    getRedirectResult(auth).catch((err) => {
+      setError(mapAuthError(err, t));
+    });
+
     const unsub = onAuthStateChanged(auth, async (nextUser) => {
       setUser(nextUser);
       setLoading(false);
@@ -48,6 +61,20 @@ export default function AuthGate({ children }) {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
+      const code = String(err?.code || "");
+      if (
+        code.includes("auth/popup-blocked") ||
+        code.includes("auth/cancelled-popup-request") ||
+        code.includes("auth/operation-not-supported-in-this-environment")
+      ) {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr) {
+          setError(mapAuthError(redirectErr, t));
+          return;
+        }
+      }
       setError(mapAuthError(err, t));
     }
   };
