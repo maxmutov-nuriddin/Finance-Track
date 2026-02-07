@@ -35,6 +35,8 @@ import {
   getActiveGoal
 } from "../lib/budgetCalc";
 
+const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
+
 function buildExpenseSeries(transactions, range) {
   const days = range.days;
   const base = makeTashkentDate(getTzParts(range.end));
@@ -117,31 +119,10 @@ function buildExpenseSeriesByMonth(transactions, nowDate, lang = "ru") {
   return months.map((m) => ({ date: m.key, label: m.label, value: map.get(m.key) || 0 }));
 }
 
-function getSalaryDay(transactions) {
-  const salaryWords = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
-  const now = new Date();
-  const limit = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-  const incomePool = [];
-  const salaryPool = [];
-
-  transactions.forEach((item) => {
-    if (item?.type !== "income" || !item?.occurredAtISO) return;
-    const date = new Date(item.occurredAtISO);
-    if (date < limit) return;
-    const parts = getTzParts(date);
-    const entry = { day: parts.day, date };
-    incomePool.push(entry);
-    const text = `${item.description || ""} ${item.raw || ""}`.toLowerCase();
-    if (salaryWords.some((word) => text.includes(word))) {
-      salaryPool.push(entry);
-    }
-  });
-
-  const pool = salaryPool.length >= 2 ? salaryPool : incomePool;
-  if (!pool.length) return null;
-
+function pickBestDay(entries) {
+  if (!entries?.length) return null;
   const stats = new Map();
-  pool.forEach((entry) => {
+  entries.forEach((entry) => {
     const existing = stats.get(entry.day) || { count: 0, last: null };
     existing.count += 1;
     if (!existing.last || entry.date > existing.last) {
@@ -165,8 +146,47 @@ function getSalaryDay(transactions) {
       bestLast = info.last;
     }
   }
-
   return bestDay;
+}
+
+function getSalaryDay(transactions, manualDayValue, nowDate = new Date()) {
+  const manualDay = Math.round(Number(manualDayValue || 0));
+  if (manualDay >= 1 && manualDay <= 31) return manualDay;
+
+  const now = nowDate;
+  const limit = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+  const prevMonthParts = addMonthsInTz(nowDate, -1);
+  const prevYear = prevMonthParts.year;
+  const prevMonth = prevMonthParts.month;
+
+  const prevMonthSalaryPool = [];
+  const incomePool = [];
+  const salaryPool = [];
+
+  transactions.forEach((item) => {
+    if (item?.type !== "income" || !item?.occurredAtISO) return;
+    const date = new Date(item.occurredAtISO);
+    const parts = getTzParts(date);
+    const entry = { day: parts.day, date };
+    const text = `${item.description || ""} ${item.raw || ""}`.toLowerCase();
+    const isSalary = SALARY_WORDS.some((word) => text.includes(word));
+
+    if (parts.year === prevYear && parts.month === prevMonth && isSalary) {
+      prevMonthSalaryPool.push(entry);
+    }
+
+    if (date < limit) return;
+    incomePool.push(entry);
+    if (isSalary) {
+      salaryPool.push(entry);
+    }
+  });
+
+  const previousMonthDay = pickBestDay(prevMonthSalaryPool);
+  if (previousMonthDay) return previousMonthDay;
+
+  const pool = salaryPool.length >= 2 ? salaryPool : incomePool;
+  return pickBestDay(pool);
 }
 
 function isSpecialExpense(item) {
@@ -233,12 +253,11 @@ export default function Dashboard() {
   );
   const analysisStartDate = useMemo(() => {
     const monthStart = periodRange.start;
-    const salaryWords = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
     let earliestSalary = null;
     statsTransactions.forEach((item) => {
       if (item?.type !== "income" || !item?.occurredAtISO) return;
       const text = `${item.description || ""} ${item.raw || ""}`.toLowerCase();
-      const isSalary = salaryWords.some((word) => text.includes(word));
+      const isSalary = SALARY_WORDS.some((word) => text.includes(word));
       if (!isSalary) return;
       const date = new Date(item.occurredAtISO);
       if (!earliestSalary || date < earliestSalary) {
@@ -278,7 +297,11 @@ export default function Dashboard() {
     const month = now.getMonth() + 1;
     return new Date(year, month, 0).getDate();
   }, [monthTick]);
-  const salaryDay = useMemo(() => getSalaryDay(allTransactions), [allTransactions]);
+  const manualSalaryDay = Number(settings?.salaryDayOfMonth || 0);
+  const salaryDay = useMemo(
+    () => getSalaryDay(allTransactions, manualSalaryDay, nowInTashkent()),
+    [allTransactions, manualSalaryDay, dayTick]
+  );
   const daysUntilSalary = useMemo(() => {
     if (!salaryDay) return null;
     const todayParts = getTzParts(nowInTashkent());
@@ -534,13 +557,10 @@ export default function Dashboard() {
     remainingDaysInMonth
   ]);
   const dailyToZero = useMemo(() => {
-    const remainingMoney =
-      monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpenseNonRecurring;
+    const remainingMoney = Math.max(0, safeRecommendedSpend - currentMonthExpenseNonRecurring);
     return remainingDaysInMonth > 0 ? remainingMoney / remainingDaysInMonth : remainingMoney;
   }, [
-    monthlyIncome,
-    monthlyMandatory,
-    plannedMonthlySavings,
+    safeRecommendedSpend,
     currentMonthExpenseNonRecurring,
     remainingDaysInMonth
   ]);

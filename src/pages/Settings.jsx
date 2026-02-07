@@ -24,6 +24,7 @@ export default function Settings() {
 
   const [budgetMode, setBudgetMode] = useState("auto");
   const [manualMonthlyBudget, setManualMonthlyBudget] = useState("");
+  const [salaryDayOfMonth, setSalaryDayOfMonth] = useState("");
   const [targetSavingsMode, setTargetSavingsMode] = useState("goal_based");
   const [fixedMonthlySavings, setFixedMonthlySavings] = useState("");
   const [activeGoalId, setActiveGoalId] = useState("");
@@ -37,6 +38,7 @@ export default function Settings() {
     const unsubSettings = watchSettings(user.uid, (data) => {
       setBudgetMode(data?.budgetMode || "auto");
       setManualMonthlyBudget(data?.manualMonthlyBudget ? String(data.manualMonthlyBudget) : "");
+      setSalaryDayOfMonth(data?.salaryDayOfMonth ? String(data.salaryDayOfMonth) : "");
       setTargetSavingsMode(data?.targetSavingsMode || "goal_based");
       setFixedMonthlySavings(data?.fixedMonthlySavings ? String(data.fixedMonthlySavings) : "");
       setActiveGoalId(data?.activeGoalId || "");
@@ -67,9 +69,16 @@ export default function Settings() {
   }, [activeGoalId, activeGoalOptions]);
 
   const handleSave = async () => {
+    const normalizedSalaryDay = Math.round(Number(salaryDayOfMonth || 0));
+    const safeSalaryDay =
+      Number.isFinite(normalizedSalaryDay) && normalizedSalaryDay >= 1 && normalizedSalaryDay <= 31
+        ? normalizedSalaryDay
+        : null;
+
     await saveSettings(user.uid, {
       budgetMode,
       manualMonthlyBudget: manualMonthlyBudget ? Number(manualMonthlyBudget) : null,
+      salaryDayOfMonth: safeSalaryDay,
       targetSavingsMode,
       fixedMonthlySavings: fixedMonthlySavings ? Number(fixedMonthlySavings) : null,
       activeGoalId: activeGoalId || null
@@ -197,6 +206,24 @@ export default function Settings() {
                     </option>
                   ))}
                 </select>
+              </div>
+            </GlassCard>
+
+            <GlassCard>
+              <div className="settings-card-header">
+                <h2 className="settings-card-title">📅 {t("salaryDayTitle")}</h2>
+              </div>
+              <p className="settings-card-hint">{t("salaryDayHelp")}</p>
+
+              <div className="settings-input-wrapper">
+                <GlassInput
+                  placeholder={t("salaryDayPlaceholder")}
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={salaryDayOfMonth}
+                  onChange={(event) => setSalaryDayOfMonth(event.target.value)}
+                />
               </div>
             </GlassCard>
           </div>
