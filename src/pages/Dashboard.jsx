@@ -912,14 +912,29 @@ export default function Dashboard() {
             <div className="tile-value">{formatAmount(Math.round(monthlyIncome))}</div>
             <div className="tile-sub">{t("monthlySalary")}</div>
           </div>
+          <div className="stat-tile tile-orange">
+            <div className="tile-icon"><Receipt size={20} strokeWidth={2.5} /></div>
+            <div className="tile-label">{t("mandatory")}</div>
+            <div className="tile-value">{formatAmount(Math.round(monthlyMandatory))}</div>
+            <div className="tile-sub">{t("monthlyMandatoryPayments")}</div>
+          </div>
           <div className="stat-tile tile-red">
-            <div className="tile-icon"><CalendarClock size={20} strokeWidth={2.5} /></div>
-            <div className="tile-label">{t("endMonthBalance")}</div>
-            <div className="tile-value">{formatAmount(Math.round(projectedEndBalance))}</div>
-            <div className="tile-sub">{t("endMonthForecast")}</div>
-            {Number.isFinite(daysUntilSalary) && (
-              <div className="tile-meta">{t("salaryDaysLeft", { days: daysUntilSalary })}</div>
-            )}
+            <div className="tile-icon"><CreditCard size={20} strokeWidth={2.5} /></div>
+            <div className="tile-label">{t("myDebtsCard")}</div>
+            <div className="tile-value">{formatAmount(Math.round(myDebtsTotal))}</div>
+            <div className="tile-sub">{t("myDebtsCard")}</div>
+            <div className="tile-meta">
+              {t("debtsCountLabel", { count: myDebtsCount.toLocaleString(lang === "uz" ? "uz-UZ" : "ru-RU") })}
+            </div>
+          </div>
+          <div className="stat-tile tile-blue">
+            <div className="tile-icon"><HandCoins size={20} strokeWidth={2.5} /></div>
+            <div className="tile-label">{t("lentDebtsCard")}</div>
+            <div className="tile-value">{formatAmount(Math.round(lentDebtsTotal))}</div>
+            <div className="tile-sub">{t("lentDebtsCard")}</div>
+            <div className="tile-meta">
+              {t("debtsCountLabel", { count: lentDebtsCount.toLocaleString(lang === "uz" ? "uz-UZ" : "ru-RU") })}
+            </div>
           </div>
           <div className="stat-tile tile-emerald">
             <div className="tile-icon"><WalletIcon size={20} strokeWidth={2.5} /></div>
@@ -949,11 +964,14 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-          <div className="stat-tile tile-orange">
-            <div className="tile-icon"><Receipt size={20} strokeWidth={2.5} /></div>
-            <div className="tile-label">{t("mandatory")}</div>
-            <div className="tile-value">{formatAmount(Math.round(monthlyMandatory))}</div>
-            <div className="tile-sub">{t("monthlyMandatoryPayments")}</div>
+          <div className="stat-tile tile-red">
+            <div className="tile-icon"><CalendarClock size={20} strokeWidth={2.5} /></div>
+            <div className="tile-label">{t("endMonthBalance")}</div>
+            <div className="tile-value">{formatAmount(Math.round(projectedEndBalance))}</div>
+            <div className="tile-sub">{t("endMonthForecast")}</div>
+            {Number.isFinite(daysUntilSalary) && (
+              <div className="tile-meta">{t("salaryDaysLeft", { days: daysUntilSalary })}</div>
+            )}
           </div>
           <div className="stat-tile tile-purple">
             <div className="tile-icon"><Crosshair size={20} strokeWidth={2.5} /></div>
@@ -963,24 +981,6 @@ export default function Dashboard() {
               <span className="tile-value-sub">/ {formatAmount(Math.round(totalGoalsTarget))}</span>
             </div>
             <div className="tile-sub">{t("goalAmount")}</div>
-          </div>
-          <div className="stat-tile tile-red">
-            <div className="tile-icon"><CreditCard size={20} strokeWidth={2.5} /></div>
-            <div className="tile-label">{t("myDebtsCard")}</div>
-            <div className="tile-value">{formatAmount(Math.round(myDebtsTotal))}</div>
-            <div className="tile-sub">{t("myDebtsCard")}</div>
-            <div className="tile-meta">
-              {t("debtsCountLabel", { count: myDebtsCount.toLocaleString(lang === "uz" ? "uz-UZ" : "ru-RU") })}
-            </div>
-          </div>
-          <div className="stat-tile tile-blue">
-            <div className="tile-icon"><HandCoins size={20} strokeWidth={2.5} /></div>
-            <div className="tile-label">{t("lentDebtsCard")}</div>
-            <div className="tile-value">{formatAmount(Math.round(lentDebtsTotal))}</div>
-            <div className="tile-sub">{t("lentDebtsCard")}</div>
-            <div className="tile-meta">
-              {t("debtsCountLabel", { count: lentDebtsCount.toLocaleString(lang === "uz" ? "uz-UZ" : "ru-RU") })}
-            </div>
           </div>
         </div>
         <BudgetCard
