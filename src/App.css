@@ -317,6 +317,153 @@
   display: none;
 }
 
+.dashboard-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dashboard-insight-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.insight-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.insight-title {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.insight-subtitle {
+  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 0.86rem;
+}
+
+.insight-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.insight-chip.neutral {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.insight-chip.success {
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.insight-chip.danger {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.insight-col {
+  border: 1px solid rgba(64, 72, 84, 0.35);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(26, 32, 44, 0.36);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.insight-col-title {
+  font-size: 0.82rem;
+  color: #93c5fd;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.insight-col-title.danger {
+  color: #fca5a5;
+}
+
+.insight-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+}
+
+.insight-row strong {
+  color: #ffffff;
+}
+
+.insight-footer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #a0aec0;
+  font-size: 0.88rem;
+}
+
+.debt-reminder-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.debt-reminder-controls .glass-button {
+  align-self: flex-start;
+}
+
+.debt-reminder-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-insights-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .insight-head {
+    flex-direction: column;
+  }
+
+  .insight-grid,
+  .debt-reminder-lists {
+    grid-template-columns: 1fr;
+  }
+
+  .debt-reminder-controls .glass-button {
+    width: 100%;
+  }
+}
+
 .dashboard-tiles {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2190,6 +2337,16 @@ select option {
   border-bottom: 1px solid rgba(64, 72, 84, 0.3);
 }
 
+.history-actions {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.history-actions .glass-button {
+  min-width: 150px;
+}
+
 .history-title {
   font-size: 2rem;
   font-weight: 800;
@@ -2479,6 +2636,15 @@ select option {
     grid-template-columns: 1fr;
   }
 
+  .history-actions {
+    width: 100%;
+  }
+
+  .history-actions .glass-button {
+    flex: 1;
+    min-width: 0;
+  }
+
   .transaction-filters {
     grid-template-columns: 1fr;
   }
@@ -2506,6 +2672,14 @@ select option {
 @media (max-width: 480px) {
   .history-header {
     padding-bottom: 16px;
+  }
+
+  .history-actions {
+    flex-direction: column;
+  }
+
+  .history-actions .glass-button {
+    width: 100%;
   }
 
   .history-title {

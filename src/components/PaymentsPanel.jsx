@@ -1,14 +1,15 @@
-import { useMemo, useState } from "react";
-import { enableNotifications, getNotificationStatus } from "../lib/notifications";
+import { useMemo } from "react";
+import { getNotificationStatus } from "../lib/notifications";
 import { addDaysInTz, formatDateISO, getTzParts, makeTashkentDate } from "../lib/timezone";
 import GlassCard from "./GlassCard";
 import GlassButton from "./GlassButton";
 import { formatAmount } from "../lib/format";
 import { useI18n } from "./I18nProvider";
 
-export default function PaymentsPanel({ uid, payments, transactions = [], onDelete }) {
+export default function PaymentsPanel({ payments, transactions = [], allRemindersEnabled = false, onDelete }) {
   const { t } = useI18n();
-  const [notificationStatus, setNotificationStatus] = useState(getNotificationStatus());
+  const notificationStatus = getNotificationStatus();
+  const remindersReady = allRemindersEnabled && notificationStatus === "granted";
 
   const upcomingAlertDateISO = useMemo(() => {
     const base = makeTashkentDate(getTzParts(new Date()));
@@ -26,11 +27,6 @@ export default function PaymentsPanel({ uid, payments, transactions = [], onDele
       .slice(0, 5);
   }, [transactions]);
 
-  const handleEnableNotifications = async () => {
-    const result = await enableNotifications(uid);
-    setNotificationStatus(result.status === "enabled" ? "granted" : result.status);
-  };
-
   return (
     <GlassCard>
       <div className="payments-list-header">
@@ -38,12 +34,16 @@ export default function PaymentsPanel({ uid, payments, transactions = [], onDele
         <div className="payments-badge">{payments.length}</div>
       </div>
 
-      {notificationStatus !== "granted" ? (
+      {!remindersReady ? (
         <div className="alert" style={{ marginBottom: 20 }}>
-          <div style={{ marginBottom: 8 }}>{t("notificationsOff")}</div>
-          <GlassButton variant="secondary" onClick={handleEnableNotifications}>
-            {t("enableNotifications")}
-          </GlassButton>
+          <div style={{ marginBottom: 8 }}>
+            {notificationStatus === "unsupported"
+              ? t("allRemindersUnsupported")
+              : notificationStatus === "denied"
+                ? t("allRemindersDenied")
+                : t("notificationsManagedInSettings")}
+          </div>
+          <div className="helper-text">{t("notificationsOff")}</div>
         </div>
       ) : (
         <div className="alert" style={{ marginBottom: 20 }}>

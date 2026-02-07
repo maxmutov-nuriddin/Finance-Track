@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useMemo } from "react";
 import PaymentsPanel from "../components/PaymentsPanel";
 import { useUser } from "../lib/user";
-import { deletePayment, watchPayments, watchTransactions } from "../lib/store";
+import { deletePayment, watchPayments, watchSettings, watchTransactions } from "../lib/store";
 import { useI18n } from "../components/I18nProvider";
 import { formatAmount } from "../lib/format";
 import { CreditCard } from "lucide-react";
@@ -11,6 +11,7 @@ export default function Payments() {
   const { t } = useI18n();
   const [payments, setPayments] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -19,6 +20,10 @@ export default function Payments() {
   useEffect(() => {
     if (!user) return;
     return watchTransactions(user.uid, setTransactions);
+  }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    return watchSettings(user.uid, setSettings);
   }, [user]);
 
   const stats = useMemo(() => {
@@ -60,9 +65,9 @@ export default function Payments() {
       </div>
 
       <PaymentsPanel
-        uid={user.uid}
         payments={payments}
         transactions={transactions}
+        allRemindersEnabled={Boolean(settings?.remindersEnabled)}
         onDelete={(id) => deletePayment(user.uid, id)}
       />
     </div>

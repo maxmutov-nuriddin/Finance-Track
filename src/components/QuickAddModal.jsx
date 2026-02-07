@@ -40,6 +40,8 @@ export default function QuickAddModal() {
   const [useCustomDate, setUseCustomDate] = useState(false);
   const [customDateISO, setCustomDateISO] = useState("");
   const [debtMode, setDebtMode] = useState("none");
+  const [useDebtDueDate, setUseDebtDueDate] = useState(false);
+  const [debtDueDateISO, setDebtDueDateISO] = useState("");
   const [transferMode, setTransferMode] = useState("none");
   const [debts, setDebts] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -85,6 +87,8 @@ export default function QuickAddModal() {
       setUseCustomDate(false);
       setCustomDateISO("");
       setDebtMode("none");
+      setUseDebtDueDate(false);
+      setDebtDueDateISO("");
       setDebtTouched(false);
       setSelectedDebtId("");
       setTransferMode("none");
@@ -192,6 +196,13 @@ export default function QuickAddModal() {
     transferMode === "none" &&
     (isManualExpense || isAutoExpenseNeedsCategory);
   const showDebtSelect = debtMode === "repay" || debtMode === "collect";
+  const isCreatingDebt = debtMode === "borrow" || debtMode === "lend";
+
+  useEffect(() => {
+    if (isCreatingDebt) return;
+    setUseDebtDueDate(false);
+    setDebtDueDateISO("");
+  }, [isCreatingDebt]);
 
   const monthRange = useMemo(() => getMonthRangeFor(nowInTashkent()), []);
   const maxDateISO = monthRange.endISO;
@@ -260,6 +271,8 @@ export default function QuickAddModal() {
       setRaw("");
       setPreview(null);
       setDebtMode("none");
+      setUseDebtDueDate(false);
+      setDebtDueDateISO("");
       setDebtTouched(false);
       setSelectedDebtId("");
       setIsRecurring(false);
@@ -332,7 +345,8 @@ export default function QuickAddModal() {
             amount,
             remaining: amount,
             direction: debtMode === "borrow" ? "borrowed" : "lent",
-            createdDateISO: dateISO
+            createdDateISO: dateISO,
+            ...(useDebtDueDate && debtDueDateISO ? { dueDateISO: debtDueDateISO } : {})
           });
           await addTransaction(user.uid, {
             amount,
@@ -803,6 +817,35 @@ export default function QuickAddModal() {
                       />
                     </div>
                   )}
+                  {isCreatingDebt && (
+                    <>
+                      <label className="modal-check">
+                        <input
+                          type="checkbox"
+                          checked={useDebtDueDate}
+                          onChange={(event) => {
+                            const next = event.target.checked;
+                            setUseDebtDueDate(next);
+                            if (next && !debtDueDateISO) {
+                              setDebtDueDateISO(monthRange.endISO);
+                            }
+                          }}
+                        />
+                        <span>{t("debtDueDateLabel")}</span>
+                      </label>
+                      {useDebtDueDate && (
+                        <div className="modal-row" style={{ marginTop: 10 }}>
+                          <span className="muted">{t("debtDueDateLabel")}</span>
+                          <input
+                            className="glass-input"
+                            type="date"
+                            value={debtDueDateISO}
+                            onChange={(event) => setDebtDueDateISO(event.target.value)}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
                 {preview && (
                   <div className="modal-card">
@@ -859,6 +902,12 @@ export default function QuickAddModal() {
                               useCustomDate ? true : preview.hasTime
                             )}
                           </span>
+                        </div>
+                      )}
+                      {!hasAmountWarning && isCreatingDebt && useDebtDueDate && debtDueDateISO && (
+                        <div className="summary-row">
+                          <span className="summary-label">{t("debtDueDateLabel")}</span>
+                          <span className="summary-value">{debtDueDateISO}</span>
                         </div>
                       )}
                       {!hasAmountWarning && isRecurring && effectiveTypeForUi === "expense" && (

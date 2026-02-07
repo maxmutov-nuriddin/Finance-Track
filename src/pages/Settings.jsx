@@ -9,6 +9,7 @@ import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../lib/firebase";
 import { useI18n } from "../components/I18nProvider";
+import { enableNotifications, getNotificationStatus } from "../lib/notifications";
 import { Settings as SettingsIcon } from "lucide-react";
 
 const savingsModes = [
@@ -29,6 +30,10 @@ export default function Settings() {
   const [fixedMonthlySavings, setFixedMonthlySavings] = useState("");
   const [activeGoalId, setActiveGoalId] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
+  const [reminderMessage, setReminderMessage] = useState("");
+  const [allRemindersEnabled, setAllRemindersEnabled] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const [reminderPermission, setReminderPermission] = useState(getNotificationStatus());
   const [clearMessage, setClearMessage] = useState("");
   const [clearing, setClearing] = useState(false);
   const [activeTab, setActiveTab] = useState("budget");
@@ -42,6 +47,7 @@ export default function Settings() {
       setTargetSavingsMode(data?.targetSavingsMode || "goal_based");
       setFixedMonthlySavings(data?.fixedMonthlySavings ? String(data.fixedMonthlySavings) : "");
       setActiveGoalId(data?.activeGoalId || "");
+      setAllRemindersEnabled(Boolean(data?.remindersEnabled));
     });
     const unsubGoals = watchGoals(user.uid, setGoals);
     return () => {
@@ -68,6 +74,10 @@ export default function Settings() {
     }
   }, [activeGoalId, activeGoalOptions]);
 
+  useEffect(() => {
+    setReminderPermission(getNotificationStatus());
+  }, [activeTab]);
+
   const handleSave = async () => {
     const normalizedSalaryDay = Math.round(Number(salaryDayOfMonth || 0));
     const safeSalaryDay =
@@ -85,6 +95,51 @@ export default function Settings() {
     });
     setSavedMessage(t("saved"));
     setTimeout(() => setSavedMessage(""), 2000);
+  };
+
+  const showReminderMessage = (message) => {
+    setReminderMessage(message);
+    setTimeout(() => setReminderMessage(""), 2500);
+  };
+
+  const handleToggleAllReminders = async () => {
+    if (!user || reminderBusy) return;
+    setReminderBusy(true);
+    try {
+      if (allRemindersEnabled) {
+        await saveSettings(user.uid, {
+          remindersEnabled: false,
+          debtReminderEnabled: false
+        });
+        showReminderMessage(t("allRemindersOff"));
+        return;
+      }
+
+      const result = await enableNotifications(user.uid);
+      const status = result.status === "enabled" ? "granted" : result.status;
+      setReminderPermission(status);
+
+      if (status !== "granted") {
+        if (status === "unsupported") {
+          showReminderMessage(t("allRemindersUnsupported"));
+        } else if (status === "denied") {
+          showReminderMessage(t("allRemindersDenied"));
+        } else {
+          showReminderMessage(t("saveFailed"));
+        }
+        return;
+      }
+
+      await saveSettings(user.uid, {
+        remindersEnabled: true,
+        debtReminderEnabled: true
+      });
+      showReminderMessage(t("allRemindersOn"));
+    } catch (error) {
+      showReminderMessage(`${t("saveFailed")}${error?.message ? `: ${error.message}` : ""}`);
+    } finally {
+      setReminderBusy(false);
+    }
   };
 
   const handleClearAll = async () => {
@@ -319,6 +374,41 @@ export default function Settings() {
                   🇺🇿 O'zbek
                 </GlassButton>
               </div>
+            </GlassCard>
+
+            <GlassCard>
+              <div className="settings-card-header">
+                <h2 className="settings-card-title">🔔 {t("allRemindersTitle")}</h2>
+              </div>
+              <p className="settings-card-hint">{t("allRemindersHelp")}</p>
+
+              <div className="settings-actions">
+                <GlassButton
+                  variant={allRemindersEnabled ? "ghost" : "secondary"}
+                  onClick={handleToggleAllReminders}
+                  disabled={reminderBusy}
+                  className="settings-action-btn"
+                >
+                  {allRemindersEnabled ? t("allRemindersDisableBtn") : t("allRemindersEnableBtn")}
+                </GlassButton>
+                {reminderBusy ? (
+                  <span className="inline-loader" role="status" aria-label={t("save")}>
+                    <span className="loading-dot" />
+                    <span className="loading-dot" />
+                    <span className="loading-dot" />
+                  </span>
+                ) : null}
+              </div>
+              <p className="settings-card-hint" style={{ marginTop: 10, marginBottom: 0 }}>
+                {reminderPermission === "unsupported"
+                  ? t("allRemindersUnsupported")
+                  : reminderPermission === "denied"
+                    ? t("allRemindersDenied")
+                    : allRemindersEnabled
+                      ? t("allRemindersOn")
+                      : t("allRemindersOff")}
+              </p>
+              {reminderMessage && <div className="settings-success" style={{ marginTop: 12 }}>{reminderMessage}</div>}
             </GlassCard>
 
             <GlassCard>

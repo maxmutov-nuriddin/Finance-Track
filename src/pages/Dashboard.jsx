@@ -18,7 +18,18 @@ import { addDaysInTz, addMonthsInTz, formatDateISO, getTzParts, makeTashkentDate
 import { useNavigate } from "react-router-dom";
 import { computeBudgetStatus } from "../lib/budget";
 import { filterByOccurredAtISO, getMonthKey, getMonthRange, getMonthRangeFor } from "../lib/utils";
-import { Banknote, CalendarClock, Wallet as WalletIcon, TrendingDown, Receipt, Crosshair, CreditCard, HandCoins } from "lucide-react";
+import {
+  AlertTriangle,
+  Banknote,
+  CalendarClock,
+  CalendarDays,
+  CreditCard,
+  Crosshair,
+  HandCoins,
+  Receipt,
+  TrendingDown,
+  Wallet as WalletIcon
+} from "lucide-react";
 import { computeStats } from "../lib/calcs";
 import { formatAmount } from "../lib/format";
 import { useI18n } from "../components/I18nProvider";
@@ -36,6 +47,138 @@ import {
 } from "../lib/budgetCalc";
 
 const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const CATEGORY_LABEL_KEYS = {
+  cafe: "categoryCafe",
+  groceries: "categoryGroceries",
+  food: "categoryFood",
+  transport: "categoryTransport",
+  clothes: "categoryClothes",
+  beauty: "categoryBeauty",
+  kids: "categoryKids",
+  gifts: "categoryGifts",
+  pets: "categoryPets",
+  travel: "categoryTravel",
+  home: "categoryHome",
+  subscriptions: "categorySubscriptions",
+  taxes: "categoryTaxes",
+  entertainment: "categoryEntertainment",
+  shopping: "categoryShopping",
+  utilities: "categoryUtilities",
+  health: "categoryHealth",
+  education: "categoryEducation",
+  personal: "categoryPersonal",
+  credit: "categoryCredit",
+  debt: "categoryDebt",
+  rent: "categoryRent",
+  carryover: "categoryCarryover"
+};
+
+function categoryLabel(category, t) {
+  return t(CATEGORY_LABEL_KEYS[category] || "categoryOther");
+}
+
+function isoFromUnknownDate(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value.slice(0, 10);
+  if (value instanceof Date) return formatDateISO(getTzParts(value));
+  if (typeof value?.toDate === "function") return formatDateISO(getTzParts(value.toDate()));
+  return "";
+}
+
+function startOfDay(date) {
+  const parts = getTzParts(date);
+  return makeTashkentDate({
+    year: parts.year,
+    month: parts.month,
+    day: parts.day,
+    hour: 0,
+    minute: 0,
+    second: 0
+  });
+}
+
+function endOfDay(date) {
+  const parts = getTzParts(date);
+  return makeTashkentDate({
+    year: parts.year,
+    month: parts.month,
+    day: parts.day,
+    hour: 23,
+    minute: 59,
+    second: 59
+  });
+}
+
+function dateDiffFromToday(dateISO, todayDate = new Date()) {
+  if (!dateISO) return null;
+  const [year, month, day] = String(dateISO)
+    .slice(0, 10)
+    .split("-")
+    .map((value) => Number(value));
+  if (!year || !month || !day) return null;
+  const dueDate = makeTashkentDate({ year, month, day, hour: 0, minute: 0, second: 0 });
+  const today = startOfDay(todayDate);
+  return Math.round((dueDate.getTime() - today.getTime()) / DAY_MS);
+}
+
+function debtLastActivityISO(debt) {
+  return (
+    isoFromUnknownDate(debt?.updatedAt) ||
+    isoFromUnknownDate(debt?.createdAt) ||
+    String(debt?.createdDateISO || "").slice(0, 10)
+  );
+}
+
+function shouldSkipDebtFlowForSpend(tx) {
+  const mode = tx?.meta?.mode;
+  return tx?.meta?.kind === "debt" && (mode === "lend" || mode === "collect");
+}
+
+function summarizeRange(transactions, startDate, endDate) {
+  const inRange = (transactions || []).filter((tx) => {
+    if (!tx?.occurredAtISO) return false;
+    const time = new Date(tx.occurredAtISO).getTime();
+    return time >= startDate.getTime() && time <= endDate.getTime();
+  });
+
+  const summary = {
+    income: 0,
+    expense: 0,
+    net: 0,
+    ops: inRange.length,
+    topCategory: "",
+    topCategoryAmount: 0
+  };
+
+  const categorySpend = new Map();
+  inRange.forEach((tx) => {
+    const amount = Number(tx?.amount || 0);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+
+    if (tx.type === "income") {
+      summary.income += amount;
+      return;
+    }
+    if (tx.type !== "expense") return;
+    if (shouldSkipDebtFlowForSpend(tx)) return;
+
+    summary.expense += amount;
+    const key = tx.category || "other";
+    categorySpend.set(key, (categorySpend.get(key) || 0) + amount);
+  });
+
+  for (const [category, amount] of categorySpend.entries()) {
+    if (amount > summary.topCategoryAmount) {
+      summary.topCategory = category;
+      summary.topCategoryAmount = amount;
+    }
+  }
+
+  summary.net = summary.income - summary.expense;
+  return summary;
+}
 
 function buildExpenseSeries(transactions, range) {
   const days = range.days;
@@ -222,6 +365,8 @@ export default function Dashboard() {
   const [dayTick, setDayTick] = useState(() => formatDateISO(getTzParts(nowInTashkent())));
   const [carryoverModalOpen, setCarryoverModalOpen] = useState(false);
   const [chartRange, setChartRange] = useState("month");
+  const debtReminderPermission =
+    typeof window === "undefined" || !("Notification" in window) ? "unsupported" : Notification.permission;
 
   useEffect(() => {
     if (!user) return;
@@ -665,6 +810,113 @@ export default function Dashboard() {
     return buildExpenseSeries(statsTransactions, periodRange);
   }, [statsTransactions, periodRange, chartRange, allTransactions, lang]);
 
+  const weeklyReport = useMemo(() => {
+    const now = nowInTashkent();
+    const todayStart = startOfDay(now);
+    const currentStart = makeTashkentDate({ ...addDaysInTz(todayStart, -6), hour: 0, minute: 0, second: 0 });
+    const prevStart = makeTashkentDate({ ...addDaysInTz(todayStart, -13), hour: 0, minute: 0, second: 0 });
+    const prevEnd = endOfDay(makeTashkentDate({ ...addDaysInTz(todayStart, -7), hour: 0, minute: 0, second: 0 }));
+
+    const current = summarizeRange(allTransactions, currentStart, endOfDay(todayStart));
+    const previous = summarizeRange(allTransactions, prevStart, prevEnd);
+    const expenseDelta = current.expense - previous.expense;
+    const expenseDeltaPercent = previous.expense > 0 ? (expenseDelta / previous.expense) * 100 : null;
+
+    return {
+      current,
+      previous,
+      expenseDelta,
+      expenseDeltaPercent,
+      currentStartISO: formatDateISO(getTzParts(currentStart)),
+      currentEndISO: formatDateISO(getTzParts(todayStart))
+    };
+  }, [allTransactions, dayTick]);
+
+  const allRemindersEnabled = Boolean(settings?.remindersEnabled);
+  const debtReminderEnabled = allRemindersEnabled && settings?.debtReminderEnabled !== false;
+  const debtReminderSummary = useMemo(() => {
+    const now = nowInTashkent();
+    const openDebts = debts.filter((debt) => !debt.isClosed && Number(debt.remaining || 0) > 0);
+    const overdue = [];
+    const soon = [];
+    const noDue = [];
+
+    openDebts.forEach((debt) => {
+      const dueDateISO = String(debt?.dueDateISO || "").slice(0, 10);
+      if (!dueDateISO) {
+        noDue.push(debt);
+        return;
+      }
+      const daysToDue = dateDiffFromToday(dueDateISO, now);
+      if (daysToDue === null) {
+        noDue.push(debt);
+        return;
+      }
+      const item = {
+        id: debt.id,
+        title: debt.title || "",
+        amount: Number(debt.remaining || 0),
+        dueDateISO,
+        daysToDue
+      };
+      if (daysToDue < 0) {
+        overdue.push(item);
+      } else if (daysToDue <= 3) {
+        soon.push(item);
+      }
+    });
+
+    overdue.sort((a, b) => a.daysToDue - b.daysToDue);
+    soon.sort((a, b) => a.daysToDue - b.daysToDue);
+    noDue.sort((a, b) => debtLastActivityISO(a).localeCompare(debtLastActivityISO(b)));
+
+    return {
+      openCount: openDebts.length,
+      overdue,
+      soon,
+      noDueCount: noDue.length
+    };
+  }, [debts, dayTick]);
+
+  useEffect(() => {
+    if (!debtReminderEnabled || debtReminderPermission !== "granted") return;
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    const candidates = [...debtReminderSummary.overdue, ...debtReminderSummary.soon];
+    if (!candidates.length) return;
+
+    const storageKey = "finance_track_debt_notifications_v1";
+    const todayKey = dayTick;
+    let sent = {};
+    try {
+      sent = JSON.parse(localStorage.getItem(storageKey) || "{}");
+    } catch {
+      sent = {};
+    }
+
+    candidates.slice(0, 3).forEach((item) => {
+      const kind = item.daysToDue < 0 ? "overdue" : "soon";
+      const mark = `${todayKey}:${item.id}:${kind}`;
+      if (sent[mark]) return;
+
+      const title = t("debtReminderPushTitle");
+      const body =
+        item.daysToDue < 0
+          ? t("debtReminderOverduePush", {
+              title: item.title || t("debtTitle"),
+              days: String(Math.abs(item.daysToDue))
+            })
+          : t("debtReminderSoonPush", {
+              title: item.title || t("debtTitle"),
+              days: String(item.daysToDue)
+            });
+
+      new Notification(title, { body });
+      sent[mark] = true;
+    });
+
+    localStorage.setItem(storageKey, JSON.stringify(sent));
+  }, [debtReminderEnabled, debtReminderPermission, debtReminderSummary, dayTick, t]);
+
   const upcomingOneTime = useMemo(() => {
     const todayISO = new Date().toISOString().slice(0, 10);
     return payments
@@ -985,6 +1237,7 @@ export default function Dashboard() {
             <div className="tile-sub">{t("goalAmount")}</div>
           </div>
         </div>
+        {walletNotice && <div className="toast">{walletNotice}</div>}
         <BudgetCard
           monthlyIncome={monthlyIncome}
           monthlyMandatory={monthlyMandatory}
@@ -1013,6 +1266,181 @@ export default function Dashboard() {
           <div className="stats-split-side">
             <ExpenseCategoriesPie transactions={periodTransactions} />
           </div>
+        </div>
+        <div className="dashboard-insights-grid">
+          <GlassCard className="dashboard-insight-card">
+            <div className="insight-head">
+              <div>
+                <div className="insight-title">{t("weeklyReportTitle")}</div>
+                <div className="insight-subtitle">
+                  {weeklyReport.currentStartISO} - {weeklyReport.currentEndISO}
+                </div>
+              </div>
+              <div
+                className={`insight-chip ${
+                  weeklyReport.expenseDelta > 0
+                    ? "danger"
+                    : weeklyReport.expenseDelta < 0
+                      ? "success"
+                      : "neutral"
+                }`}
+              >
+                {weeklyReport.expenseDelta > 0
+                  ? t("weeklyReportExpenseTrendUp", {
+                      value:
+                        weeklyReport.expenseDeltaPercent !== null
+                          ? `${Math.abs(Math.round(weeklyReport.expenseDeltaPercent))}%`
+                          : formatAmount(Math.abs(weeklyReport.expenseDelta))
+                    })
+                  : weeklyReport.expenseDelta < 0
+                    ? t("weeklyReportExpenseTrendDown", {
+                        value:
+                          weeklyReport.expenseDeltaPercent !== null
+                            ? `${Math.abs(Math.round(weeklyReport.expenseDeltaPercent))}%`
+                            : formatAmount(Math.abs(weeklyReport.expenseDelta))
+                      })
+                    : t("weeklyReportExpenseTrendFlat")}
+              </div>
+            </div>
+
+            <div className="insight-grid">
+              <div className="insight-col">
+                <div className="insight-col-title">{t("weeklyReportCurrent")}</div>
+                <div className="insight-row">
+                  <span>{t("weeklyReportIncome")}</span>
+                  <strong>{formatAmount(Math.round(weeklyReport.current.income))}</strong>
+                </div>
+                <div className="insight-row">
+                  <span>{t("weeklyReportExpense")}</span>
+                  <strong>{formatAmount(Math.round(weeklyReport.current.expense))}</strong>
+                </div>
+                <div className="insight-row">
+                  <span>{t("weeklyReportNet")}</span>
+                  <strong>{formatAmount(Math.round(weeklyReport.current.net))}</strong>
+                </div>
+                <div className="insight-row">
+                  <span>{t("weeklyReportOps")}</span>
+                  <strong>{weeklyReport.current.ops}</strong>
+                </div>
+              </div>
+              <div className="insight-col">
+                <div className="insight-col-title">{t("weeklyReportPrevious")}</div>
+                <div className="insight-row">
+                  <span>{t("weeklyReportIncome")}</span>
+                  <strong>{formatAmount(Math.round(weeklyReport.previous.income))}</strong>
+                </div>
+                <div className="insight-row">
+                  <span>{t("weeklyReportExpense")}</span>
+                  <strong>{formatAmount(Math.round(weeklyReport.previous.expense))}</strong>
+                </div>
+                <div className="insight-row">
+                  <span>{t("weeklyReportNet")}</span>
+                  <strong>{formatAmount(Math.round(weeklyReport.previous.net))}</strong>
+                </div>
+                <div className="insight-row">
+                  <span>{t("weeklyReportOps")}</span>
+                  <strong>{weeklyReport.previous.ops}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="insight-footer">
+              <CalendarDays size={16} />
+              <span>{t("weeklyReportTopCategory")}:</span>
+              <strong>
+                {weeklyReport.current.topCategory
+                  ? `${categoryLabel(weeklyReport.current.topCategory, t)} - ${formatAmount(
+                      Math.round(weeklyReport.current.topCategoryAmount)
+                    )}`
+                  : t("weeklyReportNoCategory")}
+              </strong>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="dashboard-insight-card">
+            <div className="insight-head">
+              <div>
+                <div className="insight-title">{t("debtRemindersTitle")}</div>
+                <div className="insight-subtitle">{t("debtRemindersSubtitle")}</div>
+              </div>
+              <div className="insight-chip neutral">
+                {t("debtReminderOpenCount", {
+                  count: debtReminderSummary.openCount.toLocaleString(lang === "uz" ? "uz-UZ" : "ru-RU")
+                })}
+              </div>
+            </div>
+
+            <div className="debt-reminder-controls">
+              <div className="helper-text">
+                {debtReminderPermission === "unsupported"
+                  ? t("allRemindersUnsupported")
+                  : debtReminderPermission === "denied"
+                    ? t("allRemindersDenied")
+                    : debtReminderEnabled
+                      ? t("allRemindersOn")
+                      : t("notificationsManagedInSettings")}
+              </div>
+              {!debtReminderEnabled && (
+                <GlassButton variant="ghost" onClick={() => navigate("/settings")}>
+                  {t("configure")}
+                </GlassButton>
+              )}
+            </div>
+
+            <div className="debt-reminder-lists">
+              <div>
+                <div className="insight-col-title danger">
+                  <AlertTriangle size={14} />
+                  {t("debtReminderOverdue")}
+                </div>
+                {debtReminderSummary.overdue.length ? (
+                  debtReminderSummary.overdue.slice(0, 4).map((item) => (
+                    <div className="insight-row" key={`overdue-${item.id}`}>
+                      <span>{item.title || t("debtTitle")}</span>
+                      <strong>
+                        {formatAmount(Math.round(item.amount))} -{" "}
+                        {t("debtReminderOverdueDays", { days: Math.abs(item.daysToDue) })}
+                      </strong>
+                    </div>
+                  ))
+                ) : (
+                  <div className="muted">{t("debtReminderNone")}</div>
+                )}
+              </div>
+
+              <div>
+                <div className="insight-col-title">
+                  <CalendarClock size={14} />
+                  {t("debtReminderSoon")}
+                </div>
+                {debtReminderSummary.soon.length ? (
+                  debtReminderSummary.soon.slice(0, 4).map((item) => (
+                    <div className="insight-row" key={`soon-${item.id}`}>
+                      <span>{item.title || t("debtTitle")}</span>
+                      <strong>
+                        {formatAmount(Math.round(item.amount))} -{" "}
+                        {item.daysToDue === 0
+                          ? t("debtReminderToday")
+                          : t("debtReminderInDays", { days: item.daysToDue })}
+                      </strong>
+                    </div>
+                  ))
+                ) : (
+                  <div className="muted">{t("debtReminderNone")}</div>
+                )}
+              </div>
+            </div>
+
+            {debtReminderSummary.noDueCount > 0 && (
+              <div className="insight-footer">
+                <span>
+                  {t("debtReminderNoDue", {
+                    count: debtReminderSummary.noDueCount.toLocaleString(lang === "uz" ? "uz-UZ" : "ru-RU")
+                  })}
+                </span>
+              </div>
+            )}
+          </GlassCard>
         </div>
       </div>
       <div className="dashboard-side">
