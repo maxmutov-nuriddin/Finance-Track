@@ -131,6 +131,8 @@ export default function Goals() {
         deletingIds={deletingIds}
         onDelete={async (id) => {
           if (deletingIds.has(id)) return;
+          const confirmed = window.confirm(t("deleteConfirm"));
+          if (!confirmed) return;
           setDeletingIds((prev) => new Set(prev).add(id));
           try {
             const goal = goals.find((item) => item.id === id);

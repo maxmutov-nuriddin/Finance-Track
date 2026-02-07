@@ -81,7 +81,12 @@ export default function Payments() {
         payments={payments}
         transactions={transactions}
         allRemindersEnabled={Boolean(settings?.remindersEnabled)}
-        onDelete={(id) => deletePayment(user.uid, id)}
+        onDelete={async (id) => {
+          if (!user) return;
+          const confirmed = window.confirm(t("deleteConfirm"));
+          if (!confirmed) return;
+          await deletePayment(user.uid, id);
+        }}
       />
     </div>
   );

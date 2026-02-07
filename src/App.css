@@ -661,6 +661,11 @@
   order: 2;
 }
 
+.tile-value-negative {
+  color: #ff6b6b;
+  text-shadow: 0 0 14px rgba(239, 68, 68, 0.22);
+}
+
 .tile-sub {
   margin-top: 0;
   font-size: 0.8rem;
@@ -934,6 +939,72 @@
   border: 1px solid #404854;
   color: #a0aec0;
   font-size: 0.9rem;
+}
+
+.site-toast-stack {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, calc(100vw - 24px));
+  pointer-events: none;
+}
+
+.site-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #404854;
+  background: rgba(19, 26, 40, 0.98);
+  color: #dbe6ff;
+  box-shadow: 0 12px 28px rgba(2, 8, 23, 0.42);
+}
+
+.site-toast--success {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(17, 52, 36, 0.98);
+}
+
+.site-toast--error {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(62, 25, 28, 0.98);
+}
+
+.site-toast--warning {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(66, 45, 13, 0.98);
+}
+
+.site-toast--info {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(23, 38, 62, 0.98);
+}
+
+.site-toast-message {
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.site-toast-close {
+  border: 0;
+  background: transparent;
+  color: #c8d3e8;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.site-toast-close:hover {
+  background: rgba(148, 163, 184, 0.16);
 }
 
 .hero-input {
@@ -4357,6 +4428,14 @@ select option {
   font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.01em;
+}
+
+.value-negative {
+  color: #ff5f6d !important;
+}
+
+.value-positive {
+  color: #26d07c;
 }
 
 .stats-card-foot {

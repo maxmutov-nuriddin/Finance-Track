@@ -2,6 +2,7 @@
 import AuthGate from "./components/AuthGate";
 import QuickAddModal from "./components/QuickAddModal";
 import Sidebar from "./components/Sidebar";
+import SiteToastStack from "./components/SiteToastStack";
 import { I18nProvider, useI18n } from "./components/I18nProvider";
 import Dashboard from "./pages/Dashboard";
 import Goals from "./pages/Goals";
@@ -19,6 +20,7 @@ function AppShell() {
     <div className="app-shell layout">
       <Sidebar activePath={location.pathname} onNavigate={navigate} />
       <div className="app-content">
+        <SiteToastStack />
         <header className="app-header">
           <div className="brand">
             <div className="brand-title">Finance Track</div>

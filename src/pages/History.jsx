@@ -226,7 +226,15 @@ export default function History() {
         </div>
       </div>
 
-      <TransactionList items={transactions} onDelete={(id) => deleteTransaction(user.uid, id)} />
+      <TransactionList
+        items={transactions}
+        onDelete={async (id) => {
+          if (!user) return;
+          const confirmed = window.confirm(t("deleteConfirm"));
+          if (!confirmed) return;
+          await deleteTransaction(user.uid, id);
+        }}
+      />
     </div>
   );
 }

@@ -66,20 +66,22 @@ export default function StatsCard({
       <div className="stats-card-summary">
         <div className="stats-card-metric">
           <div className="stats-card-metric-label">{t("came")}</div>
-          <div className="stats-card-metric-value">{formatAmount(stats.income)}</div>
+          <div className="stats-card-metric-value value-positive">{formatAmount(stats.income)}</div>
         </div>
         <div className="stats-card-metric">
           <div className="stats-card-metric-label">{t("spent")}</div>
-          <div className="stats-card-metric-value">{formatAmount(stats.expense)}</div>
+          <div className="stats-card-metric-value value-negative">{formatAmount(stats.expense)}</div>
         </div>
         <div className="stats-card-metric">
           <div className="stats-card-metric-label">{t("left")}</div>
-          <div className="stats-card-metric-value">{formatAmount(stats.net)}</div>
+          <div className={`stats-card-metric-value ${stats.net < 0 ? "value-negative" : "value-positive"}`}>
+            {formatAmount(stats.net)}
+          </div>
         </div>
       </div>
 
       <div className="stats-card-foot">
-        <div className="stats-card-foot-row">
+        <div className={`stats-card-foot-row ${monthlyNet < 0 ? "value-negative" : ""}`}>
           {t("monthFact")}: {formatAmount(Math.round(monthlyNet))}.
         </div>
         {Number.isFinite(dailyLimit) && Number.isFinite(daysInMonth) && (
@@ -90,7 +92,7 @@ export default function StatsCard({
           </div>
         )}
         {Number.isFinite(dailyRemaining) && (
-          <div className="stats-card-foot-row stats-card-foot-muted">
+          <div className={`stats-card-foot-row stats-card-foot-muted ${dailyRemaining < 0 ? "value-negative" : ""}`}>
             {t("dailyRemainingLabel")}: {formatAmount(Math.round(dailyRemaining))}.
           </div>
         )}

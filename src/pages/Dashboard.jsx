@@ -45,6 +45,7 @@ import {
   computeRequiredMonthlySavings,
   getActiveGoal
 } from "../lib/budgetCalc";
+import { showSiteToast } from "../lib/siteToast";
 
 const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
 const BORROW_DEBT_WORDS = ["взял", "взяла", "занял", "заняла", "borrow", "qarz ol", "одолжил у"];
@@ -385,6 +386,11 @@ export default function Dashboard() {
       unsubSettings();
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!walletNotice) return;
+    showSiteToast(walletNotice, "info", { duration: 3600 });
+  }, [walletNotice]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1228,13 +1234,15 @@ export default function Dashboard() {
           <div className="stat-tile tile-emerald">
             <div className="tile-icon"><WalletIcon size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("wallet")}</div>
-            <div className="tile-value">{formatAmount(walletBalance)}</div>
+            <div className={`tile-value ${walletBalance < 0 ? "tile-value-negative" : ""}`}>{formatAmount(walletBalance)}</div>
             <div className="tile-sub">{t("wallet")}</div>
           </div>
           <div className="stat-tile tile-blue">
             <div className="tile-icon"><TrendingDown size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("dailyAllowed")}</div>
-            <div className="tile-value">{formatAmount(Math.round(dailyLimitRemaining))}</div>
+            <div className={`tile-value ${dailyLimitRemaining < 0 ? "tile-value-negative" : ""}`}>
+              {formatAmount(Math.round(dailyLimitRemaining))}
+            </div>
             <div className="tile-sub">
               {isSalaryHorizon
                 ? t("dailyLimitToSalaryLabel")
@@ -1256,7 +1264,9 @@ export default function Dashboard() {
           <div className="stat-tile tile-red">
             <div className="tile-icon"><CalendarClock size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("endMonthBalance")}</div>
-            <div className="tile-value">{formatAmount(Math.round(projectedEndBalance))}</div>
+            <div className={`tile-value ${projectedEndBalance < 0 ? "tile-value-negative" : ""}`}>
+              {formatAmount(Math.round(projectedEndBalance))}
+            </div>
             <div className="tile-sub">{t("endMonthForecast")}</div>
             {Number.isFinite(daysUntilSalary) && (
               <div className="tile-meta">{t("salaryDaysLeft", { days: daysUntilSalary })}</div>

@@ -20,7 +20,7 @@ export default function BudgetCard({
     currentMonthExpense,
     recommendedMaxSpend
   );
-  const remaining = Math.max(0, Math.round(recommendedMaxSpend - currentMonthExpense));
+  const remaining = Math.round(recommendedMaxSpend - currentMonthExpense);
   const warningText = warning
     ? warning === "Добавь доход (зп), чтобы мы рассчитали бюджет."
       ? t("budgetWarnNoIncome")
@@ -99,7 +99,9 @@ export default function BudgetCard({
 
               <div className="budget-card-info">
                 <div className="budget-card-label">{t("remainingSpendLabel")}</div>
-                <div className="budget-card-amount">{formatAmount(remaining)}</div>
+                <div className={`budget-card-amount ${remaining < 0 ? "value-negative" : ""}`}>
+                  {formatAmount(remaining)}
+                </div>
                 <div className="budget-card-helper">{t("budgetHelper")}</div>
               </div>
 

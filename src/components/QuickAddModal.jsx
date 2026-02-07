@@ -22,6 +22,7 @@ import ModalPortal from "./ModalPortal";
 import { useI18n } from "./I18nProvider";
 import { getMonthRangeFor } from "../lib/utils";
 import { computeMandatoryMonthly, computeRecommendedSpend } from "../lib/budgetCalc";
+import { showSiteToast } from "../lib/siteToast";
 
 export default function QuickAddModal() {
   const user = useUser();
@@ -48,6 +49,15 @@ export default function QuickAddModal() {
   const [payments, setPayments] = useState([]);
   const [selectedDebtId, setSelectedDebtId] = useState("");
   const [settings, setSettings] = useState(null);
+
+  const showSavedNoticeWithToast = (message, variant = "info", duration = 2200) => {
+    if (!message) return;
+    setSavedNotice(message);
+    showSiteToast(message, variant, { duration });
+    if (duration > 0) {
+      setTimeout(() => setSavedNotice(""), duration);
+    }
+  };
   const categoryLabel = (key) => {
     if (key === "income") return t("typeIncome");
     if (key === "cafe") return t("categoryCafe");
@@ -232,7 +242,7 @@ export default function QuickAddModal() {
     if (isSubmitting) return;
     if (!preview || !user) return;
     if (hasAmountWarning) {
-      setSavedNotice(t("noAmountText"));
+      showSavedNoticeWithToast(t("noAmountText"), "warning");
       return;
     }
     const effectiveType =
@@ -258,11 +268,11 @@ export default function QuickAddModal() {
     if (debtMode !== "none") {
       const amount = Number(preview.amount || 0);
       if (!amount || amount <= 0) {
-        setSavedNotice(t("noAmountText"));
+        showSavedNoticeWithToast(t("noAmountText"), "warning");
         return;
       }
       if ((debtMode === "repay" || debtMode === "collect") && !selectedDebtId) {
-        setSavedNotice(t("debtChoose"));
+        showSavedNoticeWithToast(t("debtChoose"), "warning");
         return;
       }
     }
@@ -284,17 +294,17 @@ export default function QuickAddModal() {
       if (transferMode !== "none") {
         const amount = Number(preview.amount || 0);
         if (!amount || amount <= 0) {
-          setSavedNotice(t("noAmountText"));
+          showSavedNoticeWithToast(t("noAmountText"), "warning");
           return;
         }
         const transferToSpend = transferMode === "wallet_to_spend";
         const walletBalance = Number(settings?.walletBalance || 0);
         if (transferToSpend && walletDebug !== null && amount > walletBalance) {
-          setSavedNotice(t("walletNotEnough"));
+          showSavedNoticeWithToast(t("walletNotEnough"), "error");
           return;
         }
         if (!transferToSpend && remainingSpend !== null && amount > remainingSpend) {
-          setSavedNotice(t("spendNotEnough"));
+          showSavedNoticeWithToast(t("spendNotEnough"), "error");
           return;
         }
         await addTransfer(user.uid, {
@@ -305,15 +315,14 @@ export default function QuickAddModal() {
           description: transferToSpend ? t("transferToSpend") : t("transferToWallet"),
           raw
         });
-        setSavedNotice(t("recordAdded"));
-        setTimeout(() => setSavedNotice(""), 1500);
+        showSavedNoticeWithToast(t("recordAdded"), "success", 1800);
         success = true;
         finalizeSuccess();
         return;
       } else if (effectiveType === "goal" && debtMode === "none") {
         const amount = Number(preview.amount || 0);
         if (!amount || amount <= 0) {
-          setSavedNotice(t("noAmountText"));
+          showSavedNoticeWithToast(t("noAmountText"), "warning");
           return;
         }
         const baseTitle = (preview.description || raw || "").trim();
@@ -332,8 +341,7 @@ export default function QuickAddModal() {
           currentAmount: 0,
           createdDateISO: dateISO
         });
-        setSavedNotice(t("recordAdded"));
-        setTimeout(() => setSavedNotice(""), 1500);
+        showSavedNoticeWithToast(t("recordAdded"), "success", 1800);
         success = true;
         finalizeSuccess();
         return;
@@ -362,8 +370,7 @@ export default function QuickAddModal() {
           if (debtMode === "borrow") {
             await applyWalletDelta(amount);
           }
-          setSavedNotice(t("recordAdded"));
-          setTimeout(() => setSavedNotice(""), 1500);
+          showSavedNoticeWithToast(t("recordAdded"), "success", 1800);
           success = true;
           finalizeSuccess();
           return;
@@ -389,8 +396,7 @@ export default function QuickAddModal() {
           if (debtMode === "collect") {
             await applyWalletDelta(amount);
           }
-          setSavedNotice(t("recordAdded"));
-          setTimeout(() => setSavedNotice(""), 1500);
+          showSavedNoticeWithToast(t("recordAdded"), "success", 1800);
           success = true;
           finalizeSuccess();
           return;
@@ -415,23 +421,21 @@ export default function QuickAddModal() {
             title: preview.description || raw || t("monthlyExpense"),
             recurrence: "monthly"
           });
-          setSavedNotice(t("monthlyPaymentAdded"));
+          showSavedNoticeWithToast(t("monthlyPaymentAdded"), "success", 2600);
         }
         if (!isRecurring) {
-          setSavedNotice(t("recordAdded"));
+          showSavedNoticeWithToast(t("recordAdded"), "success", 2200);
         }
-        setTimeout(() => setSavedNotice(""), 2500);
         success = true;
         finalizeSuccess();
         return;
       }
     } catch (err) {
       if (err?.message === "wallet_insufficient") {
-        setSavedNotice(t("walletNotEnough"));
+        showSavedNoticeWithToast(t("walletNotEnough"), "error");
       } else {
-        setSavedNotice(`${t("saveFailed")}${err?.message ? `: ${err.message}` : ""}`);
+        showSavedNoticeWithToast(`${t("saveFailed")}${err?.message ? `: ${err.message}` : ""}`, "error", 2600);
       }
-      setTimeout(() => setSavedNotice(""), 2000);
     } finally {
       setIsSubmitting(false);
     }

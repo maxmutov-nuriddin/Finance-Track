@@ -15,6 +15,7 @@ import { enableNotifications, getNotificationStatus } from "../lib/notifications
 import { Settings as SettingsIcon } from "lucide-react";
 import { getMonthRangeFor } from "../lib/utils";
 import { formatDateISO, getTzParts } from "../lib/timezone";
+import { showSiteToast } from "../lib/siteToast";
 
 const savingsModes = [
   { value: "goal_based", labelRu: "По цели", labelUz: "Maqsad bo'yicha" },
@@ -129,6 +130,33 @@ export default function Settings() {
     normalizeNumberInput(fixedMonthlySavings) !== normalizeNumberInput(savedBudgetState.fixedMonthlySavings) ||
     activeGoalId !== savedBudgetState.activeGoalId;
 
+  const showSavedMessage = (message, variant = "success", duration = 2000) => {
+    if (!message) return;
+    setSavedMessage(message);
+    showSiteToast(message, variant, { duration });
+    if (duration > 0) {
+      setTimeout(() => setSavedMessage(""), duration);
+    }
+  };
+
+  const showTelegramMessage = (message, variant = "info", duration = 3000) => {
+    if (!message) return;
+    setTelegramMessage(message);
+    showSiteToast(message, variant, { duration });
+    if (duration > 0) {
+      setTimeout(() => setTelegramMessage(""), duration);
+    }
+  };
+
+  const showClearMessage = (message, variant = "info", duration = 0) => {
+    if (!message) return;
+    setClearMessage(message);
+    showSiteToast(message, variant, { duration: duration || 2200 });
+    if (duration > 0) {
+      setTimeout(() => setClearMessage(""), duration);
+    }
+  };
+
   const handleSave = async () => {
     if (!user || !isBudgetSettingsChanged) return;
     const normalizedSalaryDay = Math.round(Number(salaryDayOfMonth || 0));
@@ -153,12 +181,12 @@ export default function Settings() {
       fixedMonthlySavings: fixedMonthlySavings ? String(Number(fixedMonthlySavings)) : "",
       activeGoalId: activeGoalId || ""
     });
-    setSavedMessage(t("saved"));
-    setTimeout(() => setSavedMessage(""), 2000);
+    showSavedMessage(t("saved"), "success", 2000);
   };
 
-  const showReminderMessage = (message) => {
+  const showReminderMessage = (message, variant = "info") => {
     setReminderMessage(message);
+    showSiteToast(message, variant, { duration: 2500 });
     setTimeout(() => setReminderMessage(""), 2500);
   };
 
@@ -172,7 +200,7 @@ export default function Settings() {
           debtReminderEnabled: false,
           telegramEnabled: false
         });
-        showReminderMessage(t("allRemindersOff"));
+        showReminderMessage(t("allRemindersOff"), "info");
         return;
       }
 
@@ -182,11 +210,11 @@ export default function Settings() {
 
       if (status !== "granted") {
         if (status === "unsupported") {
-          showReminderMessage(t("allRemindersUnsupported"));
+          showReminderMessage(t("allRemindersUnsupported"), "warning");
         } else if (status === "denied") {
-          showReminderMessage(t("allRemindersDenied"));
+          showReminderMessage(t("allRemindersDenied"), "warning");
         } else {
-          showReminderMessage(t("saveFailed"));
+          showReminderMessage(t("saveFailed"), "error");
         }
         return;
       }
@@ -196,9 +224,9 @@ export default function Settings() {
         debtReminderEnabled: true,
         telegramEnabled: Boolean(telegramChatId.trim())
       });
-      showReminderMessage(t("allRemindersOn"));
+      showReminderMessage(t("allRemindersOn"), "success");
     } catch (error) {
-      showReminderMessage(`${t("saveFailed")}${error?.message ? `: ${error.message}` : ""}`);
+      showReminderMessage(`${t("saveFailed")}${error?.message ? `: ${error.message}` : ""}`, "error");
     } finally {
       setReminderBusy(false);
     }
@@ -213,14 +241,12 @@ export default function Settings() {
     if (!value) {
       await saveSettings(user.uid, { telegramChatId: null, telegramEnabled: false });
       setSavedTelegramChatId("");
-      setTelegramMessage(t("telegramIdCleared"));
-      setTimeout(() => setTelegramMessage(""), 2500);
+      showTelegramMessage(t("telegramIdCleared"), "info", 2500);
       return;
     }
 
     if (!/^-?\d+$/.test(value)) {
-      setTelegramMessage(t("telegramIdInvalid"));
-      setTimeout(() => setTelegramMessage(""), 2500);
+      showTelegramMessage(t("telegramIdInvalid"), "warning", 2500);
       return;
     }
 
@@ -234,8 +260,7 @@ export default function Settings() {
 
       const token = String(import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "").trim();
       if (!token) {
-        setTelegramMessage(t("telegramBotTokenMissing"));
-        setTimeout(() => setTelegramMessage(""), 3000);
+        showTelegramMessage(t("telegramBotTokenMissing"), "warning", 3200);
         return;
       }
 
@@ -256,14 +281,12 @@ export default function Settings() {
 
       const payload = await response.json().catch(() => null);
       if (response.ok && payload?.ok) {
-        setTelegramMessage(t("telegramWelcomeSent"));
+        showTelegramMessage(t("telegramWelcomeSent"), "success", 3000);
       } else {
-        setTelegramMessage(t("telegramWelcomeFailed"));
+        showTelegramMessage(t("telegramWelcomeFailed"), "error", 3200);
       }
-      setTimeout(() => setTelegramMessage(""), 3000);
     } catch {
-      setTelegramMessage(t("telegramWelcomeFailed"));
-      setTimeout(() => setTelegramMessage(""), 3000);
+      showTelegramMessage(t("telegramWelcomeFailed"), "error", 3200);
     } finally {
       setTelegramBusy(false);
     }
@@ -316,15 +339,13 @@ export default function Settings() {
     if (!user || telegramReportBusy) return;
     const chatId = telegramChatId.trim();
     if (!/^-?\d+$/.test(chatId)) {
-      setTelegramMessage(t("telegramIdInvalid"));
-      setTimeout(() => setTelegramMessage(""), 3000);
+      showTelegramMessage(t("telegramIdInvalid"), "warning", 3000);
       return;
     }
 
     const token = String(import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "").trim();
     if (!token) {
-      setTelegramMessage(t("telegramBotTokenMissing"));
-      setTimeout(() => setTelegramMessage(""), 3000);
+      showTelegramMessage(t("telegramBotTokenMissing"), "warning", 3200);
       return;
     }
 
@@ -411,11 +432,9 @@ export default function Settings() {
       });
 
       const payload = await response.json().catch(() => null);
-      setTelegramMessage(response.ok && payload?.ok ? t("telegramReportSent") : t("telegramReportFailed"));
-      setTimeout(() => setTelegramMessage(""), 3000);
+      showTelegramMessage(response.ok && payload?.ok ? t("telegramReportSent") : t("telegramReportFailed"), response.ok && payload?.ok ? "success" : "error", 3000);
     } catch {
-      setTelegramMessage(t("telegramReportFailed"));
-      setTimeout(() => setTelegramMessage(""), 3000);
+      showTelegramMessage(t("telegramReportFailed"), "error", 3000);
     } finally {
       setTelegramReportBusy(false);
     }
@@ -427,7 +446,7 @@ export default function Settings() {
     if (!confirmed) return;
     if (clearing) return;
     setClearing(true);
-    setClearMessage(t("clearing"));
+    showClearMessage(t("clearing"), "info", 0);
     const timeoutMs = 15000;
     try {
       await Promise.race([
@@ -436,12 +455,11 @@ export default function Settings() {
           setTimeout(() => reject(new Error(t("clearTimeout"))), timeoutMs)
         )
       ]);
-      setClearMessage(t("cleared"));
+      showClearMessage(t("cleared"), "success", 2000);
     } catch (error) {
-      setClearMessage(`${t("clearFailed")}${error?.message ? `: ${error.message}` : ""}`);
+      showClearMessage(`${t("clearFailed")}${error?.message ? `: ${error.message}` : ""}`, "error", 2600);
     }
     setClearing(false);
-    setTimeout(() => setClearMessage(""), 2000);
   };
 
   const telegramConnected = Boolean(telegramChatId.trim());
