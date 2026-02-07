@@ -189,17 +189,23 @@ function getSalaryDay(transactions, manualDayValue, nowDate = new Date()) {
   return pickBestDay(pool);
 }
 
-function isSpecialExpense(item) {
+function isDebtExpense(item) {
   const category = item?.category || "";
+  const raw = (item?.raw || "").toLowerCase();
+  return category === "credit" || category === "debt" || raw.includes("долг") || raw.includes("кредит");
+}
+
+function isGoalSavingExpense(item) {
+  if (item?.meta?.kind === "goal_contribution") return true;
   const description = (item?.description || "").toLowerCase();
   const raw = (item?.raw || "").toLowerCase();
-  const isGoal = description.includes("накоп") || raw.includes("накоп");
-  const isDebt =
-    category === "credit" ||
-    category === "debt" ||
-    raw.includes("долг") ||
-    raw.includes("кредит");
-  return isGoal || isDebt;
+  const hasGoalKeyword = description.includes("накоп") || raw.includes("накоп");
+  if (!hasGoalKeyword) return false;
+  return !isDebtExpense(item);
+}
+
+function isSpecialExpense(item) {
+  return isGoalSavingExpense(item) || isDebtExpense(item);
 }
 
 export default function Dashboard() {
@@ -430,6 +436,21 @@ export default function Dashboard() {
       return sum;
     }, 0);
   }, [allTransactions]);
+  const currentMonthGoalSavingsExpense = useMemo(() => {
+    const nowParts = getTzParts(nowInTashkent());
+    const year = nowParts.year;
+    const month = nowParts.month;
+    return allTransactions.reduce((sum, item) => {
+      if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      if (item.isRecurring) return sum;
+      if (!isGoalSavingExpense(item)) return sum;
+      const parts = getTzParts(new Date(item.occurredAtISO));
+      if (parts.year === year && parts.month === month) {
+        return sum + Number(item.amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [allTransactions, dayTick]);
 
   const todayISO = useMemo(() => dayTick, [dayTick]);
   const todayExpense = useMemo(() => {
@@ -521,11 +542,22 @@ export default function Dashboard() {
     todaySpecialExpense,
     dailyCarryoverPool
   ]);
+  const savingsRemainingForMonth = useMemo(
+    () => Math.max(0, plannedMonthlySavings - currentMonthGoalSavingsExpense),
+    [plannedMonthlySavings, currentMonthGoalSavingsExpense]
+  );
+  const dailySavingsReserve = useMemo(() => {
+    if (dailyHorizonDays <= 0) return savingsRemainingForMonth;
+    return savingsRemainingForMonth / dailyHorizonDays;
+  }, [savingsRemainingForMonth, dailyHorizonDays]);
 
   const dailyLimitComputed = useMemo(() => {
-    if (dailyHorizonDays <= 0) return Math.floor(dailyRemainingBudget);
-    return Math.floor(dailyRemainingBudget / dailyHorizonDays);
-  }, [dailyRemainingBudget, dailyHorizonDays]);
+    if (dailyHorizonDays <= 0) {
+      return Math.floor(Math.max(0, dailyRemainingBudget - dailySavingsReserve));
+    }
+    const dailyBase = dailyRemainingBudget / dailyHorizonDays;
+    return Math.floor(Math.max(0, dailyBase - dailySavingsReserve));
+  }, [dailyRemainingBudget, dailyHorizonDays, dailySavingsReserve]);
 
   const dailyLimitFixed = useMemo(() => {
     const storedDate = settings?.dailyLimitDateISO;
@@ -557,9 +589,12 @@ export default function Dashboard() {
     () => Math.max(0, safeRecommendedSpend - currentMonthExpenseNonRecurring),
     [safeRecommendedSpend, currentMonthExpenseNonRecurring]
   );
-  const projectedEndBalance = useMemo(() => {
+  const currentRegularPace = useMemo(() => {
     const safeDays = Math.max(1, analysisDaysPassed);
-    const avgDailyExpense = currentMonthRegularExpenseNonRecurring / safeDays;
+    return currentMonthRegularExpenseNonRecurring / safeDays;
+  }, [currentMonthRegularExpenseNonRecurring, analysisDaysPassed]);
+  const projectedEndBalance = useMemo(() => {
+    const avgDailyExpense = currentRegularPace;
     const remainingMoney = safeRecommendedSpend - currentMonthExpenseNonRecurring;
     const futureDays = Math.max(0, remainingDaysInMonth - 1);
     const projectedFutureExpense = avgDailyExpense * futureDays;
@@ -567,17 +602,16 @@ export default function Dashboard() {
   }, [
     safeRecommendedSpend,
     currentMonthExpenseNonRecurring,
-    currentMonthRegularExpenseNonRecurring,
-    analysisDaysPassed,
+    currentRegularPace,
     remainingDaysInMonth
   ]);
   const dailyToZero = useMemo(() => {
     const remainingMoney = Math.max(0, safeRecommendedSpend - currentMonthExpenseNonRecurring);
-    return remainingDaysInMonth > 0 ? remainingMoney / remainingDaysInMonth : remainingMoney;
+    return dailyHorizonDays > 0 ? remainingMoney / dailyHorizonDays : remainingMoney;
   }, [
     safeRecommendedSpend,
     currentMonthExpenseNonRecurring,
-    remainingDaysInMonth
+    dailyHorizonDays
   ]);
 
   const chartSeries = useMemo(() => {
@@ -722,8 +756,8 @@ export default function Dashboard() {
       );
       const nextDailyLimit =
         dailyHorizonDays > 0
-          ? Math.floor(nextRemainingBudget / dailyHorizonDays)
-          : Math.floor(nextRemainingBudget);
+          ? Math.floor(Math.max(0, nextRemainingBudget / dailyHorizonDays - dailySavingsReserve))
+          : Math.floor(Math.max(0, nextRemainingBudget - dailySavingsReserve));
 
       saveSettings(user.uid, {
         ...(carryToWallet > 0 ? { walletBalance: nextWalletBalance } : {}),
@@ -749,6 +783,7 @@ export default function Dashboard() {
     currentMonthExpenseBeforeTodayNonRecurring,
     todaySpecialExpense,
     dailyHorizonDays,
+    dailySavingsReserve,
     t
   ]);
 
@@ -867,7 +902,16 @@ export default function Dashboard() {
                 : t("dailyLimitLabel", { days: dailyHorizonDays })}
             </div>
             {Number.isFinite(dailyToZero) && (
-              <div className="tile-meta">{t("endMonthZeroHint", { amount: formatAmount(Math.round(dailyToZero)) })}</div>
+              <div className="tile-meta">
+                {isSalaryHorizon
+                  ? t("zeroToSalaryHint", { amount: formatAmount(Math.round(dailyToZero)) })
+                  : t("endMonthZeroHint", { amount: formatAmount(Math.round(dailyToZero)) })}
+              </div>
+            )}
+            {dailySavingsReserve > 0 && (
+              <div className="tile-meta">
+                {t("dailySavingsReserveHint", { amount: formatAmount(Math.round(dailySavingsReserve)) })}
+              </div>
             )}
           </div>
           <div className="stat-tile tile-orange">
