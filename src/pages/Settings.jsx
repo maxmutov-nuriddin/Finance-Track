@@ -7,10 +7,14 @@ import { clearAllUserData, saveSettings, watchGoals, watchSettings } from "../li
 import { formatAmount } from "../lib/format";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { collection, doc, getDoc, getDocs, limit, orderBy, query } from "firebase/firestore";
 import { auth } from "../lib/firebase";
+import { db } from "../lib/firebase";
 import { useI18n } from "../components/I18nProvider";
 import { enableNotifications, getNotificationStatus } from "../lib/notifications";
 import { Settings as SettingsIcon } from "lucide-react";
+import { getMonthRangeFor } from "../lib/utils";
+import { formatDateISO, getTzParts } from "../lib/timezone";
 
 const savingsModes = [
   { value: "goal_based", labelRu: "По цели", labelUz: "Maqsad bo'yicha" },
@@ -43,6 +47,7 @@ export default function Settings() {
   const [savedTelegramChatId, setSavedTelegramChatId] = useState("");
   const [telegramMessage, setTelegramMessage] = useState("");
   const [telegramBusy, setTelegramBusy] = useState(false);
+  const [telegramReportBusy, setTelegramReportBusy] = useState(false);
   const [allRemindersEnabled, setAllRemindersEnabled] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
   const [reminderPermission, setReminderPermission] = useState(getNotificationStatus());
@@ -263,6 +268,158 @@ export default function Settings() {
     }
   };
 
+  const formatReportAmount = (value) => {
+    const locale = lang === "uz" ? "uz-UZ" : "ru-RU";
+    return Number(value || 0).toLocaleString(locale);
+  };
+
+  const buildManualTelegramReportText = ({
+    todayISO,
+    todayIncome,
+    todayExpense,
+    monthIncome,
+    monthExpense,
+    walletBalance,
+    dailyLimit,
+    myDebtsTotal,
+    lentDebtsTotal
+  }) => {
+    if (lang === "uz") {
+      return [
+        `Qo'lda hisobot: ${todayISO}`,
+        `Bugun kirim: ${formatReportAmount(todayIncome)}`,
+        `Bugun chiqim: ${formatReportAmount(todayExpense)}`,
+        `Oy kirimi: ${formatReportAmount(monthIncome)}`,
+        `Oy chiqimi: ${formatReportAmount(monthExpense)}`,
+        `Hamyon: ${formatReportAmount(walletBalance)}`,
+        `Kunlik limit: ${formatReportAmount(dailyLimit)}`,
+        `Mening qarzlarim: ${formatReportAmount(myDebtsTotal)}`,
+        `Bergan qarzlarim: ${formatReportAmount(lentDebtsTotal)}`
+      ].join("\n");
+    }
+
+    return [
+      `Ручной отчёт: ${todayISO}`,
+      `Доход сегодня: ${formatReportAmount(todayIncome)}`,
+      `Расход сегодня: ${formatReportAmount(todayExpense)}`,
+      `Доход за месяц: ${formatReportAmount(monthIncome)}`,
+      `Расход за месяц: ${formatReportAmount(monthExpense)}`,
+      `Кошелёк: ${formatReportAmount(walletBalance)}`,
+      `Дневной лимит: ${formatReportAmount(dailyLimit)}`,
+      `Мои долги: ${formatReportAmount(myDebtsTotal)}`,
+      `Дал в долг: ${formatReportAmount(lentDebtsTotal)}`
+    ].join("\n");
+  };
+
+  const handleSendTelegramReport = async () => {
+    if (!user || telegramReportBusy) return;
+    const chatId = telegramChatId.trim();
+    if (!/^-?\d+$/.test(chatId)) {
+      setTelegramMessage(t("telegramIdInvalid"));
+      setTimeout(() => setTelegramMessage(""), 3000);
+      return;
+    }
+
+    const token = String(import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "").trim();
+    if (!token) {
+      setTelegramMessage(t("telegramBotTokenMissing"));
+      setTimeout(() => setTelegramMessage(""), 3000);
+      return;
+    }
+
+    setTelegramReportBusy(true);
+    try {
+      const now = new Date();
+      const todayISO = formatDateISO(getTzParts(now));
+      const monthRange = getMonthRangeFor(now);
+
+      const [settingsSnap, txSnap, debtsSnap] = await Promise.all([
+        getDoc(doc(db, `users/${user.uid}/settings/main`)),
+        getDocs(
+          query(
+            collection(db, `users/${user.uid}/transactions`),
+            orderBy("occurredAtISO", "desc"),
+            limit(1500)
+          )
+        ),
+        getDocs(
+          query(
+            collection(db, `users/${user.uid}/debts`),
+            orderBy("createdAt", "desc"),
+            limit(500)
+          )
+        )
+      ]);
+
+      const settingsData = settingsSnap.exists() ? settingsSnap.data() : {};
+      const transactions = txSnap.docs.map((docSnap) => docSnap.data());
+      const debts = debtsSnap.docs.map((docSnap) => docSnap.data());
+
+      let todayIncome = 0;
+      let todayExpense = 0;
+      let monthIncome = 0;
+      let monthExpense = 0;
+
+      transactions.forEach((tx) => {
+        const amount = Number(tx?.amount || 0);
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        const dateISO = String(tx?.occurredAtISO || "").slice(0, 10);
+        if (!dateISO) return;
+
+        if (dateISO === todayISO) {
+          if (tx?.type === "income") todayIncome += amount;
+          if (tx?.type === "expense") todayExpense += amount;
+        }
+
+        if (dateISO >= monthRange.startISO && dateISO <= monthRange.endISO) {
+          if (tx?.type === "income") monthIncome += amount;
+          if (tx?.type === "expense") monthExpense += amount;
+        }
+      });
+
+      let myDebtsTotal = 0;
+      let lentDebtsTotal = 0;
+      debts.forEach((debt) => {
+        if (debt?.isClosed) return;
+        const remaining = Number(debt?.remaining || 0);
+        if (!Number.isFinite(remaining) || remaining <= 0) return;
+        if (debt?.direction === "borrowed") myDebtsTotal += remaining;
+        if (debt?.direction === "lent") lentDebtsTotal += remaining;
+      });
+
+      const reportText = buildManualTelegramReportText({
+        todayISO,
+        todayIncome,
+        todayExpense,
+        monthIncome,
+        monthExpense,
+        walletBalance: Number(settingsData?.walletBalance || 0),
+        dailyLimit: Number(settingsData?.dailyLimitValue || 0),
+        myDebtsTotal,
+        lentDebtsTotal
+      });
+
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: reportText,
+          disable_web_page_preview: true
+        })
+      });
+
+      const payload = await response.json().catch(() => null);
+      setTelegramMessage(response.ok && payload?.ok ? t("telegramReportSent") : t("telegramReportFailed"));
+      setTimeout(() => setTelegramMessage(""), 3000);
+    } catch {
+      setTelegramMessage(t("telegramReportFailed"));
+      setTimeout(() => setTelegramMessage(""), 3000);
+    } finally {
+      setTelegramReportBusy(false);
+    }
+  };
+
   const handleClearAll = async () => {
     if (!user) return;
     const confirmed = window.confirm(t("clearConfirm"));
@@ -289,6 +446,7 @@ export default function Settings() {
   const telegramConnected = Boolean(telegramChatId.trim());
   const telegramReportsEnabled = telegramConnected && allRemindersEnabled;
   const isTelegramIdChanged = telegramChatId.trim() !== savedTelegramChatId.trim();
+  const canSendTelegramReport = telegramConnected && !telegramBusy && !telegramReportBusy;
   const permissionState =
     reminderPermission === "unsupported"
       ? "unsupported"
@@ -555,6 +713,21 @@ export default function Settings() {
                 >
                   {t("saveTelegramId")}
                 </GlassButton>
+                <GlassButton
+                  variant="ghost"
+                  onClick={handleSendTelegramReport}
+                  disabled={!canSendTelegramReport}
+                  className="settings-action-btn"
+                >
+                  {t("sendTelegramReport")}
+                </GlassButton>
+                {telegramReportBusy ? (
+                  <span className="inline-loader" role="status" aria-label={t("sendTelegramReport")}>
+                    <span className="loading-dot" />
+                    <span className="loading-dot" />
+                    <span className="loading-dot" />
+                  </span>
+                ) : null}
               </div>
               {telegramMessage && <div className="settings-success" style={{ marginTop: 12 }}>{telegramMessage}</div>}
             </GlassCard>
