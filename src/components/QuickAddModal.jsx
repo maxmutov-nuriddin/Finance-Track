@@ -33,6 +33,7 @@ export default function QuickAddModal() {
   const [savedNotice, setSavedNotice] = useState("");
   const [typeOverride, setTypeOverride] = useState("auto");
   const [typeTouched, setTypeTouched] = useState(false);
+  const [debtTouched, setDebtTouched] = useState(false);
   const [categoryOverride, setCategoryOverride] = useState("");
   const [categoryTouched, setCategoryTouched] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
@@ -84,6 +85,7 @@ export default function QuickAddModal() {
       setUseCustomDate(false);
       setCustomDateISO("");
       setDebtMode("none");
+      setDebtTouched(false);
       setSelectedDebtId("");
       setTransferMode("none");
       return;
@@ -159,7 +161,15 @@ export default function QuickAddModal() {
     if (preview.categoryDetected && !categoryTouched) {
       setCategoryOverride(preview.category);
     }
-  }, [preview, typeTouched, categoryTouched]);
+    if (!debtTouched && typeOverride === "auto" && transferMode === "none") {
+      if (preview.debtMode) {
+        setDebtMode(preview.debtMode);
+        setIsRecurring(false);
+      } else {
+        setDebtMode("none");
+      }
+    }
+  }, [preview, typeTouched, categoryTouched, debtTouched, typeOverride, transferMode]);
 
   const isDebtType = debtMode !== "none";
   const isTransfer = transferMode !== "none";
@@ -250,6 +260,7 @@ export default function QuickAddModal() {
       setRaw("");
       setPreview(null);
       setDebtMode("none");
+      setDebtTouched(false);
       setSelectedDebtId("");
       setIsRecurring(false);
       setTransferMode("none");
@@ -331,9 +342,12 @@ export default function QuickAddModal() {
             type: debtMode === "borrow" ? "income" : "expense",
             incomePeriod: debtMode === "borrow" ? preview.incomePeriod || null : null,
             description: preview.description || t("debtTitle"),
-            raw
+            raw,
+            meta: { kind: "debt", mode: debtMode }
           });
-          await applyWalletDelta(debtMode === "borrow" ? amount : -amount);
+          if (debtMode === "borrow") {
+            await applyWalletDelta(amount);
+          }
           setSavedNotice(t("recordAdded"));
           setTimeout(() => setSavedNotice(""), 1500);
           success = true;
@@ -355,7 +369,8 @@ export default function QuickAddModal() {
             type: debtMode === "repay" ? "expense" : "income",
             incomePeriod: debtMode === "collect" ? preview.incomePeriod || null : null,
             description: debt.title || t("debtTitle"),
-            raw
+            raw,
+            meta: { kind: "debt", mode: debtMode }
           });
           if (debtMode === "collect") {
             await applyWalletDelta(amount);
@@ -460,6 +475,7 @@ export default function QuickAddModal() {
                     className={`pill-tab compact ${!isDebtType && !isTransfer && typeOverride === "auto" ? "pill-tab-active" : ""}`}
                     onClick={() => {
                       setDebtMode("none");
+                      setDebtTouched(false);
                       setTransferMode("none");
                       setTypeOverride("auto");
                       setTypeTouched(true);
@@ -472,6 +488,7 @@ export default function QuickAddModal() {
                     className={`pill-tab compact ${!isDebtType && !isTransfer && typeOverride === "income" ? "pill-tab-active" : ""}`}
                     onClick={() => {
                       setDebtMode("none");
+                      setDebtTouched(true);
                       setTransferMode("none");
                       setTypeOverride("income");
                       setTypeTouched(true);
@@ -484,6 +501,7 @@ export default function QuickAddModal() {
                     className={`pill-tab compact ${!isDebtType && !isTransfer && typeOverride === "expense" ? "pill-tab-active" : ""}`}
                     onClick={() => {
                       setDebtMode("none");
+                      setDebtTouched(true);
                       setTransferMode("none");
                       setTypeOverride("expense");
                       setTypeTouched(true);
@@ -496,6 +514,7 @@ export default function QuickAddModal() {
                     className={`pill-tab compact ${!isDebtType && !isTransfer && typeOverride === "goal" ? "pill-tab-active" : ""}`}
                     onClick={() => {
                       setDebtMode("none");
+                      setDebtTouched(true);
                       setTransferMode("none");
                       setTypeOverride("goal");
                       setTypeTouched(true);
@@ -508,6 +527,7 @@ export default function QuickAddModal() {
                     className={`pill-tab compact ${isTransfer ? "pill-tab-active" : ""}`}
                     onClick={() => {
                       setDebtMode("none");
+                      setDebtTouched(true);
                       setTypeOverride("auto");
                       setTypeTouched(true);
                       setIsRecurring(false);
@@ -521,6 +541,7 @@ export default function QuickAddModal() {
                     className={`pill-tab compact ${isDebtType ? "pill-tab-active" : ""}`}
                     onClick={() => {
                       setTransferMode("none");
+                      setDebtTouched(true);
                       setDebtMode((current) => (current === "none" ? "borrow" : current));
                       setTypeTouched(true);
                     }}
@@ -605,6 +626,7 @@ export default function QuickAddModal() {
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
+                          setDebtTouched(true);
                           setDebtMode("none");
                         }}
                       >
@@ -616,6 +638,7 @@ export default function QuickAddModal() {
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
+                          setDebtTouched(true);
                           setDebtMode("borrow");
                         }}
                       >
@@ -627,6 +650,7 @@ export default function QuickAddModal() {
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
+                          setDebtTouched(true);
                           setDebtMode("repay");
                         }}
                       >
@@ -638,6 +662,7 @@ export default function QuickAddModal() {
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
+                          setDebtTouched(true);
                           setDebtMode("lend");
                         }}
                       >
@@ -649,6 +674,7 @@ export default function QuickAddModal() {
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
+                          setDebtTouched(true);
                           setDebtMode("collect");
                         }}
                       >

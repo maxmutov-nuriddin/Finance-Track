@@ -68,6 +68,40 @@ const getEffectiveCategory = (tx) => {
   return base;
 };
 
+const isDebtLendOrCollect = (tx) => {
+  const mode = tx?.meta?.mode;
+  if (tx?.meta?.kind === "debt" && (mode === "lend" || mode === "collect")) {
+    return true;
+  }
+  if (tx?.type !== "expense") return false;
+  if (tx?.category !== "debt") return false;
+  const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+  return /(дал|дала|одолжил|одолжила|lend|loaned|qarz\s*ber)/.test(text);
+};
+
+function ExpensePieTooltip({ active, payload }) {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    return (
+      <div style={{
+        background: "#1a202c",
+        border: "1px solid #404854",
+        borderRadius: "8px",
+        padding: "10px 12px",
+        color: "#ffffff",
+        fontSize: "0.9rem",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
+      }}>
+        <p style={{ margin: 0, fontWeight: "600" }}>{data.name}</p>
+        <p style={{ margin: "4px 0 0 0", color: "#2f6bff", fontWeight: "700" }}>
+          {formatCompact(data.value)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
 export default function ExpenseCategoriesPie({ transactions = [] }) {
   const { t } = useI18n();
 
@@ -80,6 +114,7 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
 
     transactions.forEach((tx) => {
       if (tx.type !== "expense") return;
+      if (isDebtLendOrCollect(tx)) return;
       const category = getEffectiveCategory(tx);
       if (!(category in categoryMap)) {
         categoryMap[category] = 0;
@@ -113,29 +148,6 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
       </div>
     );
   }
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      return (
-        <div style={{
-          background: "#1a202c",
-          border: "1px solid #404854",
-          borderRadius: "8px",
-          padding: "10px 12px",
-          color: "#ffffff",
-          fontSize: "0.9rem",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
-        }}>
-          <p style={{ margin: 0, fontWeight: "600" }}>{data.name}</p>
-          <p style={{ margin: "4px 0 0 0", color: "#2f6bff", fontWeight: "700" }}>
-            {formatCompact(data.value)}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div style={{ background: "#1a202c", border: "1px solid #404854", borderRadius: "20px", padding: "28px", display: "flex", flexDirection: "column", height: "100%" }}>
@@ -178,7 +190,7 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
                 />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "transparent" }} />
+            <Tooltip content={<ExpensePieTooltip />} cursor={{ fill: "transparent" }} />
           </PieChartRechart>
         </ResponsiveContainer>
       </div>

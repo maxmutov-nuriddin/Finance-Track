@@ -7,6 +7,7 @@ import ExpenseCategoriesPie from "../components/ExpenseCategoriesPie";
 import { useUser } from "../lib/user";
 import {
   addGoalContribution,
+  watchDebts,
   watchGoals,
   watchPayments,
   watchTransactions,
@@ -17,8 +18,7 @@ import { addDaysInTz, addMonthsInTz, formatDateISO, getTzParts, makeTashkentDate
 import { useNavigate } from "react-router-dom";
 import { computeBudgetStatus } from "../lib/budget";
 import { filterByOccurredAtISO, getMonthKey, getMonthRange, getMonthRangeFor } from "../lib/utils";
-import { DollarSign, Calendar, Wallet, TrendingUp, CreditCard, Target } from "lucide-react";
-import { Banknote, CalendarClock, Wallet as WalletIcon, TrendingDown, Receipt, Crosshair } from "lucide-react";
+import { Banknote, CalendarClock, Wallet as WalletIcon, TrendingDown, Receipt, Crosshair, CreditCard, HandCoins } from "lucide-react";
 import { computeStats } from "../lib/calcs";
 import { formatAmount } from "../lib/format";
 import { useI18n } from "../components/I18nProvider";
@@ -213,6 +213,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { t, lang } = useI18n();
   const [goals, setGoals] = useState([]);
+  const [debts, setDebts] = useState([]);
   const [payments, setPayments] = useState([]);
   const [allTransactions, setAllTransactions] = useState([]);
   const [settings, setSettings] = useState(null);
@@ -225,11 +226,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     const unsubGoals = watchGoals(user.uid, setGoals);
+    const unsubDebts = watchDebts(user.uid, setDebts);
     const unsubPayments = watchPayments(user.uid, setPayments);
     const unsubAll = watchTransactions(user.uid, setAllTransactions);
     const unsubSettings = watchSettings(user.uid, setSettings);
     return () => {
       unsubGoals();
+      unsubDebts();
       unsubPayments();
       unsubAll();
       unsubSettings();
@@ -371,6 +374,38 @@ export default function Dashboard() {
   const totalGoalsTarget = useMemo(
     () => goals.reduce((sum, goal) => sum + Number(goal.targetAmount || 0), 0),
     [goals]
+  );
+  const myDebtsCount = useMemo(
+    () =>
+      debts.filter((debt) => debt.direction === "borrowed" && !debt.isClosed && Number(debt.remaining || 0) > 0)
+        .length,
+    [debts]
+  );
+  const myDebtsTotal = useMemo(
+    () =>
+      debts.reduce((sum, debt) => {
+        if (debt.direction !== "borrowed" || debt.isClosed) return sum;
+        const remaining = Number(debt.remaining || 0);
+        if (remaining <= 0) return sum;
+        return sum + remaining;
+      }, 0),
+    [debts]
+  );
+  const lentDebtsCount = useMemo(
+    () =>
+      debts.filter((debt) => debt.direction === "lent" && !debt.isClosed && Number(debt.remaining || 0) > 0)
+        .length,
+    [debts]
+  );
+  const lentDebtsTotal = useMemo(
+    () =>
+      debts.reduce((sum, debt) => {
+        if (debt.direction !== "lent" || debt.isClosed) return sum;
+        const remaining = Number(debt.remaining || 0);
+        if (remaining <= 0) return sum;
+        return sum + remaining;
+      }, 0),
+    [debts]
   );
 
   const plannedMonthlySavings = useMemo(() => {
@@ -928,6 +963,24 @@ export default function Dashboard() {
               <span className="tile-value-sub">/ {formatAmount(Math.round(totalGoalsTarget))}</span>
             </div>
             <div className="tile-sub">{t("goalAmount")}</div>
+          </div>
+          <div className="stat-tile tile-red">
+            <div className="tile-icon"><CreditCard size={20} strokeWidth={2.5} /></div>
+            <div className="tile-label">{t("myDebtsCard")}</div>
+            <div className="tile-value">{formatAmount(Math.round(myDebtsTotal))}</div>
+            <div className="tile-sub">{t("myDebtsCard")}</div>
+            <div className="tile-meta">
+              {t("debtsCountLabel", { count: myDebtsCount.toLocaleString(lang === "uz" ? "uz-UZ" : "ru-RU") })}
+            </div>
+          </div>
+          <div className="stat-tile tile-blue">
+            <div className="tile-icon"><HandCoins size={20} strokeWidth={2.5} /></div>
+            <div className="tile-label">{t("lentDebtsCard")}</div>
+            <div className="tile-value">{formatAmount(Math.round(lentDebtsTotal))}</div>
+            <div className="tile-sub">{t("lentDebtsCard")}</div>
+            <div className="tile-meta">
+              {t("debtsCountLabel", { count: lentDebtsCount.toLocaleString(lang === "uz" ? "uz-UZ" : "ru-RU") })}
+            </div>
           </div>
         </div>
         <BudgetCard

@@ -28,6 +28,7 @@ const CATEGORY_MAP = [
 
 const INCOME_WORDS = ["зп", "зарплата", "доход", "получил", "получила", "премия", "аванс", "бонус"];
 const GOAL_WORDS = ["цель", "maqsad", "goal", "накопить", "накопление", "коплю"];
+const DEBT_HINT_WORDS = ["долг", "долги", "займ", "займы", "qarz", "debt", "loan"];
 
 const DATE_REGEX = /(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?/;
 const TIME_REGEX = /(\d{1,2}):(\d{2})/;
@@ -57,6 +58,47 @@ function detectIncomePeriod(text) {
   if (/(зп|зарплат)/.test(text)) {
     return "monthly";
   }
+  return null;
+}
+
+function detectDebtMode(text) {
+  const hasDebtHint =
+    DEBT_HINT_WORDS.some((word) => text.includes(word)) ||
+    /(занял|заняла|одолжил|одолжила|qarz)/.test(text);
+  if (!hasDebtHint) return null;
+
+  if (
+    /(отдал|отдала|вернул(?!и)|вернула|погасил|погасила|закрыл|закрыла|выплатил|выплатила|repay|repaid|pay\s*back|paid\s*back|qarzni?\s*(to'lad|tolad|qaytard|qaytardi))/.test(
+      text
+    )
+  ) {
+    return "repay";
+  }
+
+  if (
+    /(забрал|забрала|получил\s+обратно|получила\s+обратно|вернули|возвратили|взыскал|взыскала|collect|collected|qarzni?\s*(oldim|oldi|qaytarib\s+oldim))/.test(
+      text
+    )
+  ) {
+    return "collect";
+  }
+
+  if (
+    /(взял|взяла|занял|заняла|одолжил\s+у|одолжила\s+у|borrow|borrowed|took\s+loan|qarz\s*ol)/.test(
+      text
+    )
+  ) {
+    return "borrow";
+  }
+
+  if (
+    /(дал|дала|одолжил(?!\s+у)|одолжила(?!\s+у)|lend|loaned|qarz\s*ber)/.test(
+      text
+    )
+  ) {
+    return "lend";
+  }
+
   return null;
 }
 
@@ -167,6 +209,7 @@ export function parseInput(rawText, nowDate = new Date()) {
   const categoryResult = detectCategory(text);
   const category = categoryResult.key;
   const incomePeriod = type === "income" ? detectIncomePeriod(text) : null;
+  const debtMode = detectDebtMode(text);
 
   const tokensToStrip = [];
   const dt = parseDateTime(text, nowDate);
@@ -194,6 +237,7 @@ export function parseInput(rawText, nowDate = new Date()) {
     categoryDetected: categoryResult.matched,
     type,
     incomePeriod,
+    debtMode,
     description,
     warnings
   };
