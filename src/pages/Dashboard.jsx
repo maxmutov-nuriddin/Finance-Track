@@ -415,6 +415,21 @@ export default function Dashboard() {
       return sum;
     }, 0);
   }, [allTransactions]);
+  const currentMonthRegularExpenseNonRecurring = useMemo(() => {
+    const nowParts = getTzParts(new Date());
+    const year = nowParts.year;
+    const month = nowParts.month;
+    return allTransactions.reduce((sum, item) => {
+      if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      if (item.isRecurring) return sum;
+      if (isSpecialExpense(item)) return sum;
+      const parts = getTzParts(new Date(item.occurredAtISO));
+      if (parts.year === year && parts.month === month) {
+        return sum + Number(item.amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [allTransactions]);
 
   const todayISO = useMemo(() => dayTick, [dayTick]);
   const todayExpense = useMemo(() => {
@@ -543,16 +558,16 @@ export default function Dashboard() {
     [safeRecommendedSpend, currentMonthExpenseNonRecurring]
   );
   const projectedEndBalance = useMemo(() => {
-    const avgDailyExpense = currentMonthExpenseNonRecurring / analysisDaysPassed;
-    const remainingMoney =
-      monthlyIncome - monthlyMandatory - plannedMonthlySavings - currentMonthExpenseNonRecurring;
-    const projectedFutureExpense = avgDailyExpense * remainingDaysInMonth;
+    const safeDays = Math.max(1, analysisDaysPassed);
+    const avgDailyExpense = currentMonthRegularExpenseNonRecurring / safeDays;
+    const remainingMoney = safeRecommendedSpend - currentMonthExpenseNonRecurring;
+    const futureDays = Math.max(0, remainingDaysInMonth - 1);
+    const projectedFutureExpense = avgDailyExpense * futureDays;
     return remainingMoney - projectedFutureExpense;
   }, [
-    monthlyIncome,
-    monthlyMandatory,
-    plannedMonthlySavings,
+    safeRecommendedSpend,
     currentMonthExpenseNonRecurring,
+    currentMonthRegularExpenseNonRecurring,
     analysisDaysPassed,
     remainingDaysInMonth
   ]);
