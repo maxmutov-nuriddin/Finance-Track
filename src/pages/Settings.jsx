@@ -21,6 +21,8 @@ const savingsModes = [
   { value: "goal_based", labelRu: "По цели", labelUz: "Maqsad bo'yicha" },
   { value: "fixed", labelRu: "Фикс", labelUz: "Fiks" }
 ];
+const APP_SITE_URL = String(import.meta.env.VITE_APP_SITE_URL || "https://finance-track-7fadf.web.app").trim();
+const TELEGRAM_ID_HELP_BOT = "@Get_myidrobot";
 
 export default function Settings() {
   const user = useUser();
@@ -266,8 +268,34 @@ export default function Settings() {
 
       const welcomeText =
         lang === "uz"
-          ? "Xush kelibsiz! Siz Finance Track botini muvaffaqiyatli uladingiz."
-          : "Добро пожаловать! Вы успешно подключили бота Finance Track.";
+          ? [
+              "🎉 Finance Track ulandi!",
+              "Hisobotlar va eslatmalar endi shu chatga keladi.",
+              "",
+              `🌐 Sayt: ${APP_SITE_URL}`,
+              "🤖 Bot: @mvfintrackbot",
+              `🆔 ID olish: ${TELEGRAM_ID_HELP_BOT} (/start yozing)`,
+              "",
+              "Keyingi qadamlar:",
+              "1) Saytga kiring.",
+              "2) Sozlamalar -> Telegram hisobotlar bo'limini oching.",
+              "3) Telegram ID ni saqlang va eslatmalarni yoqing.",
+              "4) «Hisobot yuborish» tugmasi bilan tekshiring."
+            ].join("\n")
+          : [
+              "🎉 Finance Track подключен!",
+              "Отчёты и напоминания теперь будут приходить в этот чат.",
+              "",
+              `🌐 Сайт: ${APP_SITE_URL}`,
+              "🤖 Бот: @mvfintrackbot",
+              `🆔 Где взять ID: ${TELEGRAM_ID_HELP_BOT} (напиши /start)`,
+              "",
+              "Что делать дальше:",
+              "1) Войди на сайт.",
+              "2) Открой Настройки -> Telegram отчёты.",
+              "3) Сохрани Telegram ID и включи напоминания.",
+              "4) Нажми «Отправить отчёт» для проверки."
+            ].join("\n");
 
       const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
@@ -297,6 +325,14 @@ export default function Settings() {
     return Number(value || 0).toLocaleString(locale);
   };
 
+  const formatSignedReportAmount = (value) => {
+    const num = Number(value || 0);
+    const absText = formatReportAmount(Math.abs(num));
+    if (num > 0) return `+${absText}`;
+    if (num < 0) return `-${absText}`;
+    return absText;
+  };
+
   const buildManualTelegramReportText = ({
     todayISO,
     todayIncome,
@@ -308,30 +344,45 @@ export default function Settings() {
     myDebtsTotal,
     lentDebtsTotal
   }) => {
+    const todayNet = Number(todayIncome || 0) - Number(todayExpense || 0);
+    const monthNet = Number(monthIncome || 0) - Number(monthExpense || 0);
+
     if (lang === "uz") {
       return [
-        `Qo'lda hisobot: ${todayISO}`,
-        `Bugun kirim: ${formatReportAmount(todayIncome)}`,
-        `Bugun chiqim: ${formatReportAmount(todayExpense)}`,
-        `Oy kirimi: ${formatReportAmount(monthIncome)}`,
-        `Oy chiqimi: ${formatReportAmount(monthExpense)}`,
-        `Hamyon: ${formatReportAmount(walletBalance)}`,
-        `Kunlik limit: ${formatReportAmount(dailyLimit)}`,
-        `Mening qarzlarim: ${formatReportAmount(myDebtsTotal)}`,
-        `Bergan qarzlarim: ${formatReportAmount(lentDebtsTotal)}`
+        `📘 Qo'lda hisobot · ${todayISO}`,
+        "━━━━━━━━━━━━",
+        `💵 Bugungi kirim: ${formatReportAmount(todayIncome)}`,
+        `💸 Bugungi chiqim: ${formatReportAmount(todayExpense)}`,
+        `⚖️ Bugungi natija: ${formatSignedReportAmount(todayNet)}`,
+        "",
+        "📅 Joriy oy",
+        `• Kirim: ${formatReportAmount(monthIncome)}`,
+        `• Chiqim: ${formatReportAmount(monthExpense)}`,
+        `• Balans: ${formatSignedReportAmount(monthNet)}`,
+        "",
+        `👛 Hamyon: ${formatReportAmount(walletBalance)}`,
+        `🎯 Kunlik limit: ${formatReportAmount(dailyLimit)}`,
+        `🤝 Mening qarzlarim: ${formatReportAmount(myDebtsTotal)}`,
+        `🫱 Bergan qarzlarim: ${formatReportAmount(lentDebtsTotal)}`
       ].join("\n");
     }
 
     return [
-      `Ручной отчёт: ${todayISO}`,
-      `Доход сегодня: ${formatReportAmount(todayIncome)}`,
-      `Расход сегодня: ${formatReportAmount(todayExpense)}`,
-      `Доход за месяц: ${formatReportAmount(monthIncome)}`,
-      `Расход за месяц: ${formatReportAmount(monthExpense)}`,
-      `Кошелёк: ${formatReportAmount(walletBalance)}`,
-      `Дневной лимит: ${formatReportAmount(dailyLimit)}`,
-      `Мои долги: ${formatReportAmount(myDebtsTotal)}`,
-      `Дал в долг: ${formatReportAmount(lentDebtsTotal)}`
+      `📘 Ручной отчёт · ${todayISO}`,
+      "━━━━━━━━━━━━",
+      `💵 Доход сегодня: ${formatReportAmount(todayIncome)}`,
+      `💸 Расход сегодня: ${formatReportAmount(todayExpense)}`,
+      `⚖️ Итог сегодня: ${formatSignedReportAmount(todayNet)}`,
+      "",
+      "📅 Текущий месяц",
+      `• Доход: ${formatReportAmount(monthIncome)}`,
+      `• Расход: ${formatReportAmount(monthExpense)}`,
+      `• Баланс: ${formatSignedReportAmount(monthNet)}`,
+      "",
+      `👛 Кошелёк: ${formatReportAmount(walletBalance)}`,
+      `🎯 Дневной лимит: ${formatReportAmount(dailyLimit)}`,
+      `🤝 Мои долги: ${formatReportAmount(myDebtsTotal)}`,
+      `🫱 Дал в долг: ${formatReportAmount(lentDebtsTotal)}`
     ].join("\n");
   };
 

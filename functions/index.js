@@ -10,6 +10,9 @@ if (!admin.apps.length) {
 const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const TZ = "Asia/Tashkent";
 const REGION = "asia-northeast1";
+const APP_SITE_URL = String(process.env.FINANCE_TRACK_SITE_URL || "https://finance-track-7fadf.web.app").trim();
+const TELEGRAM_ID_HELP_BOT = "@Get_myidrobot";
+const FINANCE_TRACK_BOT = "@mvfintrackbot";
 const SALARY_WORDS = [
   "зп",
   "зарплат",
@@ -171,6 +174,14 @@ function formatAmount(value, lang = "ru") {
   return Number(value || 0).toLocaleString(locale);
 }
 
+function formatSignedAmount(value, lang = "ru") {
+  const num = Number(value || 0);
+  const abs = formatAmount(Math.abs(num), lang);
+  if (num > 0) return `+${abs}`;
+  if (num < 0) return `-${abs}`;
+  return abs;
+}
+
 function parseTelegramChatId(settings) {
   const raw = String(settings?.telegramChatId || "").trim();
   if (!raw) return null;
@@ -330,131 +341,222 @@ function classifyDebts(debts, todayParts) {
 }
 
 function buildPaymentReminderText(payment, lang) {
+  const title = payment?.title || (lang === "uz" ? "To'lov" : "Платёж");
+  const amount = formatAmount(payment?.amount || 0, lang);
+
   if (lang === "uz") {
-    return `To'lov eslatmasi\n3 kundan keyin: ${payment.title || "To'lov"}\nSumma: ${formatAmount(payment.amount, lang)}`;
+    return [
+      "🔔 To'lov eslatmasi",
+      `📅 3 kundan keyin: ${title}`,
+      `💰 Summa: ${amount}`,
+      "✍️ To'lovdan oldin yozuvlarni tekshirib chiqing."
+    ].join("\n");
   }
-  return `Напоминание о платеже\nЧерез 3 дня: ${payment.title || "Платёж"}\nСумма: ${formatAmount(payment.amount, lang)}`;
+
+  return [
+    "🔔 Напоминание о платеже",
+    `📅 Через 3 дня: ${title}`,
+    `💰 Сумма: ${amount}`,
+    "✍️ Перед оплатой проверь записи и баланс."
+  ].join("\n");
 }
 
 function buildSalaryReminderText(lang) {
   if (lang === "uz") {
-    return "Ertaga maosh kuni. Byudjetni tekshirib qo'ying.";
+    return [
+      "💼 Ertaga maosh kuni",
+      "Byudjetni yangilang va kunlik limitni tekshirib qo'ying."
+    ].join("\n");
   }
-  return "Завтра день зарплаты. Проверь бюджет на новый период.";
+
+  return [
+    "💼 Завтра день зарплаты",
+    "Обнови бюджет и проверь дневной лимит на новый период."
+  ].join("\n");
 }
 
 function buildTelegramWelcomeText(lang) {
   if (lang === "uz") {
     return [
-      "Xush kelibsiz!",
-      "Siz Finance Track Telegram botini muvaffaqiyatli uladingiz.",
-      "Endi eslatmalar va hisobotlar shu yerga keladi."
+      "🎉 Finance Track ulandi!",
+      "Hisobotlar va eslatmalar endi shu chatga keladi.",
+      "",
+      `🌐 Sayt: ${APP_SITE_URL}`,
+      `🤖 Bot: ${FINANCE_TRACK_BOT}`,
+      `🆔 ID olish: ${TELEGRAM_ID_HELP_BOT} (/start yozing)`,
+      "",
+      "Keyingi qadamlar:",
+      "1) Saytga kiring.",
+      "2) Sozlamalar -> Telegram hisobotlar bo'limini oching.",
+      "3) Telegram ID ni saqlang va eslatmalarni yoqing.",
+      "4) «Hisobot yuborish» tugmasi bilan tekshiring."
     ].join("\n");
   }
 
   return [
-    "Добро пожаловать!",
-    "Вы успешно подключили Telegram-бот Finance Track.",
-    "Теперь отчеты и напоминания будут приходить сюда."
+    "🎉 Finance Track подключен!",
+    "Отчёты и напоминания теперь будут приходить в этот чат.",
+    "",
+    `🌐 Сайт: ${APP_SITE_URL}`,
+    `🤖 Бот: ${FINANCE_TRACK_BOT}`,
+    `🆔 Где взять ID: ${TELEGRAM_ID_HELP_BOT} (напиши /start)`,
+    "",
+    "Что делать дальше:",
+    "1) Войди на сайт.",
+    "2) Открой Настройки -> Telegram отчёты.",
+    "3) Сохрани Telegram ID и включи напоминания.",
+    "4) Нажми «Отправить отчёт» для проверки."
   ].join("\n");
 }
 
 function buildMorningStatusText({ lang, todayISO, settings, todayStats, monthStats, debtInfo }) {
+  const dailyLimit = Number(settings?.dailyLimitValue || 0);
+  const dailySpent = Number(todayStats?.expense || 0);
+  const dailyRemaining = dailyLimit - dailySpent;
+
   if (lang === "uz") {
     return [
-      `Xayrli tong! ${todayISO}`,
-      `Bugungi limit: ${formatAmount(settings?.dailyLimitValue || 0, lang)}`,
-      `Bugun sarflangan: ${formatAmount(todayStats.expense, lang)}`,
-      `Hamyon: ${formatAmount(settings?.walletBalance || 0, lang)}`,
-      `Oy bo'yicha xarajat: ${formatAmount(monthStats.expense, lang)}`,
-      `Ochiq qarzlar: ${debtInfo.openCount}`
+      `🌅 Xayrli tong! ${todayISO}`,
+      "━━━━━━━━━━━━",
+      `👛 Hamyon: ${formatAmount(settings?.walletBalance || 0, lang)}`,
+      `🎯 Bugungi limit: ${formatAmount(dailyLimit, lang)}`,
+      `💸 Bugun sarflangan: ${formatAmount(dailySpent, lang)}`,
+      `⚖️ Limit qoldig'i: ${formatSignedAmount(dailyRemaining, lang)}`,
+      "",
+      "📅 Joriy oy",
+      `• Kirim: ${formatAmount(monthStats.income, lang)}`,
+      `• Chiqim: ${formatAmount(monthStats.expense, lang)}`,
+      `• Balans: ${formatSignedAmount(monthStats.net, lang)}`,
+      `🤝 Ochiq qarzlar: ${debtInfo.openCount} (${formatAmount(debtInfo.openTotal, lang)})`
     ].join("\n");
   }
 
   return [
-    `Доброе утро! ${todayISO}`,
-    `Лимит на сегодня: ${formatAmount(settings?.dailyLimitValue || 0, lang)}`,
-    `Потрачено сегодня: ${formatAmount(todayStats.expense, lang)}`,
-    `Кошелёк: ${formatAmount(settings?.walletBalance || 0, lang)}`,
-    `Расход за месяц: ${formatAmount(monthStats.expense, lang)}`,
-    `Открытых долгов: ${debtInfo.openCount}`
+    `🌅 Доброе утро! ${todayISO}`,
+    "━━━━━━━━━━━━",
+    `👛 Кошелёк: ${formatAmount(settings?.walletBalance || 0, lang)}`,
+    `🎯 Лимит на сегодня: ${formatAmount(dailyLimit, lang)}`,
+    `💸 Потрачено сегодня: ${formatAmount(dailySpent, lang)}`,
+    `⚖️ Остаток лимита: ${formatSignedAmount(dailyRemaining, lang)}`,
+    "",
+    "📅 Текущий месяц",
+    `• Доход: ${formatAmount(monthStats.income, lang)}`,
+    `• Расход: ${formatAmount(monthStats.expense, lang)}`,
+    `• Баланс: ${formatSignedAmount(monthStats.net, lang)}`,
+    `🤝 Открытых долгов: ${debtInfo.openCount} (${formatAmount(debtInfo.openTotal, lang)})`
   ].join("\n");
 }
 
 function buildDailyReportText({ lang, todayISO, todayStats, monthStats, settings, debtInfo }) {
   if (lang === "uz") {
     return [
-      `Kunlik hisobot: ${todayISO}`,
-      `Kirim: ${formatAmount(todayStats.income, lang)}`,
-      `Chiqim: ${formatAmount(todayStats.expense, lang)}`,
-      `Natija: ${formatAmount(todayStats.net, lang)}`,
-      `Oy bo'yicha kirim: ${formatAmount(monthStats.income, lang)}`,
-      `Oy bo'yicha chiqim: ${formatAmount(monthStats.expense, lang)}`,
-      `Hamyon: ${formatAmount(settings?.walletBalance || 0, lang)}`,
-      `Qarzlar (ochiq): ${debtInfo.openCount}`
+      `📘 Kunlik hisobot · ${todayISO}`,
+      "━━━━━━━━━━━━",
+      `💵 Bugungi kirim: ${formatAmount(todayStats.income, lang)}`,
+      `💸 Bugungi chiqim: ${formatAmount(todayStats.expense, lang)}`,
+      `⚖️ Bugungi natija: ${formatSignedAmount(todayStats.net, lang)}`,
+      "",
+      "📅 Joriy oy",
+      `• Kirim: ${formatAmount(monthStats.income, lang)}`,
+      `• Chiqim: ${formatAmount(monthStats.expense, lang)}`,
+      `• Balans: ${formatSignedAmount(monthStats.net, lang)}`,
+      "",
+      `👛 Hamyon: ${formatAmount(settings?.walletBalance || 0, lang)}`,
+      `🎯 Kunlik limit: ${formatAmount(settings?.dailyLimitValue || 0, lang)}`,
+      `🤝 Ochiq qarzlar: ${debtInfo.openCount} (${formatAmount(debtInfo.openTotal, lang)})`
     ].join("\n");
   }
 
   return [
-    `Дневной отчёт: ${todayISO}`,
-    `Доход: ${formatAmount(todayStats.income, lang)}`,
-    `Расход: ${formatAmount(todayStats.expense, lang)}`,
-    `Итог: ${formatAmount(todayStats.net, lang)}`,
-    `Доход за месяц: ${formatAmount(monthStats.income, lang)}`,
-    `Расход за месяц: ${formatAmount(monthStats.expense, lang)}`,
-    `Кошелёк: ${formatAmount(settings?.walletBalance || 0, lang)}`,
-    `Открытых долгов: ${debtInfo.openCount}`
+    `📘 Дневной отчёт · ${todayISO}`,
+    "━━━━━━━━━━━━",
+    `💵 Доход сегодня: ${formatAmount(todayStats.income, lang)}`,
+    `💸 Расход сегодня: ${formatAmount(todayStats.expense, lang)}`,
+    `⚖️ Итог сегодня: ${formatSignedAmount(todayStats.net, lang)}`,
+    "",
+    "📅 Текущий месяц",
+    `• Доход: ${formatAmount(monthStats.income, lang)}`,
+    `• Расход: ${formatAmount(monthStats.expense, lang)}`,
+    `• Баланс: ${formatSignedAmount(monthStats.net, lang)}`,
+    "",
+    `👛 Кошелёк: ${formatAmount(settings?.walletBalance || 0, lang)}`,
+    `🎯 Дневной лимит: ${formatAmount(settings?.dailyLimitValue || 0, lang)}`,
+    `🤝 Открытых долгов: ${debtInfo.openCount} (${formatAmount(debtInfo.openTotal, lang)})`
   ].join("\n");
 }
 
 function buildWeeklyReportText({ lang, range, stats }) {
   if (lang === "uz") {
     return [
-      `Haftalik hisobot (${range.startISO} - ${range.endISO})`,
-      `Kirim: ${formatAmount(stats.income, lang)}`,
-      `Chiqim: ${formatAmount(stats.expense, lang)}`,
-      `Natija: ${formatAmount(stats.net, lang)}`,
-      `Yozuvlar: ${stats.count}`
+      "📗 Haftalik hisobot",
+      `📅 ${range.startISO} - ${range.endISO}`,
+      "━━━━━━━━━━━━",
+      `💵 Kirim: ${formatAmount(stats.income, lang)}`,
+      `💸 Chiqim: ${formatAmount(stats.expense, lang)}`,
+      `⚖️ Natija: ${formatSignedAmount(stats.net, lang)}`,
+      `🧾 Yozuvlar: ${stats.count}`
     ].join("\n");
   }
 
   return [
-    `Недельный отчёт (${range.startISO} - ${range.endISO})`,
-    `Доход: ${formatAmount(stats.income, lang)}`,
-    `Расход: ${formatAmount(stats.expense, lang)}`,
-    `Итог: ${formatAmount(stats.net, lang)}`,
-    `Записей: ${stats.count}`
+    "📗 Недельный отчёт",
+    `📅 ${range.startISO} - ${range.endISO}`,
+    "━━━━━━━━━━━━",
+    `💵 Доход: ${formatAmount(stats.income, lang)}`,
+    `💸 Расход: ${formatAmount(stats.expense, lang)}`,
+    `⚖️ Итог: ${formatSignedAmount(stats.net, lang)}`,
+    `🧾 Записей: ${stats.count}`
   ].join("\n");
 }
 
 function buildMonthlyReportText({ lang, range, stats }) {
   if (lang === "uz") {
     return [
-      `Oylik hisobot (${range.startISO} - ${range.endISO})`,
-      `Kirim: ${formatAmount(stats.income, lang)}`,
-      `Chiqim: ${formatAmount(stats.expense, lang)}`,
-      `Natija: ${formatAmount(stats.net, lang)}`,
-      `Yozuvlar: ${stats.count}`
+      "📙 Oylik hisobot",
+      `📅 ${range.startISO} - ${range.endISO}`,
+      "━━━━━━━━━━━━",
+      `💵 Kirim: ${formatAmount(stats.income, lang)}`,
+      `💸 Chiqim: ${formatAmount(stats.expense, lang)}`,
+      `⚖️ Natija: ${formatSignedAmount(stats.net, lang)}`,
+      `🧾 Yozuvlar: ${stats.count}`
     ].join("\n");
   }
 
   return [
-    `Месячный отчёт (${range.startISO} - ${range.endISO})`,
-    `Доход: ${formatAmount(stats.income, lang)}`,
-    `Расход: ${formatAmount(stats.expense, lang)}`,
-    `Итог: ${formatAmount(stats.net, lang)}`,
-    `Записей: ${stats.count}`
+    "📙 Месячный отчёт",
+    `📅 ${range.startISO} - ${range.endISO}`,
+    "━━━━━━━━━━━━",
+    `💵 Доход: ${formatAmount(stats.income, lang)}`,
+    `💸 Расход: ${formatAmount(stats.expense, lang)}`,
+    `⚖️ Итог: ${formatSignedAmount(stats.net, lang)}`,
+    `🧾 Записей: ${stats.count}`
   ].join("\n");
 }
 
 function buildRecordReminderText(lang, period) {
   if (lang === "uz") {
-    if (period === "noon") return "Eslatma: tushgacha bo'lgan xarajat va kirimlarni yozib qo'ying.";
-    return "Eslatma: kun oxirigacha barcha xarajat va kirimlarni yozing.";
+    if (period === "noon") {
+      return [
+        "⏰ Eslatma",
+        "Tushgacha bo'lgan kirim va chiqimlarni yozib qo'ying."
+      ].join("\n");
+    }
+    return [
+      "⏰ Eslatma",
+      "Kechqurun barcha kirim va chiqimlarni yozishni unutmang."
+    ].join("\n");
   }
 
-  if (period === "noon") return "Напоминание: запиши расходы и доходы до обеда.";
-  return "Напоминание: к вечеру запиши все расходы и доходы за день.";
+  if (period === "noon") {
+    return [
+      "⏰ Напоминание",
+      "Запиши доходы и расходы до обеда."
+    ].join("\n");
+  }
+  return [
+    "⏰ Напоминание",
+    "К вечеру запиши все расходы и доходы за день."
+  ].join("\n");
 }
 
 function buildDebtAlertText(lang, debtInfo) {
@@ -466,29 +568,37 @@ function buildDebtAlertText(lang, debtInfo) {
 
   if (lang === "uz") {
     const lines = [
-      "Qarz eslatmasi",
-      `Muddati o'tgan: ${debtInfo.overdue.length}`,
-      `Yaqin 3 kun: ${debtInfo.soon.length}`
+      "⚠️ Qarzlar bo'yicha ogohlantirish",
+      `🔴 Muddati o'tgan: ${debtInfo.overdue.length}`,
+      `🟡 Yaqin 3 kun: ${debtInfo.soon.length}`
     ];
+
+    if (topOverdue.length) lines.push("", "🔴 Muddati o'tganlar:");
     topOverdue.forEach((item) => {
-      lines.push(`- ${item.title || "Qarz"}: ${formatAmount(item.remaining, lang)} (${Math.abs(item.diff)} kun oldin)`);
+      lines.push(`• ${item.title || "Qarz"} — ${formatAmount(item.remaining, lang)} (${Math.abs(item.diff)} kun kechikdi)`);
     });
+
+    if (topSoon.length) lines.push("", "🟡 Yaqin muddatdagilar:");
     topSoon.forEach((item) => {
-      lines.push(`- ${item.title || "Qarz"}: ${formatAmount(item.remaining, lang)} (${item.diff} kun qoldi)`);
+      lines.push(`• ${item.title || "Qarz"} — ${formatAmount(item.remaining, lang)} (${item.diff} kun qoldi)`);
     });
     return lines.join("\n");
   }
 
   const lines = [
-    "Напоминание по долгам",
-    `Просрочено: ${debtInfo.overdue.length}`,
-    `Срок до 3 дней: ${debtInfo.soon.length}`
+    "⚠️ Внимание по долгам",
+    `🔴 Просрочено: ${debtInfo.overdue.length}`,
+    `🟡 Срок до 3 дней: ${debtInfo.soon.length}`
   ];
+
+  if (topOverdue.length) lines.push("", "🔴 Просроченные:");
   topOverdue.forEach((item) => {
-    lines.push(`- ${item.title || "Долг"}: ${formatAmount(item.remaining, lang)} (${Math.abs(item.diff)} дн. назад)`);
+    lines.push(`• ${item.title || "Долг"} — ${formatAmount(item.remaining, lang)} (${Math.abs(item.diff)} дн. просрочки)`);
   });
+
+  if (topSoon.length) lines.push("", "🟡 Скоро срок:");
   topSoon.forEach((item) => {
-    lines.push(`- ${item.title || "Долг"}: ${formatAmount(item.remaining, lang)} (через ${item.diff} дн.)`);
+    lines.push(`• ${item.title || "Долг"} — ${formatAmount(item.remaining, lang)} (через ${item.diff} дн.)`);
   });
   return lines.join("\n");
 }
@@ -546,7 +656,33 @@ exports.telegramWelcomeOnConnect = onDocumentWritten(
     if (!chatChanged) return;
 
     const lang = getLang(after);
-    await sendTelegramMessage(afterChatId, buildTelegramWelcomeText(lang), token);
+    const sent = await sendTelegramMessage(afterChatId, buildTelegramWelcomeText(lang), token);
+    if (sent) {
+      await event.data.after.ref.set(
+        { telegramOnboardingSentAt: admin.firestore.FieldValue.serverTimestamp() },
+        { merge: true }
+      );
+    }
+  }
+);
+
+exports.telegramOnboardingBroadcast = onSchedule(
+  {
+    schedule: "5 10 * * *",
+    timeZone: TZ,
+    region: REGION,
+    secrets: [TELEGRAM_BOT_TOKEN]
+  },
+  async () => {
+    await forEachTelegramUser(async ({ userRef, settings, chatId, lang, token }) => {
+      if (settings?.telegramOnboardingSentAt) return;
+      const sent = await sendTelegramMessage(chatId, buildTelegramWelcomeText(lang), token);
+      if (!sent) return;
+      await userRef.collection("settings").doc("main").set(
+        { telegramOnboardingSentAt: admin.firestore.FieldValue.serverTimestamp() },
+        { merge: true }
+      );
+    });
   }
 );
 
@@ -865,4 +1001,3 @@ exports.telegramMonthlyReport = onSchedule(
     });
   }
 );
-

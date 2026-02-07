@@ -139,7 +139,7 @@ export default function Goals() {
             const refund = Math.max(0, Number(goal?.currentAmount || 0));
             await deleteGoalWithRefund(user.uid, id, refund);
             setDeleteMessage(t("deleted"));
-          } catch (error) {
+          } catch {
             setDeleteMessage(t("deleteFailed"));
           } finally {
             setDeletingIds((prev) => {
