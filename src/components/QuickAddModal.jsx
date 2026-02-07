@@ -27,6 +27,7 @@ export default function QuickAddModal() {
   const user = useUser();
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [raw, setRaw] = useState("");
   const [preview, setPreview] = useState(null);
   const [savedNotice, setSavedNotice] = useState("");
@@ -207,6 +208,7 @@ export default function QuickAddModal() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (!preview || !user) return;
     if (hasAmountWarning) {
       setSavedNotice(t("noAmountText"));
@@ -253,6 +255,7 @@ export default function QuickAddModal() {
       setTransferMode("none");
     };
     let success = false;
+    setIsSubmitting(true);
     try {
       if (transferMode !== "none") {
         const amount = Number(preview.amount || 0);
@@ -354,7 +357,9 @@ export default function QuickAddModal() {
             description: debt.title || t("debtTitle"),
             raw
           });
-          await applyWalletDelta(debtMode === "collect" ? amount : -amount);
+          if (debtMode === "collect") {
+            await applyWalletDelta(amount);
+          }
           setSavedNotice(t("recordAdded"));
           setTimeout(() => setSavedNotice(""), 1500);
           success = true;
@@ -398,6 +403,8 @@ export default function QuickAddModal() {
         setSavedNotice(`${t("saveFailed")}${err?.message ? `: ${err.message}` : ""}`);
       }
       setTimeout(() => setSavedNotice(""), 2000);
+    } finally {
+      setIsSubmitting(false);
     }
     if (!success) {
       setOpen(true);
@@ -854,14 +861,17 @@ export default function QuickAddModal() {
                   )}
                   <GlassButton
                     onClick={handleSubmit}
+                    className={isSubmitting ? "is-loading" : ""}
+                    aria-busy={isSubmitting}
                     disabled={
+                      isSubmitting ||
                       !preview ||
                       (debtMode === "none" && hasAmountWarning) ||
                       (showCategorySelect && !categoryOverride) ||
                       (showDebtSelect && !selectedDebtId)
                     }
                   >
-                    {t("add")}
+                    {isSubmitting ? t("adding") : t("add")}
                   </GlassButton>
                   <div className="helper-text">
                     {t("examples")}

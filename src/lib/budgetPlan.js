@@ -48,6 +48,10 @@ function isTransferTx(tx) {
   return false;
 }
 
+function isDebtIncome(tx) {
+  return tx?.type === "income" && tx?.category === "debt";
+}
+
 function isExpenseLike(tx) {
   return tx?.type !== "income";
 }
@@ -148,7 +152,7 @@ export function buildMonthlyPlan({
   transactions.forEach((tx) => {
     const date = getTxDate(tx);
     if (!date || !isSameMonth(date, nowParts.year, nowParts.month)) return;
-    if (tx.type === "income") {
+    if (tx.type === "income" && !isDebtIncome(tx)) {
       incomeThisMonth.push(tx);
     } else if (isExpenseLike(tx)) {
       expenseThisMonth.push(tx);

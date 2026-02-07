@@ -1,8 +1,13 @@
 ﻿import { getTzParts } from "./timezone";
 
+function isDebtIncomeTransaction(tx) {
+  return tx?.type === "income" && tx?.category === "debt";
+}
+
 export function computeMonthlyIncome(transactions, days) {
   const totalIncome = transactions
     .filter((t) => t.type === "income")
+    .filter((t) => !isDebtIncomeTransaction(t))
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
   if (!days || days <= 0) return Math.round(totalIncome);
   return Math.round(totalIncome);
