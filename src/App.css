@@ -4144,6 +4144,37 @@ select option {
   margin-top: 16px !important;
 }
 
+.auth-inline-note {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(127, 29, 29, 0.22);
+}
+
+.auth-inline-note-text {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: #fecaca;
+}
+
+.auth-inline-actions {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.auth-inline-btn {
+  min-width: 180px;
+}
+
+.auth-inline-copied {
+  font-size: 0.82rem;
+  color: #86efac;
+}
+
 /* Responsive Auth */
 @media (max-width: 700px) {
   .auth-card {

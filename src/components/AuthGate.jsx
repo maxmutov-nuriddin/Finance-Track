@@ -8,9 +8,26 @@ import GlassButton from "./GlassButton";
 import { t as translate } from "../lib/i18n";
 import { Sparkles, ShieldCheck, Clock3 } from "lucide-react";
 
+function isEmbeddedInAppBrowser() {
+  if (typeof navigator === "undefined") return false;
+  const ua = String(navigator.userAgent || "").toLowerCase();
+  const markers = [
+    "telegram",
+    "instagram",
+    "fban",
+    "fbav",
+    "line/",
+    "micromessenger",
+    "; wv",
+    " wv)"
+  ];
+  return markers.some((marker) => ua.includes(marker));
+}
+
 const mapAuthError = (err, t) => {
   const code = err?.code || "";
   const message = String(err?.message || "").toLowerCase();
+  if (message.includes("disallowed_useragent")) return t("authDisallowedUserAgent");
   if (code.includes("auth/operation-not-allowed")) return t("authGoogleDisabled");
   if (code.includes("auth/unauthorized-domain")) return t("authUnauthorizedDomain");
   if (code.includes("auth/popup-closed-by-user")) return t("authPopupClosed");
@@ -34,6 +51,8 @@ export default function AuthGate({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [linkCopied, setLinkCopied] = useState(false);
+  const inAppBrowser = useMemo(() => isEmbeddedInAppBrowser(), []);
 
   useEffect(() => {
     getRedirectResult(auth).catch((err) => {
@@ -58,6 +77,10 @@ export default function AuthGate({ children }) {
 
   const handleGoogle = async () => {
     setError("");
+    if (inAppBrowser) {
+      setError(t("authDisallowedUserAgent"));
+      return;
+    }
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
@@ -76,6 +99,29 @@ export default function AuthGate({ children }) {
         }
       }
       setError(mapAuthError(err, t));
+    }
+  };
+
+  const handleOpenInBrowser = async () => {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+
+    const telegramOpenLink = window?.Telegram?.WebApp?.openLink;
+    if (typeof telegramOpenLink === "function") {
+      telegramOpenLink(url);
+      return;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 1800);
+      }
+    } catch {
+      // ignore clipboard issues in restricted webviews
     }
   };
 
@@ -137,6 +183,18 @@ export default function AuthGate({ children }) {
               <span>{t("signInGoogle")}</span>
             </GlassButton>
           </div>
+
+          {inAppBrowser && (
+            <div className="auth-inline-note">
+              <div className="auth-inline-note-text">{t("authDisallowedUserAgent")}</div>
+              <div className="auth-inline-actions">
+                <GlassButton variant="ghost" onClick={handleOpenInBrowser} className="auth-inline-btn">
+                  {t("authOpenInBrowser")}
+                </GlassButton>
+                {linkCopied && <span className="auth-inline-copied">{t("authLinkCopied")}</span>}
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="alert alert-danger auth-error" style={{ marginTop: 16 }}>

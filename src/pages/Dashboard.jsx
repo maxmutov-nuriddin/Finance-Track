@@ -50,6 +50,7 @@ import { showSiteToast } from "../lib/siteToast";
 const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
 const BORROW_DEBT_WORDS = ["взял", "взяла", "занял", "заняла", "borrow", "qarz ol", "одолжил у"];
 const COLLECT_DEBT_WORDS = ["забрал", "забрала", "вернули", "возврат", "collect", "undird", "qaytarib old"];
+const LEND_DEBT_WORDS = ["дал в долг", "дала в долг", "одолжил", "одолжила", "lend", "loaned", "qarz ber"];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const CATEGORY_LABEL_KEYS = {
@@ -137,6 +138,14 @@ function debtLastActivityISO(debt) {
 function shouldSkipDebtFlowForSpend(tx) {
   const mode = tx?.meta?.mode;
   return tx?.meta?.kind === "debt" && (mode === "lend" || mode === "collect");
+}
+
+function isManualLendDebtExpense(tx) {
+  if (tx?.type !== "expense") return false;
+  if (tx?.category !== "debt") return false;
+  if (tx?.meta?.kind === "debt") return tx?.meta?.mode === "lend";
+  const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+  return LEND_DEBT_WORDS.some((word) => text.includes(word));
 }
 
 function summarizeRange(transactions, startDate, endDate) {
@@ -527,13 +536,22 @@ export default function Dashboard() {
   }, [statsTransactions]);
   const statsMoneyCard = useMemo(() => {
     const income = Math.max(0, Number(monthlySalaryCardAmount || 0));
-    const expense = Number(stats?.expense || 0);
+    const expense = statsTransactions.reduce((sum, tx) => {
+      if (tx?.type !== "expense") return sum;
+      const amount = Number(tx?.amount || 0);
+      if (!Number.isFinite(amount) || amount <= 0) return sum;
+      if (tx?.meta?.kind === "transfer") return sum;
+      if (shouldSkipDebtFlowForSpend(tx)) return sum;
+      if (isManualLendDebtExpense(tx)) return sum;
+      return sum + amount;
+    }, 0);
     return {
       ...stats,
       income,
+      expense,
       net: income - expense
     };
-  }, [stats, monthlySalaryCardAmount]);
+  }, [stats, monthlySalaryCardAmount, statsTransactions]);
   const monthlyExpense = useMemo(
     () => computeMonthlyExpense(statsTransactions, periodDays),
     [statsTransactions, periodDays]
@@ -1493,7 +1511,10 @@ export default function Dashboard() {
                 Период (месяц): {periodRange.startISO} → {periodRange.endISO}
               </div>
               <div>Транзакции в периоде: {periodTransactions.length}</div>
-              <div>Факт: пришло {formatAmount(stats.income)}, потрачено {formatAmount(stats.expense)}, остаётся {formatAmount(stats.net)}</div>
+              <div>
+                Факт: пришло {formatAmount(statsMoneyCard.income)}, потрачено {formatAmount(statsMoneyCard.expense)},
+                остаётся {formatAmount(statsMoneyCard.net)}
+              </div>
               <div>Месячный доход: {formatAmount(monthlyIncome)}</div>
               <div>Месячный расход: {formatAmount(monthlyExpense)}</div>
               <div>Ежемесячные обязательные: {formatAmount(monthlyMandatory)}</div>
