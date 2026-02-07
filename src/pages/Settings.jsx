@@ -24,6 +24,41 @@ const savingsModes = [
 const APP_SITE_URL = String(import.meta.env.VITE_APP_SITE_URL || "https://finance-track-7fadf.web.app").trim();
 const TELEGRAM_ID_HELP_BOT = "@Get_myidrobot";
 
+function toDateOnlyISO(date) {
+  return formatDateISO(getTzParts(date));
+}
+
+function addDays(date, days) {
+  const next = new Date(date.getTime());
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function previousWeekRange(refDate) {
+  const date = new Date(refDate.getTime());
+  const day = date.getDay(); // 0=Sun, 1=Mon
+  const daysFromMonday = (day + 6) % 7;
+  const thisWeekMonday = addDays(new Date(date.getFullYear(), date.getMonth(), date.getDate()), -daysFromMonday);
+  const prevWeekMonday = addDays(thisWeekMonday, -7);
+  const prevWeekSunday = addDays(thisWeekMonday, -1);
+  return {
+    startISO: toDateOnlyISO(prevWeekMonday),
+    endISO: toDateOnlyISO(prevWeekSunday)
+  };
+}
+
+function previousMonthRange(refDate) {
+  const parts = getTzParts(refDate);
+  const year = parts.month === 1 ? parts.year - 1 : parts.year;
+  const month = parts.month === 1 ? 12 : parts.month - 1;
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0);
+  return {
+    startISO: toDateOnlyISO(start),
+    endISO: toDateOnlyISO(end)
+  };
+}
+
 export default function Settings() {
   const user = useUser();
   const navigate = useNavigate();
@@ -386,6 +421,206 @@ export default function Settings() {
     ].join("\n");
   };
 
+  const buildMorningTelegramReportText = ({
+    todayISO,
+    todayExpense,
+    monthIncome,
+    monthExpense,
+    walletBalance,
+    dailyLimit,
+    myDebtsTotal
+  }) => {
+    const monthNet = Number(monthIncome || 0) - Number(monthExpense || 0);
+    const dailyRemaining = Number(dailyLimit || 0) - Number(todayExpense || 0);
+    if (lang === "uz") {
+      return [
+        `🌅 Xayrli tong! ${todayISO}`,
+        "━━━━━━━━━━━━",
+        `👛 Hamyon: ${formatReportAmount(walletBalance)}`,
+        `🎯 Kunlik limit: ${formatReportAmount(dailyLimit)}`,
+        `💸 Bugun sarflangan: ${formatReportAmount(todayExpense)}`,
+        `⚖️ Limit qoldig'i: ${formatSignedReportAmount(dailyRemaining)}`,
+        "",
+        "📅 Joriy oy",
+        `• Kirim: ${formatReportAmount(monthIncome)}`,
+        `• Chiqim: ${formatReportAmount(monthExpense)}`,
+        `• Balans: ${formatSignedReportAmount(monthNet)}`,
+        `🤝 Mening qarzlarim: ${formatReportAmount(myDebtsTotal)}`
+      ].join("\n");
+    }
+
+    return [
+      `🌅 Доброе утро! ${todayISO}`,
+      "━━━━━━━━━━━━",
+      `👛 Кошелёк: ${formatReportAmount(walletBalance)}`,
+      `🎯 Дневной лимит: ${formatReportAmount(dailyLimit)}`,
+      `💸 Потрачено сегодня: ${formatReportAmount(todayExpense)}`,
+      `⚖️ Остаток лимита: ${formatSignedReportAmount(dailyRemaining)}`,
+      "",
+      "📅 Текущий месяц",
+      `• Доход: ${formatReportAmount(monthIncome)}`,
+      `• Расход: ${formatReportAmount(monthExpense)}`,
+      `• Баланс: ${formatSignedReportAmount(monthNet)}`,
+      `🤝 Мои долги: ${formatReportAmount(myDebtsTotal)}`
+    ].join("\n");
+  };
+
+  const buildWeeklyTelegramReportText = ({ rangeStartISO, rangeEndISO, weekIncome, weekExpense, weekCount }) => {
+    const weekNet = Number(weekIncome || 0) - Number(weekExpense || 0);
+    if (lang === "uz") {
+      return [
+        "📗 Haftalik hisobot",
+        `📅 ${rangeStartISO} - ${rangeEndISO}`,
+        "━━━━━━━━━━━━",
+        `💵 Kirim: ${formatReportAmount(weekIncome)}`,
+        `💸 Chiqim: ${formatReportAmount(weekExpense)}`,
+        `⚖️ Natija: ${formatSignedReportAmount(weekNet)}`,
+        `🧾 Yozuvlar: ${weekCount}`
+      ].join("\n");
+    }
+
+    return [
+      "📗 Недельный отчёт",
+      `📅 ${rangeStartISO} - ${rangeEndISO}`,
+      "━━━━━━━━━━━━",
+      `💵 Доход: ${formatReportAmount(weekIncome)}`,
+      `💸 Расход: ${formatReportAmount(weekExpense)}`,
+      `⚖️ Итог: ${formatSignedReportAmount(weekNet)}`,
+      `🧾 Записей: ${weekCount}`
+    ].join("\n");
+  };
+
+  const buildMonthlyTelegramReportText = ({ rangeStartISO, rangeEndISO, monthIncome, monthExpense, monthCount }) => {
+    const monthNet = Number(monthIncome || 0) - Number(monthExpense || 0);
+    if (lang === "uz") {
+      return [
+        "📙 Oylik hisobot",
+        `📅 ${rangeStartISO} - ${rangeEndISO}`,
+        "━━━━━━━━━━━━",
+        `💵 Kirim: ${formatReportAmount(monthIncome)}`,
+        `💸 Chiqim: ${formatReportAmount(monthExpense)}`,
+        `⚖️ Natija: ${formatSignedReportAmount(monthNet)}`,
+        `🧾 Yozuvlar: ${monthCount}`
+      ].join("\n");
+    }
+
+    return [
+      "📙 Месячный отчёт",
+      `📅 ${rangeStartISO} - ${rangeEndISO}`,
+      "━━━━━━━━━━━━",
+      `💵 Доход: ${formatReportAmount(monthIncome)}`,
+      `💸 Расход: ${formatReportAmount(monthExpense)}`,
+      `⚖️ Итог: ${formatSignedReportAmount(monthNet)}`,
+      `🧾 Записей: ${monthCount}`
+    ].join("\n");
+  };
+
+  const buildTelegramReminderText = (period) => {
+    if (lang === "uz") {
+      if (period === "noon") {
+        return ["⏰ Eslatma", "Tushgacha bo'lgan kirim va chiqimlarni yozib qo'ying."].join("\n");
+      }
+      return ["⏰ Eslatma", "Kechqurun barcha kirim va chiqimlarni yozishni unutmang."].join("\n");
+    }
+
+    if (period === "noon") {
+      return ["⏰ Напоминание", "Запиши доходы и расходы до обеда."].join("\n");
+    }
+    return ["⏰ Напоминание", "К вечеру запиши все расходы и доходы за день."].join("\n");
+  };
+
+  const sendTelegramText = async (chatId, token, text) => {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        disable_web_page_preview: true
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    return Boolean(response.ok && payload?.ok);
+  };
+
+  const collectTelegramReportData = async () => {
+    if (!user) return null;
+    const now = new Date();
+    const todayISO = toDateOnlyISO(now);
+    const monthRange = getMonthRangeFor(now);
+
+    const [settingsSnap, txSnap, debtsSnap] = await Promise.all([
+      getDoc(doc(db, `users/${user.uid}/settings/main`)),
+      getDocs(
+        query(
+          collection(db, `users/${user.uid}/transactions`),
+          orderBy("occurredAtISO", "desc"),
+          limit(1500)
+        )
+      ),
+      getDocs(
+        query(
+          collection(db, `users/${user.uid}/debts`),
+          orderBy("createdAt", "desc"),
+          limit(500)
+        )
+      )
+    ]);
+
+    const settingsData = settingsSnap.exists() ? settingsSnap.data() : {};
+    const transactions = txSnap.docs.map((docSnap) => docSnap.data());
+    const debts = debtsSnap.docs.map((docSnap) => docSnap.data());
+
+    let todayIncome = 0;
+    let todayExpense = 0;
+    let monthIncome = 0;
+    let monthExpense = 0;
+
+    transactions.forEach((tx) => {
+      const amount = Number(tx?.amount || 0);
+      if (!Number.isFinite(amount) || amount <= 0) return;
+      const dateISO = String(tx?.occurredAtISO || "").slice(0, 10);
+      if (!dateISO) return;
+
+      if (dateISO === todayISO) {
+        if (tx?.type === "income") todayIncome += amount;
+        if (tx?.type === "expense") todayExpense += amount;
+      }
+
+      if (dateISO >= monthRange.startISO && dateISO <= monthRange.endISO) {
+        if (tx?.type === "income") monthIncome += amount;
+        if (tx?.type === "expense") monthExpense += amount;
+      }
+    });
+
+    let myDebtsTotal = 0;
+    let lentDebtsTotal = 0;
+    debts.forEach((debt) => {
+      if (debt?.isClosed) return;
+      const remaining = Number(debt?.remaining || 0);
+      if (!Number.isFinite(remaining) || remaining <= 0) return;
+      if (debt?.direction === "borrowed") myDebtsTotal += remaining;
+      if (debt?.direction === "lent") lentDebtsTotal += remaining;
+    });
+
+    return {
+      now,
+      todayISO,
+      monthRange,
+      settingsData,
+      transactions,
+      debts,
+      todayIncome,
+      todayExpense,
+      monthIncome,
+      monthExpense,
+      myDebtsTotal,
+      lentDebtsTotal,
+      walletBalance: Number(settingsData?.walletBalance || 0),
+      dailyLimit: Number(settingsData?.dailyLimitValue || 0)
+    };
+  };
+
   const handleSendTelegramReport = async () => {
     if (!user || telegramReportBusy) return;
     const chatId = telegramChatId.trim();
@@ -402,94 +637,163 @@ export default function Settings() {
 
     setTelegramReportBusy(true);
     try {
-      const now = new Date();
-      const todayISO = formatDateISO(getTzParts(now));
-      const monthRange = getMonthRangeFor(now);
-
-      const [settingsSnap, txSnap, debtsSnap] = await Promise.all([
-        getDoc(doc(db, `users/${user.uid}/settings/main`)),
-        getDocs(
-          query(
-            collection(db, `users/${user.uid}/transactions`),
-            orderBy("occurredAtISO", "desc"),
-            limit(1500)
-          )
-        ),
-        getDocs(
-          query(
-            collection(db, `users/${user.uid}/debts`),
-            orderBy("createdAt", "desc"),
-            limit(500)
-          )
-        )
-      ]);
-
-      const settingsData = settingsSnap.exists() ? settingsSnap.data() : {};
-      const transactions = txSnap.docs.map((docSnap) => docSnap.data());
-      const debts = debtsSnap.docs.map((docSnap) => docSnap.data());
-
-      let todayIncome = 0;
-      let todayExpense = 0;
-      let monthIncome = 0;
-      let monthExpense = 0;
-
-      transactions.forEach((tx) => {
-        const amount = Number(tx?.amount || 0);
-        if (!Number.isFinite(amount) || amount <= 0) return;
-        const dateISO = String(tx?.occurredAtISO || "").slice(0, 10);
-        if (!dateISO) return;
-
-        if (dateISO === todayISO) {
-          if (tx?.type === "income") todayIncome += amount;
-          if (tx?.type === "expense") todayExpense += amount;
-        }
-
-        if (dateISO >= monthRange.startISO && dateISO <= monthRange.endISO) {
-          if (tx?.type === "income") monthIncome += amount;
-          if (tx?.type === "expense") monthExpense += amount;
-        }
-      });
-
-      let myDebtsTotal = 0;
-      let lentDebtsTotal = 0;
-      debts.forEach((debt) => {
-        if (debt?.isClosed) return;
-        const remaining = Number(debt?.remaining || 0);
-        if (!Number.isFinite(remaining) || remaining <= 0) return;
-        if (debt?.direction === "borrowed") myDebtsTotal += remaining;
-        if (debt?.direction === "lent") lentDebtsTotal += remaining;
-      });
+      const report = await collectTelegramReportData();
+      if (!report) {
+        showTelegramMessage(t("telegramReportFailed"), "error", 3000);
+        return;
+      }
 
       const reportText = buildManualTelegramReportText({
-        todayISO,
-        todayIncome,
-        todayExpense,
-        monthIncome,
-        monthExpense,
-        walletBalance: Number(settingsData?.walletBalance || 0),
-        dailyLimit: Number(settingsData?.dailyLimitValue || 0),
-        myDebtsTotal,
-        lentDebtsTotal
+        todayISO: report.todayISO,
+        todayIncome: report.todayIncome,
+        todayExpense: report.todayExpense,
+        monthIncome: report.monthIncome,
+        monthExpense: report.monthExpense,
+        walletBalance: report.walletBalance,
+        dailyLimit: report.dailyLimit,
+        myDebtsTotal: report.myDebtsTotal,
+        lentDebtsTotal: report.lentDebtsTotal
       });
 
-      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: reportText,
-          disable_web_page_preview: true
-        })
-      });
-
-      const payload = await response.json().catch(() => null);
-      showTelegramMessage(response.ok && payload?.ok ? t("telegramReportSent") : t("telegramReportFailed"), response.ok && payload?.ok ? "success" : "error", 3000);
+      const sent = await sendTelegramText(chatId, token, reportText);
+      showTelegramMessage(sent ? t("telegramReportSent") : t("telegramReportFailed"), sent ? "success" : "error", 3000);
     } catch {
       showTelegramMessage(t("telegramReportFailed"), "error", 3000);
     } finally {
       setTelegramReportBusy(false);
     }
   };
+
+  // Local fallback scheduler for Telegram without Firebase Functions (works while site is open).
+  /* eslint-disable react-hooks/exhaustive-deps */
+  useEffect(() => {
+    if (!user || !allRemindersEnabled) return;
+
+    const chatId = telegramChatId.trim();
+    const token = String(import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "").trim();
+    if (!/^-?\d+$/.test(chatId) || !token) return;
+
+    const storagePrefix = `finance_track_local_tg_scheduler_v1:${user.uid}`;
+    let running = false;
+
+    const wasSent = (type, key) => localStorage.getItem(`${storagePrefix}:${type}:${key}`) === "1";
+    const markSent = (type, key) => localStorage.setItem(`${storagePrefix}:${type}:${key}`, "1");
+
+    const isDueWindow = (parts, hour, minute = 0, windowMinutes = 20) => {
+      const nowMinutes = parts.hour * 60 + parts.minute;
+      const targetMinutes = hour * 60 + minute;
+      return nowMinutes >= targetMinutes && nowMinutes <= targetMinutes + windowMinutes;
+    };
+
+    const summarizeRange = (transactions, startISO, endISO) => {
+      let income = 0;
+      let expense = 0;
+      let count = 0;
+      (transactions || []).forEach((tx) => {
+        const iso = String(tx?.occurredAtISO || "").slice(0, 10);
+        if (!iso || iso < startISO || iso > endISO) return;
+        const amount = Number(tx?.amount || 0);
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        count += 1;
+        if (tx?.type === "income") income += amount;
+        if (tx?.type === "expense") expense += amount;
+      });
+      return { income, expense, count };
+    };
+
+    const tick = async () => {
+      if (running) return;
+      running = true;
+      try {
+        const now = new Date();
+        const parts = getTzParts(now);
+        const todayISO = toDateOnlyISO(now);
+        const weekKey = previousWeekRange(now).startISO;
+        const monthKeyValue = previousMonthRange(now).startISO;
+
+        const dueMorning = isDueWindow(parts, 6) && !wasSent("morning", todayISO);
+        const dueNoon = isDueWindow(parts, 12) && !wasSent("noon", todayISO);
+        const dueEvening = isDueWindow(parts, 18) && !wasSent("evening", todayISO);
+        const dueDaily = isDueWindow(parts, 22) && !wasSent("daily", todayISO);
+        const dueWeekly = parts.day === 1 && isDueWindow(parts, 0, 0, 30) && !wasSent("weekly", weekKey);
+        const dueMonthly = parts.day === 1 && isDueWindow(parts, 0, 0, 30) && !wasSent("monthly", monthKeyValue);
+
+        const needReportData = dueMorning || dueDaily || dueWeekly || dueMonthly;
+        const report = needReportData ? await collectTelegramReportData() : null;
+
+        if (dueMorning && report) {
+          const text = buildMorningTelegramReportText({
+            todayISO: report.todayISO,
+            todayExpense: report.todayExpense,
+            monthIncome: report.monthIncome,
+            monthExpense: report.monthExpense,
+            walletBalance: report.walletBalance,
+            dailyLimit: report.dailyLimit,
+            myDebtsTotal: report.myDebtsTotal
+          });
+          if (await sendTelegramText(chatId, token, text)) markSent("morning", todayISO);
+        }
+
+        if (dueNoon) {
+          if (await sendTelegramText(chatId, token, buildTelegramReminderText("noon"))) markSent("noon", todayISO);
+        }
+
+        if (dueEvening) {
+          if (await sendTelegramText(chatId, token, buildTelegramReminderText("evening"))) markSent("evening", todayISO);
+        }
+
+        if (dueDaily && report) {
+          const text = buildManualTelegramReportText({
+            todayISO: report.todayISO,
+            todayIncome: report.todayIncome,
+            todayExpense: report.todayExpense,
+            monthIncome: report.monthIncome,
+            monthExpense: report.monthExpense,
+            walletBalance: report.walletBalance,
+            dailyLimit: report.dailyLimit,
+            myDebtsTotal: report.myDebtsTotal,
+            lentDebtsTotal: report.lentDebtsTotal
+          });
+          if (await sendTelegramText(chatId, token, text)) markSent("daily", todayISO);
+        }
+
+        if (dueWeekly && report) {
+          const range = previousWeekRange(now);
+          const weekStats = summarizeRange(report.transactions, range.startISO, range.endISO);
+          const text = buildWeeklyTelegramReportText({
+            rangeStartISO: range.startISO,
+            rangeEndISO: range.endISO,
+            weekIncome: weekStats.income,
+            weekExpense: weekStats.expense,
+            weekCount: weekStats.count
+          });
+          if (await sendTelegramText(chatId, token, text)) markSent("weekly", weekKey);
+        }
+
+        if (dueMonthly && report) {
+          const range = previousMonthRange(now);
+          const monthStats = summarizeRange(report.transactions, range.startISO, range.endISO);
+          const text = buildMonthlyTelegramReportText({
+            rangeStartISO: range.startISO,
+            rangeEndISO: range.endISO,
+            monthIncome: monthStats.income,
+            monthExpense: monthStats.expense,
+            monthCount: monthStats.count
+          });
+          if (await sendTelegramText(chatId, token, text)) markSent("monthly", monthKeyValue);
+        }
+      } catch (error) {
+        console.error("local telegram scheduler failed", error);
+      } finally {
+        running = false;
+      }
+    };
+
+    tick();
+    const timer = setInterval(tick, 60 * 1000);
+    return () => clearInterval(timer);
+  }, [user, allRemindersEnabled, telegramChatId, lang]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const handleClearAll = async () => {
     if (!user) return;
@@ -750,6 +1054,9 @@ export default function Settings() {
                 <h2 className="settings-card-title">🤖 {t("telegramBotTitle")}</h2>
               </div>
               <p className="settings-card-hint">{t("telegramBotHelp")}</p>
+              <p className="settings-status-note" style={{ marginBottom: 10 }}>
+                {t("telegramLocalModeNote")}
+              </p>
               <p className="settings-telegram-bot-line">
                 {t("telegramBotAccount")}{" "}
                 <a
