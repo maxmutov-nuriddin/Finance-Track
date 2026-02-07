@@ -27,10 +27,21 @@ export default function Payments() {
   }, [user]);
 
   const stats = useMemo(() => {
-    const total = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-    const monthly = payments.filter(p => p.recurrence === "monthly").length;
-    return { total, monthly };
-  }, [payments]);
+    const fallbackRecurring = (transactions || []).filter(
+      (tx) => tx?.isRecurring && tx.type === "expense"
+    );
+    const useFallback = payments.length === 0;
+
+    if (useFallback) {
+      const total = fallbackRecurring.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+      return { total, monthly: fallbackRecurring.length, count: fallbackRecurring.length };
+    }
+
+    const total = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const monthly = payments.filter((p) => p.recurrence === "monthly").length;
+    return { total, monthly, count: payments.length };
+  }, [payments, transactions]);
+  const remindersEnabled = Boolean(settings?.remindersEnabled);
 
   return (
     <div className="payments-container">
@@ -39,7 +50,9 @@ export default function Payments() {
           <h1 className="payments-title" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <CreditCard size={28} strokeWidth={2.5} /> {t("monthlyPayments")}
           </h1>
-          <p className="payments-subtitle">{t("remind3days")}</p>
+          <p className="payments-subtitle">
+            {remindersEnabled ? t("remind3days") : t("notificationsManagedInSettings")}
+          </p>
         </div>
       </div>
 
@@ -47,7 +60,7 @@ export default function Payments() {
         <div className="stat-card">
           <div className="stat-card-label">{t("allPayments")}</div>
           <div className="stat-card-value" style={{ color: "#3b82f6" }}>
-            {payments.length}
+            {stats.count}
           </div>
         </div>
         <div className="stat-card">

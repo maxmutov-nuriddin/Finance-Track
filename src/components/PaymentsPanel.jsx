@@ -24,14 +24,17 @@ export default function PaymentsPanel({ payments, transactions = [], allReminder
   const recurringFromTransactions = useMemo(() => {
     return (transactions || [])
       .filter((tx) => tx?.isRecurring && tx.type === "expense")
-      .slice(0, 5);
+      .slice(0, 100);
   }, [transactions]);
+  const usingTransactionFallback = payments.length === 0;
+  const recurringVisible = usingTransactionFallback ? recurringFromTransactions : [];
+  const recordsCount = usingTransactionFallback ? recurringVisible.length : payments.length;
 
   return (
     <GlassCard>
       <div className="payments-list-header">
         <div className="payments-list-title">{t("paymentsTitle")}</div>
-        <div className="payments-badge">{payments.length}</div>
+        <div className="payments-badge">{recordsCount}</div>
       </div>
 
       {!remindersReady ? (
@@ -43,7 +46,7 @@ export default function PaymentsPanel({ payments, transactions = [], allReminder
                 ? t("allRemindersDenied")
                 : t("notificationsManagedInSettings")}
           </div>
-          <div className="helper-text">{t("notificationsOff")}</div>
+          <div className="helper-text">{t("allRemindersOff")}</div>
         </div>
       ) : (
         <div className="alert" style={{ marginBottom: 20 }}>
@@ -72,7 +75,7 @@ export default function PaymentsPanel({ payments, transactions = [], allReminder
         <div className="payments-section">
           <div className="payments-section-title">📋 {t("allRecords")}</div>
           <div className="payment-list">
-            {recurringFromTransactions.map((tx) => (
+            {recurringVisible.map((tx) => (
               <div className="payment-item" key={`rtx-${tx.id}`}>
                 <div className="payment-item-left">
                   <div className="payment-icon">🔄</div>
@@ -113,7 +116,7 @@ export default function PaymentsPanel({ payments, transactions = [], allReminder
                 </div>
               </div>
             ))}
-            {!payments.length && recurringFromTransactions.length === 0 && (
+            {!payments.length && recurringVisible.length === 0 && (
               <div className="payments-empty">
                 <div className="empty-icon">💳</div>
                 <div className="empty-text">{t("noPaymentsYet")}</div>
