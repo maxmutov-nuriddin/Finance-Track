@@ -84,6 +84,7 @@ export default function AuthGate({ children }) {
     setError("");
     if (inAppBrowser) {
       setError(t("authDisallowedUserAgent"));
+      await handleOpenInBrowser();
       return;
     }
     try {
@@ -113,11 +114,29 @@ export default function AuthGate({ children }) {
     const cleanUrl = url.split("#")[0];
 
     const telegramOpenLink = window?.Telegram?.WebApp?.openLink;
+    let opened = false;
     if (typeof telegramOpenLink === "function") {
-      telegramOpenLink(cleanUrl, { try_instant_view: false });
+      try {
+        telegramOpenLink(cleanUrl, { try_instant_view: false, try_browser: "chrome" });
+        opened = true;
+      } catch {
+        try {
+          telegramOpenLink(cleanUrl, { try_instant_view: false });
+          opened = true;
+        } catch {
+          opened = false;
+        }
+      }
     }
 
-    window.open(cleanUrl, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      const popup = window.open(cleanUrl, "_blank", "noopener,noreferrer");
+      opened = Boolean(popup);
+    }
+
+    if (!opened) {
+      window.location.assign(cleanUrl);
+    }
 
     try {
       if (navigator?.clipboard?.writeText) {
@@ -164,7 +183,7 @@ export default function AuthGate({ children }) {
           </div>
 
           <div className="auth-social">
-            <GlassButton onClick={handleGoogle} className="auth-google-btn" disabled={inAppBrowser}>
+            <GlassButton onClick={handleGoogle} className="auth-google-btn">
               <span className="auth-google-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" focusable="false">
                   <path
