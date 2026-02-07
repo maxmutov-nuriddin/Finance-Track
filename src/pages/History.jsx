@@ -6,6 +6,30 @@ import { useI18n } from "../components/I18nProvider";
 import { deleteTransaction, watchTransactions } from "../lib/store";
 import { useUser } from "../lib/user";
 
+const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
+const BORROW_DEBT_WORDS = ["взял", "взяла", "занял", "заняла", "borrow", "qarz ol", "одолжил у"];
+const COLLECT_DEBT_WORDS = ["забрал", "забрала", "вернули", "возврат", "collect", "undird", "qaytarib old"];
+
+function isSalaryOrBorrowIncome(tx) {
+  if (tx?.type !== "income") return false;
+
+  if (tx?.meta?.kind === "transfer") return false;
+
+  if (tx?.meta?.kind === "debt") {
+    return tx?.meta?.mode === "borrow";
+  }
+
+  if (tx?.category === "debt") {
+    const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+    const isCollect = COLLECT_DEBT_WORDS.some((word) => text.includes(word));
+    const isBorrow = BORROW_DEBT_WORDS.some((word) => text.includes(word));
+    return isBorrow && !isCollect;
+  }
+
+  const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+  return tx?.incomePeriod === "monthly" || SALARY_WORDS.some((word) => text.includes(word));
+}
+
 function escapeCsvValue(value, delimiter = ";") {
   const text = String(value ?? "");
   if (text.includes(delimiter) || text.includes('"') || text.includes("\n") || text.includes("\r")) {
@@ -45,11 +69,11 @@ export default function History() {
 
   const stats = useMemo(() => {
     const income = transactions
-      .filter((tx) => tx.type === "income")
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      .filter((tx) => isSalaryOrBorrowIncome(tx))
+      .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
     const expense = transactions
       .filter((tx) => tx.type === "expense")
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+      .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
     return { income, expense, total: transactions.length };
   }, [transactions]);
 

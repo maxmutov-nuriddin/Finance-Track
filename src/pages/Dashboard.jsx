@@ -519,6 +519,15 @@ export default function Dashboard() {
       return isSalary ? sum + amount : sum;
     }, 0);
   }, [statsTransactions]);
+  const statsMoneyCard = useMemo(() => {
+    const income = Math.max(0, Number(monthlySalaryCardAmount || 0));
+    const expense = Number(stats?.expense || 0);
+    return {
+      ...stats,
+      income,
+      net: income - expense
+    };
+  }, [stats, monthlySalaryCardAmount]);
   const monthlyExpense = useMemo(
     () => computeMonthlyExpense(statsTransactions, periodDays),
     [statsTransactions, periodDays]
@@ -781,7 +790,7 @@ export default function Dashboard() {
     if (!Number.isFinite(remaining)) return 0;
     return remaining;
   }, [dailyLimitFixed, todayRegularExpense]);
-  const factMonthlyNet = useMemo(() => stats.net, [stats.net]);
+  const factMonthlyNet = useMemo(() => statsMoneyCard.net, [statsMoneyCard.net]);
 
   const status = useMemo(
     () =>
@@ -1277,7 +1286,7 @@ export default function Dashboard() {
         <div className="stats-split-container">
           <div className="stats-split-main">
             <StatsCard
-              stats={stats}
+              stats={statsMoneyCard}
               periodLabel={t("periodMonth")}
               monthlyNet={factMonthlyNet}
               series={chartSeries}
