@@ -47,6 +47,8 @@ import {
 } from "../lib/budgetCalc";
 
 const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
+const BORROW_DEBT_WORDS = ["взял", "взяла", "занял", "заняла", "borrow", "qarz ol", "одолжил у"];
+const COLLECT_DEBT_WORDS = ["забрал", "забрала", "вернули", "возврат", "collect", "undird", "qaytarib old"];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const CATEGORY_LABEL_KEYS = {
@@ -493,6 +495,30 @@ export default function Dashboard() {
     () => computeMonthlyIncome(statsTransactions, periodDays),
     [statsTransactions, periodDays]
   );
+  const monthlySalaryCardAmount = useMemo(() => {
+    return statsTransactions.reduce((sum, tx) => {
+      if (tx?.type !== "income") return sum;
+      const amount = Number(tx?.amount || 0);
+      if (!Number.isFinite(amount) || amount <= 0) return sum;
+
+      if (tx?.meta?.kind === "debt") {
+        return tx?.meta?.mode === "borrow" ? sum + amount : sum;
+      }
+
+      if (tx?.category === "debt") {
+        const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+        const isCollect = COLLECT_DEBT_WORDS.some((word) => text.includes(word));
+        const isBorrow = BORROW_DEBT_WORDS.some((word) => text.includes(word));
+        return isBorrow && !isCollect ? sum + amount : sum;
+      }
+
+      if (tx?.meta?.kind === "transfer") return sum;
+
+      const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+      const isSalary = tx?.incomePeriod === "monthly" || SALARY_WORDS.some((word) => text.includes(word));
+      return isSalary ? sum + amount : sum;
+    }, 0);
+  }, [statsTransactions]);
   const monthlyExpense = useMemo(
     () => computeMonthlyExpense(statsTransactions, periodDays),
     [statsTransactions, periodDays]
@@ -1163,7 +1189,7 @@ export default function Dashboard() {
           <div className="stat-tile tile-green">
             <div className="tile-icon"><Banknote size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("monthlySalary")}</div>
-            <div className="tile-value">{formatAmount(Math.round(monthlyIncome))}</div>
+            <div className="tile-value">{formatAmount(Math.round(monthlySalaryCardAmount))}</div>
             <div className="tile-sub">{t("monthlySalary")}</div>
           </div>
           <div className="stat-tile tile-orange">
