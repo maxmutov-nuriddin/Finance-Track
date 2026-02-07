@@ -807,6 +807,7 @@ exports.telegramDailyReport = onSchedule(
       const debts = await getRecentDebts(userRef);
       const debtInfo = classifyDebts(debts, todayParts);
 
+      
       const text = buildDailyReportText({
         lang,
         todayISO,
