@@ -51,7 +51,7 @@ export default function Payments() {
             <CreditCard size={28} strokeWidth={2.5} /> {t("monthlyPayments")}
           </h1>
           <p className="payments-subtitle">
-            {remindersEnabled ? t("remind3days") : t("notificationsManagedInSettings")}
+            {remindersEnabled ? t("remind3days") : t("allRemindersOff")}
           </p>
         </div>
       </div>

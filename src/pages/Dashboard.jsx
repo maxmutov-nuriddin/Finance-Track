@@ -1378,13 +1378,8 @@ export default function Dashboard() {
                     ? t("allRemindersDenied")
                     : debtReminderEnabled
                       ? t("allRemindersOn")
-                      : t("notificationsManagedInSettings")}
+                      : t("allRemindersOff")}
               </div>
-              {!debtReminderEnabled && (
-                <GlassButton variant="ghost" onClick={() => navigate("/settings")}>
-                  {t("configure")}
-                </GlassButton>
-              )}
             </div>
 
             <div className="debt-reminder-lists">

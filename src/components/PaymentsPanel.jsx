@@ -39,14 +39,13 @@ export default function PaymentsPanel({ payments, transactions = [], allReminder
 
       {!remindersReady ? (
         <div className="alert" style={{ marginBottom: 20 }}>
-          <div style={{ marginBottom: 8 }}>
+          <div>
             {notificationStatus === "unsupported"
               ? t("allRemindersUnsupported")
               : notificationStatus === "denied"
                 ? t("allRemindersDenied")
-                : t("notificationsManagedInSettings")}
+                : t("allRemindersOff")}
           </div>
-          <div className="helper-text">{t("allRemindersOff")}</div>
         </div>
       ) : (
         <div className="alert" style={{ marginBottom: 20 }}>

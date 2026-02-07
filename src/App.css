@@ -3537,6 +3537,10 @@ select option {
   gap: 16px;
 }
 
+.budget-tab .settings-grid:first-of-type > .glass-card:last-child {
+  grid-column: 1 / -1;
+}
+
 .settings-card-header {
   display: flex;
   align-items: center;
