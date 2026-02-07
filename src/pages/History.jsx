@@ -9,6 +9,7 @@ import { useUser } from "../lib/user";
 const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
 const BORROW_DEBT_WORDS = ["взял", "взяла", "занял", "заняла", "borrow", "qarz ol", "одолжил у"];
 const COLLECT_DEBT_WORDS = ["забрал", "забрала", "вернули", "возврат", "collect", "undird", "qaytarib old"];
+const LEND_DEBT_WORDS = ["дал в долг", "дала в долг", "одолжил", "одолжила", "lend", "loaned", "qarz ber"];
 
 function isSalaryOrBorrowIncome(tx) {
   if (tx?.type !== "income") return false;
@@ -34,6 +35,10 @@ function isTrackableExpense(tx) {
   if (tx?.type !== "expense") return false;
   if (tx?.meta?.kind === "transfer") return false;
   if (tx?.meta?.kind === "debt" && tx?.meta?.mode === "lend") return false;
+  if (tx?.category === "debt") {
+    const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+    if (LEND_DEBT_WORDS.some((word) => text.includes(word))) return false;
+  }
   return true;
 }
 

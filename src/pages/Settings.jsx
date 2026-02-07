@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import GlassCard from "../components/GlassCard";
 import GlassButton from "../components/GlassButton";
 import GlassInput from "../components/GlassInput";
@@ -23,6 +23,10 @@ const savingsModes = [
 ];
 const APP_SITE_URL = String(import.meta.env.VITE_APP_SITE_URL || "https://finance-track-7fadf.web.app").trim();
 const TELEGRAM_ID_HELP_BOT = "@Get_myidrobot";
+const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
+const BORROW_DEBT_WORDS = ["взял", "взяла", "занял", "заняла", "borrow", "qarz ol", "одолжил у"];
+const COLLECT_DEBT_WORDS = ["забрал", "забрала", "вернули", "возврат", "collect", "undird", "qaytarib old"];
+const LEND_DEBT_WORDS = ["дал в долг", "дала в долг", "одолжил", "одолжила", "lend", "loaned", "qarz ber"];
 
 function toDateOnlyISO(date) {
   return formatDateISO(getTzParts(date));
@@ -57,6 +61,43 @@ function previousMonthRange(refDate) {
     startISO: toDateOnlyISO(start),
     endISO: toDateOnlyISO(end)
   };
+}
+
+function shouldIncludeIncomeForMoneyFlow(tx) {
+  if (tx?.type !== "income") return false;
+  const amount = Number(tx?.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
+
+  if (tx?.meta?.kind === "debt") {
+    return tx?.meta?.mode === "borrow";
+  }
+
+  if (tx?.category === "debt") {
+    const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+    const isCollect = COLLECT_DEBT_WORDS.some((word) => text.includes(word));
+    const isBorrow = BORROW_DEBT_WORDS.some((word) => text.includes(word));
+    return isBorrow && !isCollect;
+  }
+
+  if (tx?.meta?.kind === "transfer") return false;
+
+  const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+  return tx?.incomePeriod === "monthly" || SALARY_WORDS.some((word) => text.includes(word));
+}
+
+function shouldIncludeExpenseForMoneyFlow(tx) {
+  if (tx?.type !== "expense") return false;
+  const amount = Number(tx?.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
+  if (tx?.meta?.kind === "transfer") return false;
+  if (tx?.meta?.kind === "debt" && (tx?.meta?.mode === "lend" || tx?.meta?.mode === "collect")) return false;
+
+  if (tx?.category === "debt") {
+    const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+    if (LEND_DEBT_WORDS.some((word) => text.includes(word))) return false;
+  }
+
+  return true;
 }
 
 export default function Settings() {
@@ -583,13 +624,13 @@ export default function Settings() {
       if (!dateISO) return;
 
       if (dateISO === todayISO) {
-        if (tx?.type === "income") todayIncome += amount;
-        if (tx?.type === "expense") todayExpense += amount;
+        if (shouldIncludeIncomeForMoneyFlow(tx)) todayIncome += amount;
+        if (shouldIncludeExpenseForMoneyFlow(tx)) todayExpense += amount;
       }
 
       if (dateISO >= monthRange.startISO && dateISO <= monthRange.endISO) {
-        if (tx?.type === "income") monthIncome += amount;
-        if (tx?.type === "expense") monthExpense += amount;
+        if (shouldIncludeIncomeForMoneyFlow(tx)) monthIncome += amount;
+        if (shouldIncludeExpenseForMoneyFlow(tx)) monthExpense += amount;
       }
     });
 
@@ -695,8 +736,8 @@ export default function Settings() {
         const amount = Number(tx?.amount || 0);
         if (!Number.isFinite(amount) || amount <= 0) return;
         count += 1;
-        if (tx?.type === "income") income += amount;
-        if (tx?.type === "expense") expense += amount;
+        if (shouldIncludeIncomeForMoneyFlow(tx)) income += amount;
+        if (shouldIncludeExpenseForMoneyFlow(tx)) expense += amount;
       });
       return { income, expense, count };
     };

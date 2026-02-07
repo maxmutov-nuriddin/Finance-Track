@@ -1,4 +1,4 @@
-﻿const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
@@ -25,6 +25,9 @@ const SALARY_WORDS = [
   "премия",
   "бонус"
 ];
+const BORROW_DEBT_WORDS = ["взял", "взяла", "занял", "заняла", "borrow", "qarz ol", "одолжил у"];
+const COLLECT_DEBT_WORDS = ["забрал", "забрала", "вернули", "возврат", "collect", "undird", "qaytarib old"];
+const LEND_DEBT_WORDS = ["дал в долг", "дала в долг", "одолжил", "одолжила", "lend", "loaned", "qarz ber"];
 
 function getDateParts(date, timeZone) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -89,6 +92,43 @@ function isSalaryTransaction(item) {
   if (!item || item.type !== "income") return false;
   const text = `${item.description || ""} ${item.raw || ""}`.toLowerCase();
   return SALARY_WORDS.some((word) => text.includes(word));
+}
+
+function shouldIncludeIncomeForMoneyFlow(item) {
+  if (!item || item.type !== "income") return false;
+  const amount = Number(item?.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
+
+  if (item?.meta?.kind === "debt") {
+    return item?.meta?.mode === "borrow";
+  }
+
+  if (item?.category === "debt") {
+    const text = `${item?.description || ""} ${item?.raw || ""}`.toLowerCase();
+    const isCollect = COLLECT_DEBT_WORDS.some((word) => text.includes(word));
+    const isBorrow = BORROW_DEBT_WORDS.some((word) => text.includes(word));
+    return isBorrow && !isCollect;
+  }
+
+  if (item?.meta?.kind === "transfer") return false;
+  if (item?.incomePeriod === "monthly") return true;
+  return isSalaryTransaction(item);
+}
+
+function shouldIncludeExpenseForMoneyFlow(item) {
+  if (!item || item.type !== "expense") return false;
+  const amount = Number(item?.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
+
+  if (item?.meta?.kind === "transfer") return false;
+  if (item?.meta?.kind === "debt" && (item?.meta?.mode === "lend" || item?.meta?.mode === "collect")) return false;
+
+  if (item?.category === "debt") {
+    const text = `${item?.description || ""} ${item?.raw || ""}`.toLowerCase();
+    if (LEND_DEBT_WORDS.some((word) => text.includes(word))) return false;
+  }
+
+  return true;
 }
 
 function detectSalaryDay(transactions) {
@@ -272,10 +312,10 @@ function computeTransactionStats(transactions) {
   (transactions || []).forEach((item) => {
     const amount = Number(item?.amount || 0);
     if (!Number.isFinite(amount) || amount <= 0) return;
-    if (item?.type === "income") {
+    if (shouldIncludeIncomeForMoneyFlow(item)) {
       income += amount;
     }
-    if (item?.type === "expense") {
+    if (shouldIncludeExpenseForMoneyFlow(item)) {
       expense += amount;
     }
   });
@@ -1120,4 +1160,3 @@ exports.telegramMonthlyReport = onSchedule(
     });
   }
 );
-
