@@ -30,6 +30,13 @@ function isSalaryOrBorrowIncome(tx) {
   return tx?.incomePeriod === "monthly" || SALARY_WORDS.some((word) => text.includes(word));
 }
 
+function isTrackableExpense(tx) {
+  if (tx?.type !== "expense") return false;
+  if (tx?.meta?.kind === "transfer") return false;
+  if (tx?.meta?.kind === "debt" && tx?.meta?.mode === "lend") return false;
+  return true;
+}
+
 function escapeCsvValue(value, delimiter = ";") {
   const text = String(value ?? "");
   if (text.includes(delimiter) || text.includes('"') || text.includes("\n") || text.includes("\r")) {
@@ -72,7 +79,7 @@ export default function History() {
       .filter((tx) => isSalaryOrBorrowIncome(tx))
       .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
     const expense = transactions
-      .filter((tx) => tx.type === "expense")
+      .filter((tx) => isTrackableExpense(tx))
       .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
     return { income, expense, total: transactions.length };
   }, [transactions]);
