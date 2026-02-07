@@ -148,6 +148,38 @@ function isManualLendDebtExpense(tx) {
   return LEND_DEBT_WORDS.some((word) => text.includes(word));
 }
 
+function shouldIncludeIncomeForMoneyFlow(tx) {
+  if (tx?.type !== "income") return false;
+  const amount = Number(tx?.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
+
+  if (tx?.meta?.kind === "debt") {
+    return tx?.meta?.mode === "borrow";
+  }
+
+  if (tx?.category === "debt") {
+    const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+    const isCollect = COLLECT_DEBT_WORDS.some((word) => text.includes(word));
+    const isBorrow = BORROW_DEBT_WORDS.some((word) => text.includes(word));
+    return isBorrow && !isCollect;
+  }
+
+  if (tx?.meta?.kind === "transfer") return false;
+
+  const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
+  return tx?.incomePeriod === "monthly" || SALARY_WORDS.some((word) => text.includes(word));
+}
+
+function shouldIncludeExpenseForMoneyFlow(tx) {
+  if (tx?.type !== "expense") return false;
+  const amount = Number(tx?.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
+  if (tx?.meta?.kind === "transfer") return false;
+  if (shouldSkipDebtFlowForSpend(tx)) return false;
+  if (isManualLendDebtExpense(tx)) return false;
+  return true;
+}
+
 function summarizeRange(transactions, startDate, endDate) {
   const inRange = (transactions || []).filter((tx) => {
     if (!tx?.occurredAtISO) return false;
@@ -169,12 +201,11 @@ function summarizeRange(transactions, startDate, endDate) {
     const amount = Number(tx?.amount || 0);
     if (!Number.isFinite(amount) || amount <= 0) return;
 
-    if (tx.type === "income") {
+    if (shouldIncludeIncomeForMoneyFlow(tx)) {
       summary.income += amount;
       return;
     }
-    if (tx.type !== "expense") return;
-    if (shouldSkipDebtFlowForSpend(tx)) return;
+    if (!shouldIncludeExpenseForMoneyFlow(tx)) return;
 
     summary.expense += amount;
     const key = tx.category || "other";
@@ -512,38 +543,17 @@ export default function Dashboard() {
   );
   const monthlySalaryCardAmount = useMemo(() => {
     return statsTransactions.reduce((sum, tx) => {
-      if (tx?.type !== "income") return sum;
+      if (!shouldIncludeIncomeForMoneyFlow(tx)) return sum;
       const amount = Number(tx?.amount || 0);
-      if (!Number.isFinite(amount) || amount <= 0) return sum;
-
-      if (tx?.meta?.kind === "debt") {
-        return tx?.meta?.mode === "borrow" ? sum + amount : sum;
-      }
-
-      if (tx?.category === "debt") {
-        const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
-        const isCollect = COLLECT_DEBT_WORDS.some((word) => text.includes(word));
-        const isBorrow = BORROW_DEBT_WORDS.some((word) => text.includes(word));
-        return isBorrow && !isCollect ? sum + amount : sum;
-      }
-
-      if (tx?.meta?.kind === "transfer") return sum;
-
-      const text = `${tx?.description || ""} ${tx?.raw || ""}`.toLowerCase();
-      const isSalary = tx?.incomePeriod === "monthly" || SALARY_WORDS.some((word) => text.includes(word));
-      return isSalary ? sum + amount : sum;
+      return Number.isFinite(amount) ? sum + amount : sum;
     }, 0);
   }, [statsTransactions]);
   const statsMoneyCard = useMemo(() => {
     const income = Math.max(0, Number(monthlySalaryCardAmount || 0));
     const expense = statsTransactions.reduce((sum, tx) => {
-      if (tx?.type !== "expense") return sum;
+      if (!shouldIncludeExpenseForMoneyFlow(tx)) return sum;
       const amount = Number(tx?.amount || 0);
-      if (!Number.isFinite(amount) || amount <= 0) return sum;
-      if (tx?.meta?.kind === "transfer") return sum;
-      if (shouldSkipDebtFlowForSpend(tx)) return sum;
-      if (isManualLendDebtExpense(tx)) return sum;
-      return sum + amount;
+      return Number.isFinite(amount) ? sum + amount : sum;
     }, 0);
     return {
       ...stats,

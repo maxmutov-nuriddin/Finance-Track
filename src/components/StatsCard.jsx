@@ -5,6 +5,7 @@ import { useI18n } from "./I18nProvider";
 
 export default function StatsCard({
   stats,
+  // eslint-disable-next-line no-unused-vars
   periodLabel = "За текущий месяц",
   monthlyNet,
   series,
