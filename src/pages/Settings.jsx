@@ -263,7 +263,9 @@ export default function Settings() {
                 </select>
               </div>
             </GlassCard>
+          </div>
 
+          <div className="settings-grid settings-grid-budget-secondary">
             <GlassCard>
               <div className="settings-card-header">
                 <h2 className="settings-card-title">📅 {t("salaryDayTitle")}</h2>
@@ -281,9 +283,6 @@ export default function Settings() {
                 />
               </div>
             </GlassCard>
-          </div>
-
-          <div className="settings-grid">
             <GlassCard>
               <div className="settings-card-header">
                 <h2 className="settings-card-title">🏦 {t("savingsTitle")}</h2>
