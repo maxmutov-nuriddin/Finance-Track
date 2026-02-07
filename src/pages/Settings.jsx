@@ -54,6 +54,7 @@ export default function Settings() {
   const [clearMessage, setClearMessage] = useState("");
   const [clearing, setClearing] = useState(false);
   const [activeTab, setActiveTab] = useState("budget");
+  const telegramBotHandle = "@mvfintrackbot";
 
   useEffect(() => {
     if (!user) return;
@@ -680,6 +681,17 @@ export default function Settings() {
                 <h2 className="settings-card-title">🤖 {t("telegramBotTitle")}</h2>
               </div>
               <p className="settings-card-hint">{t("telegramBotHelp")}</p>
+              <p className="settings-telegram-bot-line">
+                {t("telegramBotAccount")}{" "}
+                <a
+                  className="settings-telegram-bot-link"
+                  href="https://t.me/mvfintrackbot"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {telegramBotHandle}
+                </a>
+              </p>
               <div className="settings-status-grid">
                 <div className={`settings-status-item ${telegramConnected ? "is-on" : "is-off"}`}>
                   <span className="settings-status-label">{t("telegramConnectionStatusTitle")}</span>
