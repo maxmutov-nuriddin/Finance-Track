@@ -91,11 +91,32 @@ function normalize(text) {
     .replace(/[ʻʼ’`]/g, "'");
 }
 
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasWholeWord(text, word) {
+  const pattern = new RegExp(
+    `(^|[^\\p{L}\\p{N}'])${escapeRegExp(word)}([^\\p{L}\\p{N}']|$)`,
+    "iu"
+  );
+  return pattern.test(text);
+}
+
+function matchKeyword(text, word) {
+  const normalizedWord = normalize(word);
+  if (!normalizedWord) return false;
+  if (normalizedWord.length <= 2) {
+    return hasWholeWord(text, normalizedWord);
+  }
+  return text.includes(normalizedWord);
+}
+
 function detectCategory(text) {
   const categorySets = [...CATEGORY_MAP, ...CATEGORY_MAP_UZ];
   for (const group of categorySets) {
     for (const word of group.words) {
-      if (text.includes(word)) {
+      if (matchKeyword(text, word)) {
         return { key: group.key, matched: true };
       }
     }

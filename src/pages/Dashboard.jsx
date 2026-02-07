@@ -491,6 +491,7 @@ export default function Dashboard() {
   const todayExpense = useMemo(() => {
     return allTransactions.reduce((sum, item) => {
       if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      if (item.isRecurring) return sum;
       const iso = item.occurredAtISO.slice(0, 10);
       if (iso !== todayISO) return sum;
       return sum + Number(item.amount || 0);
@@ -500,6 +501,7 @@ export default function Dashboard() {
   const todaySpecialExpense = useMemo(() => {
     return allTransactions.reduce((sum, item) => {
       if (item.type !== "expense" || !item.occurredAtISO) return sum;
+      if (item.isRecurring) return sum;
       const iso = item.occurredAtISO.slice(0, 10);
       if (iso !== todayISO) return sum;
       if (isSpecialExpense(item)) {

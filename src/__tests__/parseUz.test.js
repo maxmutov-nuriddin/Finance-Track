@@ -23,6 +23,16 @@ describe("parseInput (uz)", () => {
     expect(parsed.debtMode).toBe("lend");
     expect(parsed.amount).toBe(200000);
   });
+
+  it("detects credit category without false pets match", () => {
+    const parsed = parseInput("kredit 500 ming");
+    expect(parsed.category).toBe("credit");
+  });
+
+  it("still detects pets category for short word it", () => {
+    const parsed = parseInput("it uchun ovqat 20 ming");
+    expect(parsed.category).toBe("pets");
+  });
 });
 
 describe("parsePaymentInput (uz)", () => {
