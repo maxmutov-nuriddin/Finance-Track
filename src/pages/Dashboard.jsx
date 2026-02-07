@@ -7,14 +7,13 @@ import ExpenseCategoriesPie from "../components/ExpenseCategoriesPie";
 import { useUser } from "../lib/user";
 import {
   addGoalContribution,
-  addTransaction,
   watchGoals,
   watchPayments,
   watchTransactions,
   watchSettings,
   saveSettings
 } from "../lib/store";
-import { addDaysInTz, addMonthsInTz, formatDateISO, formatISOWithOffset, getTzParts, makeTashkentDate, nowInTashkent } from "../lib/timezone";
+import { addDaysInTz, addMonthsInTz, formatDateISO, getTzParts, makeTashkentDate, nowInTashkent } from "../lib/timezone";
 import { useNavigate } from "react-router-dom";
 import { computeBudgetStatus } from "../lib/budget";
 import { filterByOccurredAtISO, getMonthKey, getMonthRange, getMonthRangeFor } from "../lib/utils";
@@ -170,6 +169,19 @@ function getSalaryDay(transactions) {
   return bestDay;
 }
 
+function isSpecialExpense(item) {
+  const category = item?.category || "";
+  const description = (item?.description || "").toLowerCase();
+  const raw = (item?.raw || "").toLowerCase();
+  const isGoal = description.includes("накоп") || raw.includes("накоп");
+  const isDebt =
+    category === "credit" ||
+    category === "debt" ||
+    raw.includes("долг") ||
+    raw.includes("кредит");
+  return isGoal || isDebt;
+}
+
 export default function Dashboard() {
   const user = useUser();
   const navigate = useNavigate();
@@ -180,6 +192,7 @@ export default function Dashboard() {
   const [settings, setSettings] = useState(null);
   const [walletNotice, setWalletNotice] = useState("");
   const [monthTick, setMonthTick] = useState(getMonthKey(new Date()));
+  const [dayTick, setDayTick] = useState(() => formatDateISO(getTzParts(nowInTashkent())));
   const [carryoverModalOpen, setCarryoverModalOpen] = useState(false);
   const [chartRange, setChartRange] = useState("month");
 
@@ -201,6 +214,14 @@ export default function Dashboard() {
     const timer = setInterval(() => {
       const nextKey = getMonthKey(new Date());
       setMonthTick((prev) => (prev === nextKey ? prev : nextKey));
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const nextDay = formatDateISO(getTzParts(nowInTashkent()));
+      setDayTick((prev) => (prev === nextDay ? prev : nextDay));
     }, 60000);
     return () => clearInterval(timer);
   }, []);
@@ -290,7 +311,7 @@ export default function Dashboard() {
     const diff =
       Math.floor((targetDate.getTime() - todayStart.getTime()) / (24 * 60 * 60 * 1000));
     return Math.max(0, diff);
-  }, [salaryDay]);
+  }, [salaryDay, dayTick]);
   const monthlyIncome = useMemo(
     () => computeMonthlyIncome(statsTransactions, periodDays),
     [statsTransactions, periodDays]
@@ -372,7 +393,7 @@ export default function Dashboard() {
     }, 0);
   }, [allTransactions]);
 
-  const todayISO = useMemo(() => formatDateISO(getTzParts(nowInTashkent())), []);
+  const todayISO = useMemo(() => dayTick, [dayTick]);
   const todayExpense = useMemo(() => {
     return allTransactions.reduce((sum, item) => {
       if (item.type !== "expense" || !item.occurredAtISO) return sum;
@@ -387,12 +408,7 @@ export default function Dashboard() {
       if (item.type !== "expense" || !item.occurredAtISO) return sum;
       const iso = item.occurredAtISO.slice(0, 10);
       if (iso !== todayISO) return sum;
-      const category = item.category || "";
-      const description = (item.description || "").toLowerCase();
-      const raw = (item.raw || "").toLowerCase();
-      const isGoal = description.includes("накоп") || raw.includes("накоп");
-      const isDebt = category === "credit" || category === "debt" || raw.includes("долг") || raw.includes("кредит");
-      if (isGoal || isDebt) {
+      if (isSpecialExpense(item)) {
         return sum + Number(item.amount || 0);
       }
       return sum;
@@ -441,34 +457,46 @@ export default function Dashboard() {
     const endDate = makeTashkentDate(getTzParts(periodRange.end));
     const diffDays = Math.ceil((endDate.getTime() - todayStart.getTime()) / (24 * 60 * 60 * 1000));
     return Math.max(1, diffDays);
-  }, [periodRange.end]);
+  }, [periodRange.end, dayTick]);
+
+  const dailyHorizonDays = useMemo(() => {
+    if (Number.isFinite(daysUntilSalary) && daysUntilSalary > 0) {
+      return Math.max(1, daysUntilSalary);
+    }
+    return remainingDaysInMonth;
+  }, [daysUntilSalary, remainingDaysInMonth]);
+  const isSalaryHorizon = Number.isFinite(daysUntilSalary) && daysUntilSalary > 0;
+
+  const walletBalance = Number(settings?.walletBalance || 0);
+  const dailyCarryoverPool = Number(settings?.dailyCarryoverPool || 0);
+  const dailyRemainingBudget = useMemo(() => {
+    const value =
+      safeRecommendedSpend -
+      currentMonthExpenseBeforeTodayNonRecurring -
+      todaySpecialExpense +
+      dailyCarryoverPool;
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, value);
+  }, [
+    safeRecommendedSpend,
+    currentMonthExpenseBeforeTodayNonRecurring,
+    todaySpecialExpense,
+    dailyCarryoverPool
+  ]);
+
+  const dailyLimitComputed = useMemo(() => {
+    if (dailyHorizonDays <= 0) return Math.floor(dailyRemainingBudget);
+    return Math.floor(dailyRemainingBudget / dailyHorizonDays);
+  }, [dailyRemainingBudget, dailyHorizonDays]);
 
   const dailyLimitFixed = useMemo(() => {
     const storedDate = settings?.dailyLimitDateISO;
-    const storedValue = Number(settings?.dailyLimitValue || 0);
-    if (storedDate === todayISO && storedValue > 0 && todaySpecialExpense <= 0) {
+    const storedValue = Number(settings?.dailyLimitValue);
+    if (storedDate === todayISO && Number.isFinite(storedValue) && storedValue > 0) {
       return storedValue;
     }
-    const carryPool = Number(settings?.dailyCarryoverPool || 0);
-    const remainingBase =
-      monthlyIncome -
-      monthlyMandatory -
-      plannedMonthlySavings -
-      currentMonthExpenseBeforeTodayNonRecurring -
-      todaySpecialExpense +
-      carryPool;
-    const value = remainingBase / remainingDaysInMonth;
-    return Number.isFinite(value) ? value : 0;
-  }, [
-    settings,
-    todayISO,
-    monthlyIncome,
-    monthlyMandatory,
-    plannedMonthlySavings,
-    currentMonthExpenseBeforeTodayNonRecurring,
-    remainingDaysInMonth,
-    todaySpecialExpense
-  ]);
+    return dailyLimitComputed;
+  }, [settings, todayISO, dailyLimitComputed]);
 
   const dailyLimitRemaining = useMemo(() => {
     const remaining = Number(dailyLimitFixed || 0) - Number(todayRegularExpense || 0);
@@ -545,7 +573,6 @@ export default function Dashboard() {
     [allTransactions, periodRange]
   );
 
-  const walletBalance = Number(settings?.walletBalance || 0);
   const walletMonthKey = settings?.walletMonthKey || "";
   const overspendAppliedMonthKey = settings?.overspendAppliedMonthKey || "";
   const overspendAppliedAmount = Number(settings?.overspendAppliedAmount || 0);
@@ -637,94 +664,68 @@ export default function Dashboard() {
     if (!user || !settings) return;
     const today = todayISO;
     if (settings.dailyLimitDateISO !== today) {
+      let carryToWallet = 0;
       if (settings.dailyLimitDateISO) {
         const prevDate = settings.dailyLimitDateISO;
-        const prevSpent = allTransactions.reduce((sum, item) => {
+        const prevRegularSpent = allTransactions.reduce((sum, item) => {
           if (item.type !== "expense" || !item.occurredAtISO) return sum;
           const iso = item.occurredAtISO.slice(0, 10);
           if (iso !== prevDate) return sum;
+          if (isSpecialExpense(item)) return sum;
           return sum + Number(item.amount || 0);
         }, 0);
         const prevLimit = Number(settings.dailyLimitValue || 0);
-        const leftover = Math.max(0, prevLimit - prevSpent);
-        if (leftover > 0) {
-          const nextBalance = walletBalance + leftover;
-          saveSettings(user.uid, {
-            walletBalance: nextBalance,
-            dailyCarryoverPendingAmount: 0,
-            dailyCarryoverPendingDateISO: ""
-          });
-          const nowParts = getTzParts(nowInTashkent());
-          addTransaction(user.uid, {
-            amount: leftover,
-            occurredAt: makeTashkentDate(nowParts),
-            occurredAtISO: formatISOWithOffset(nowParts),
-            category: "carryover",
-            type: "income",
-            description: t("carryoverTitle"),
-            raw: "carryover"
-          });
-          setWalletNotice(t("walletCarry", { amount: formatAmount(leftover) }));
-          setTimeout(() => setWalletNotice(""), 4000);
-        }
+        carryToWallet = Math.max(0, prevLimit - prevRegularSpent);
       }
 
-      const carryPool = 0;
-      const remainingBase =
-        monthlyIncome -
-        monthlyMandatory -
-        plannedMonthlySavings -
-        currentMonthExpenseBeforeTodayNonRecurring +
-        carryPool;
-      const nextDailyLimit = Math.round(remainingBase / remainingDaysInMonth);
+      const nextWalletBalance = walletBalance + carryToWallet;
+      const nextRemainingBudget = Math.max(
+        0,
+        safeRecommendedSpend -
+          currentMonthExpenseBeforeTodayNonRecurring -
+          todaySpecialExpense
+      );
+      const nextDailyLimit =
+        dailyHorizonDays > 0
+          ? Math.floor(nextRemainingBudget / dailyHorizonDays)
+          : Math.floor(nextRemainingBudget);
+
       saveSettings(user.uid, {
+        ...(carryToWallet > 0 ? { walletBalance: nextWalletBalance } : {}),
         dailyLimitDateISO: today,
         dailyLimitValue: nextDailyLimit,
-        dailyCarryoverPool: 0
+        dailyCarryoverPool: 0,
+        dailyCarryoverPendingAmount: 0,
+        dailyCarryoverPendingDateISO: ""
       });
+
+      if (carryToWallet > 0) {
+        setWalletNotice(t("walletCarry", { amount: formatAmount(carryToWallet) }));
+        setTimeout(() => setWalletNotice(""), 4000);
+      }
     }
   }, [
     user,
     settings,
     todayISO,
     allTransactions,
-    monthlyIncome,
-    monthlyMandatory,
-    plannedMonthlySavings,
+    walletBalance,
+    safeRecommendedSpend,
     currentMonthExpenseBeforeTodayNonRecurring,
-    remainingDaysInMonth,
-    todaySpecialExpense
+    todaySpecialExpense,
+    dailyHorizonDays,
+    t
   ]);
 
   useEffect(() => {
     if (!user || !settings) return;
     if (settings.dailyLimitDateISO !== todayISO) return;
-    if (todaySpecialExpense <= 0) return;
-    const carryPool = Number(settings.dailyCarryoverPool || 0);
-    const remainingBase =
-      monthlyIncome -
-      monthlyMandatory -
-      plannedMonthlySavings -
-      currentMonthExpenseBeforeTodayNonRecurring -
-      todaySpecialExpense +
-      carryPool;
-    const nextDailyLimit = Math.round(remainingBase / remainingDaysInMonth);
-    if (Math.round(Number(settings.dailyLimitValue || 0)) !== nextDailyLimit) {
+    if (Number(settings.dailyLimitValue || 0) !== dailyLimitComputed) {
       saveSettings(user.uid, {
-        dailyLimitValue: nextDailyLimit
+        dailyLimitValue: dailyLimitComputed
       });
     }
-  }, [
-    user,
-    settings,
-    todayISO,
-    todaySpecialExpense,
-    monthlyIncome,
-    monthlyMandatory,
-    plannedMonthlySavings,
-    currentMonthExpenseBeforeTodayNonRecurring,
-    remainingDaysInMonth
-  ]);
+  }, [user, settings, todayISO, dailyLimitComputed]);
 
   useEffect(() => {
     if (pendingCarryoverAmount > 0 && pendingCarryoverDate) {
@@ -825,7 +826,11 @@ export default function Dashboard() {
             <div className="tile-icon"><TrendingDown size={20} strokeWidth={2.5} /></div>
             <div className="tile-label">{t("dailyAllowed")}</div>
             <div className="tile-value">{formatAmount(Math.round(dailyLimitRemaining))}</div>
-            <div className="tile-sub">{t("dailyLimitLabel", { days: periodDays })}</div>
+            <div className="tile-sub">
+              {isSalaryHorizon
+                ? t("dailyLimitToSalaryLabel")
+                : t("dailyLimitLabel", { days: dailyHorizonDays })}
+            </div>
             {Number.isFinite(dailyToZero) && (
               <div className="tile-meta">{t("endMonthZeroHint", { amount: formatAmount(Math.round(dailyToZero)) })}</div>
             )}
@@ -865,7 +870,8 @@ export default function Dashboard() {
               series={chartSeries}
               dailyLimit={dailyLimitFixed}
               dailyRemaining={dailyLimitRemaining}
-              daysInMonth={periodDays}
+              daysInMonth={dailyHorizonDays}
+              isSalaryHorizon={isSalaryHorizon}
               range={chartRange}
               onRangeChange={setChartRange}
             />

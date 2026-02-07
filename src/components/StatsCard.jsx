@@ -11,6 +11,7 @@ export default function StatsCard({
   dailyLimit,
   dailyRemaining,
   daysInMonth,
+  isSalaryHorizon = false,
   range,
   onRangeChange
 }) {
@@ -83,7 +84,9 @@ export default function StatsCard({
         </div>
         {Number.isFinite(dailyLimit) && Number.isFinite(daysInMonth) && (
           <div className="stats-card-foot-row">
-            {t("dailyLimitLabel", { days: daysInMonth })}: {formatAmount(Math.round(dailyLimit))}.
+            {isSalaryHorizon
+              ? t("dailyLimitToSalaryLabel")
+              : t("dailyLimitLabel", { days: daysInMonth })}: {formatAmount(Math.round(dailyLimit))}.
           </div>
         )}
         {Number.isFinite(dailyRemaining) && (
