@@ -26,20 +26,74 @@ const CATEGORY_MAP = [
   { key: "rent", words: ["аренда", "квартира", "съем", "съём"] }
 ];
 
-const INCOME_WORDS = ["зп", "зарплата", "доход", "получил", "получила", "премия", "аванс", "бонус"];
-const GOAL_WORDS = ["цель", "maqsad", "goal", "накопить", "накопление", "коплю"];
+const CATEGORY_MAP_UZ = [
+  { key: "cafe", words: ["kafe", "restoran", "bar", "qahva", "choy", "fastfood"] },
+  { key: "groceries", words: ["mahsulot", "oziq-ovqat", "supermarket", "bozor", "dokon", "do'kon"] },
+  { key: "food", words: ["ovqat", "tushlik", "kechki ovqat", "nonushta"] },
+  { key: "transport", words: ["taksi", "transport", "metro", "avtobus", "benzin", "yoqilgi", "yoqilg'i"] },
+  { key: "clothes", words: ["kiyim", "poyabzal", "krossovka"] },
+  { key: "beauty", words: ["gozallik", "go'zallik", "salon", "sartarosh", "manikyur", "pedikyur"] },
+  { key: "kids", words: ["bola", "bolalar", "bogcha", "bog'cha", "maktab", "oyinchoq", "o'yinchoq"] },
+  { key: "gifts", words: ["sovga", "sovg'a", "gul"] },
+  { key: "pets", words: ["mushuk", "it", "veterinar", "hayvon"] },
+  { key: "travel", words: ["sayohat", "tatil", "ta'til", "aviachipta", "mehmonxona"] },
+  { key: "home", words: ["uy", "tamir", "ta'mir", "mebel", "texnika"] },
+  { key: "subscriptions", words: ["obuna"] },
+  { key: "taxes", words: ["soliq", "jarima"] },
+  { key: "entertainment", words: ["oyin-kulgi", "o'yin-kulgi", "kino", "oyin", "o'yin", "konsert"] },
+  { key: "shopping", words: ["xarid", "xaridlar", "marketpleys", "uzum"] },
+  { key: "utilities", words: ["kommunal", "komunal", "elektr", "gaz", "suv"] },
+  { key: "health", words: ["dori", "dorixona", "shifokor", "klinika", "sogliq", "sog'liq"] },
+  { key: "education", words: ["kurs", "talim", "ta'lim", "universitet", "oqish", "o'qish"] },
+  { key: "personal", words: ["shaxsiy", "hobby", "hobbi"] },
+  { key: "debt", words: ["qarz", "qarzlar"] },
+  { key: "credit", words: ["kredit", "ipoteka"] },
+  { key: "rent", words: ["ijara"] }
+];
+
+const INCOME_WORDS = [
+  "зп",
+  "зарплата",
+  "доход",
+  "получил",
+  "получила",
+  "премия",
+  "аванс",
+  "бонус",
+  "maosh",
+  "oylik",
+  "daromad",
+  "kirim",
+  "tushum"
+];
+const GOAL_WORDS = [
+  "цель",
+  "maqsad",
+  "goal",
+  "накопить",
+  "накопление",
+  "коплю",
+  "jamgar",
+  "jamg'ar",
+  "yigaman",
+  "yig'aman"
+];
 const DEBT_HINT_WORDS = ["долг", "долги", "займ", "займы", "qarz", "debt", "loan"];
 
-const DATE_REGEX = /(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?/;
+const DATE_REGEX = /(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?/;
 const TIME_REGEX = /(\d{1,2}):(\d{2})/;
-const DAYS_AGO_REGEX = /(\d+)\s*д(ень|ня|ней)\s*назад/;
+const DAYS_AGO_REGEX = /(\d+)\s*(?:д(?:ень|ня|ней)\s*назад|kun\s*(?:oldin|avval))/;
 
 function normalize(text) {
-  return text.trim().toLowerCase();
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[ʻʼ’`]/g, "'");
 }
 
 function detectCategory(text) {
-  for (const group of CATEGORY_MAP) {
+  const categorySets = [...CATEGORY_MAP, ...CATEGORY_MAP_UZ];
+  for (const group of categorySets) {
     for (const word of group.words) {
       if (text.includes(word)) {
         return { key: group.key, matched: true };
@@ -55,7 +109,7 @@ function detectType(text) {
 }
 
 function detectIncomePeriod(text) {
-  if (/(зп|зарплат)/.test(text)) {
+  if (/(зп|зарплат|maosh|oylik|har\s*oy)/.test(text)) {
     return "monthly";
   }
   return null;
@@ -64,11 +118,11 @@ function detectIncomePeriod(text) {
 function detectDebtMode(text) {
   const hasDebtHint =
     DEBT_HINT_WORDS.some((word) => text.includes(word)) ||
-    /(занял|заняла|одолжил|одолжила|qarz)/.test(text);
+    /(занял|заняла|одолжил|одолжила|qarz|debt|loan)/.test(text);
   if (!hasDebtHint) return null;
 
   if (
-    /(отдал|отдала|вернул(?!и)|вернула|погасил|погасила|закрыл|закрыла|выплатил|выплатила|repay|repaid|pay\s*back|paid\s*back|qarzni?\s*(to'lad|tolad|qaytard|qaytardi))/.test(
+    /(отдал|отдала|вернул(?!и)|вернула|погасил|погасила|закрыл|закрыла|выплатил|выплатила|repay|repaid|pay\s*back|paid\s*back|qarzni?\s*(to'la|tolad|to'lad|to'ladi|qaytar|qaytard|qaytardi))/.test(
       text
     )
   ) {
@@ -76,7 +130,7 @@ function detectDebtMode(text) {
   }
 
   if (
-    /(забрал|забрала|получил\s+обратно|получила\s+обратно|вернули|возвратили|взыскал|взыскала|collect|collected|qarzni?\s*(oldim|oldi|qaytarib\s+oldim))/.test(
+    /(забрал|забрала|получил\s+обратно|получила\s+обратно|вернули|возвратили|взыскал|взыскала|collect|collected|qarzni?\s*(oldim|oldi|qaytarib\s+oldim|undirdim|undirdi))/.test(
       text
     )
   ) {
@@ -84,7 +138,7 @@ function detectDebtMode(text) {
   }
 
   if (
-    /(взял|взяла|занял|заняла|одолжил\s+у|одолжила\s+у|borrow|borrowed|took\s+loan|qarz\s*ol)/.test(
+    /(взял|взяла|занял|заняла|одолжил\s+у|одолжила\s+у|borrow|borrowed|took\s+loan|qarz\s*ol(dim|di)?)/.test(
       text
     )
   ) {
@@ -92,7 +146,7 @@ function detectDebtMode(text) {
   }
 
   if (
-    /(дал|дала|одолжил(?!\s+у)|одолжила(?!\s+у)|lend|loaned|qarz\s*ber)/.test(
+    /(дал|дала|одолжил(?!\s+у)|одолжила(?!\s+у)|lend|loaned|qarz\s*ber(dim|di)?)/.test(
       text
     )
   ) {
@@ -122,7 +176,12 @@ function parseDateTime(rawText, nowDate, options = {}) {
     вчера: -1,
     позавчера: -2,
     завтра: 1,
-    послезавтра: 2
+    послезавтра: 2,
+    bugun: 0,
+    kecha: -1,
+    indin: -2,
+    ertaga: 1,
+    indinga: 2
   };
 
   let match = null;
@@ -262,13 +321,16 @@ export function parsePaymentInput(rawText, nowDate = new Date()) {
   }
 
   const title = stripTokens(rawText, [text.match(DATE_REGEX)?.[0]]);
-  const isMonthly = /(ежемесяч|каждый месяц|кажд(?:ый|ую)\s+месяц)/.test(text);
+  const isMonthly =
+    /(ежемесяч|каждый месяц|кажд(?:ый|ую)\s+месяц|oylik|har\s*oy|har\s*oyi|oyma-oy|oymaoy)/.test(
+      text
+    );
 
   return {
     amount: amount ? Math.round(amount) : amount,
     payDateISO: dt.dateISO,
     payDateTimeISO: dt.occurredAtISO,
-    title: title || "Платеж",
+    title: title || "Payment",
     recurrence: isMonthly ? "monthly" : "oneTime",
     warnings
   };
