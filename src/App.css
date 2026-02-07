@@ -3107,12 +3107,37 @@ select option {
 }
 
 .goal-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.9rem;
   color: #a0aec0;
   padding: 8px 12px;
   background: rgba(47, 107, 255, 0.08);
   border-left: 2px solid rgba(47, 107, 255, 0.3);
   border-radius: 6px;
+}
+
+.goal-hint-danger {
+  color: #ffe2e7;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.24) 0%, rgba(239, 68, 68, 0.12) 100%);
+  border-left: 3px solid rgba(248, 113, 113, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.25);
+  font-weight: 600;
+}
+
+.goal-hint-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(248, 113, 113, 0.95);
+  color: #1f2937;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 
 .goal-item-actions {
@@ -3236,6 +3261,12 @@ select option {
   .goal-hint {
     font-size: 0.85rem;
     padding: 6px 10px;
+  }
+
+  .goal-hint-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 0.75rem;
   }
 
   .goal-item-actions {

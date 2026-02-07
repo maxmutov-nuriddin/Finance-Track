@@ -83,13 +83,25 @@ export default function GoalPanel({
 
         const hints = [];
         if (!isCompleted) {
-          hints.push(t("goalRecommendedMonthly", { amount: formatAmount(recommendedMonthly) }));
+          hints.push({
+            text: t("goalRecommendedMonthly", { amount: formatAmount(recommendedMonthly) }),
+            kind: "info"
+          });
           if (monthsLeft === null) {
-            hints.push(t("goalForecastUnavailable"));
+            hints.push({
+              text: t("goalForecastUnavailable"),
+              kind: "danger"
+            });
           } else if (monthsLeft > 0) {
-            hints.push(t("goalMonthsLeft", { months: monthsLeft }));
+            hints.push({
+              text: t("goalMonthsLeft", { months: monthsLeft }),
+              kind: "info"
+            });
             if (forecastDate) {
-              hints.push(t("goalFinishDate", { date: forecastDate }));
+              hints.push({
+                text: t("goalFinishDate", { date: forecastDate }),
+                kind: "info"
+              });
             }
           }
         }
@@ -174,8 +186,12 @@ export default function GoalPanel({
             {goal.hints.length > 0 && (
               <div className="goal-item-hints">
                 {goal.hints.map((hint, index) => (
-                  <div className="goal-hint" key={`${goal.id}-hint-${index}`}>
-                    {hint}
+                  <div
+                    className={`goal-hint ${hint.kind === "danger" ? "goal-hint-danger" : ""}`}
+                    key={`${goal.id}-hint-${index}`}
+                  >
+                    {hint.kind === "danger" && <span className="goal-hint-icon">!</span>}
+                    <span>{hint.text}</span>
                   </div>
                 ))}
               </div>

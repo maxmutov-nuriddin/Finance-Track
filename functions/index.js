@@ -1,5 +1,6 @@
 ﻿const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 
@@ -409,6 +410,74 @@ function buildTelegramWelcomeText(lang) {
   ].join("\n");
 }
 
+function getTelegramLangFromMessage(message) {
+  const code = String(message?.from?.language_code || message?.from?.languageCode || "").toLowerCase();
+  return code.startsWith("uz") ? "uz" : "ru";
+}
+
+function buildTelegramStartReply(lang, chatId) {
+  const idLine =
+    lang === "uz"
+      ? `🆔 Sizning Telegram ID: ${chatId}`
+      : `🆔 Ваш Telegram ID: ${chatId}`;
+
+  if (lang === "uz") {
+    return [
+      buildTelegramWelcomeText(lang),
+      "",
+      idLine,
+      "",
+      "Foydali buyruqlar:",
+      "/id - Telegram ID ni qayta ko'rsatish",
+      "/help - qisqa yordam"
+    ].join("\n");
+  }
+
+  return [
+    buildTelegramWelcomeText(lang),
+    "",
+    idLine,
+    "",
+    "Полезные команды:",
+    "/id - показать Telegram ID",
+    "/help - короткая помощь"
+  ].join("\n");
+}
+
+function buildTelegramHelpReply(lang, chatId) {
+  if (lang === "uz") {
+    return [
+      "ℹ️ Yordam",
+      `🆔 Telegram ID: ${chatId}`,
+      `🌐 Sayt: ${APP_SITE_URL}`,
+      `🤖 Bot: ${FINANCE_TRACK_BOT}`,
+      "",
+      "Qadamlar:",
+      "1) Saytda Sozlamalar -> Telegram hisobotlar bo'limini oching.",
+      "2) Telegram ID ni kiriting va saqlang.",
+      "3) «Barcha eslatmalar»ni yoqing.",
+      "4) «Hisobot yuborish» bilan tekshiring.",
+      "",
+      `Agar ID ko'rinmasa: ${TELEGRAM_ID_HELP_BOT}`
+    ].join("\n");
+  }
+
+  return [
+    "ℹ️ Помощь",
+    `🆔 Telegram ID: ${chatId}`,
+    `🌐 Сайт: ${APP_SITE_URL}`,
+    `🤖 Бот: ${FINANCE_TRACK_BOT}`,
+    "",
+    "Шаги:",
+    "1) На сайте открой Настройки -> Telegram отчёты.",
+    "2) Введи Telegram ID и сохрани.",
+    "3) Включи «Все напоминания».",
+    "4) Нажми «Отправить отчёт» для проверки.",
+    "",
+    `Если ID не видно: ${TELEGRAM_ID_HELP_BOT}`
+  ].join("\n");
+}
+
 function buildMorningStatusText({ lang, todayISO, settings, todayStats, monthStats, debtInfo }) {
   const dailyLimit = Number(settings?.dailyLimitValue || 0);
   const dailySpent = Number(todayStats?.expense || 0);
@@ -629,6 +698,56 @@ async function forEachTelegramUser(handler) {
     }
   }
 }
+
+exports.telegramWebhook = onRequest(
+  {
+    region: REGION,
+    secrets: [TELEGRAM_BOT_TOKEN]
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(200).send("ok");
+      return;
+    }
+
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+      console.warn("TELEGRAM_BOT_TOKEN is not set");
+      res.status(200).json({ ok: false });
+      return;
+    }
+
+    const update = req.body || {};
+    const message = update?.message || update?.edited_message || null;
+    const chatId = String(message?.chat?.id || "").trim();
+    const rawText = String(message?.text || "").trim();
+    const command = rawText.split(/\s+/)[0].toLowerCase();
+
+    if (!chatId || !command) {
+      res.status(200).json({ ok: true });
+      return;
+    }
+
+    const lang = getTelegramLangFromMessage(message);
+
+    if (command === "/start") {
+      await sendTelegramMessage(chatId, buildTelegramStartReply(lang, chatId), token);
+    } else if (command === "/id") {
+      const text = lang === "uz" ? `🆔 Sizning Telegram ID: ${chatId}` : `🆔 Ваш Telegram ID: ${chatId}`;
+      await sendTelegramMessage(chatId, text, token);
+    } else if (command === "/help") {
+      await sendTelegramMessage(chatId, buildTelegramHelpReply(lang, chatId), token);
+    } else {
+      const text =
+        lang === "uz"
+          ? "Buyruq tushunilmadi. /start, /id yoki /help dan foydalaning."
+          : "Команда не распознана. Используй /start, /id или /help.";
+      await sendTelegramMessage(chatId, text, token);
+    }
+
+    res.status(200).json({ ok: true });
+  }
+);
 
 exports.telegramWelcomeOnConnect = onDocumentWritten(
   {
@@ -1001,3 +1120,4 @@ exports.telegramMonthlyReport = onSchedule(
     });
   }
 );
+
