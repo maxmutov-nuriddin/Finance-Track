@@ -1,12 +1,15 @@
-const VERSION = "v6";
-const ICON_VERSION = "8";
-const MANIFEST_VERSION = "6";
+const VERSION = "v7";
+const ICON_VERSION = "10";
+const MANIFEST_VERSION = "8";
 const STATIC_CACHE = `finance-track-static-${VERSION}`;
 const STATIC_FALLBACKS = [
   "/",
   "/index.html",
   "/offline.html",
   `/manifest.webmanifest?v=${MANIFEST_VERSION}`,
+  `/icon-48.png?v=${ICON_VERSION}`,
+  `/icon-72.png?v=${ICON_VERSION}`,
+  `/icon-96.png?v=${ICON_VERSION}`,
   `/icon-192.png?v=${ICON_VERSION}`,
   `/icon-512.png?v=${ICON_VERSION}`,
   `/icon-192-maskable.png?v=${ICON_VERSION}`,
