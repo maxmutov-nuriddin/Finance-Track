@@ -1,15 +1,17 @@
-const VERSION = "v5";
+const VERSION = "v6";
+const ICON_VERSION = "8";
+const MANIFEST_VERSION = "6";
 const STATIC_CACHE = `finance-track-static-${VERSION}`;
 const STATIC_FALLBACKS = [
   "/",
   "/index.html",
   "/offline.html",
-  "/manifest.webmanifest",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/icon-192-maskable.png",
-  "/icon-512-maskable.png",
-  "/apple-touch-icon.png"
+  `/manifest.webmanifest?v=${MANIFEST_VERSION}`,
+  `/icon-192.png?v=${ICON_VERSION}`,
+  `/icon-512.png?v=${ICON_VERSION}`,
+  `/icon-192-maskable.png?v=${ICON_VERSION}`,
+  `/icon-512-maskable.png?v=${ICON_VERSION}`,
+  `/apple-touch-icon.png?v=${ICON_VERSION}`
 ];
 const STATIC_DESTINATIONS = new Set(["style", "script", "worker", "image", "font"]);
 

@@ -21,8 +21,8 @@ messaging.onBackgroundMessage((payload) => {
 
   const notificationOptions = {
     body: payload.notification?.body || "Проверь свои платежи",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: "/icon-192.png?v=8",
+    badge: "/icon-192.png?v=8",
     data: payload.data || {},
   };
 
