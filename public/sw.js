@@ -1,4 +1,4 @@
-const VERSION = "v4";
+const VERSION = "v5";
 const STATIC_CACHE = `finance-track-static-${VERSION}`;
 const STATIC_FALLBACKS = [
   "/",
