@@ -83,17 +83,9 @@ function ExpensePieTooltip({ active, payload }) {
   if (active && payload && payload.length) {
     const data = payload[0];
     return (
-      <div style={{
-        background: "#1a202c",
-        border: "1px solid #404854",
-        borderRadius: "8px",
-        padding: "10px 12px",
-        color: "#ffffff",
-        fontSize: "0.9rem",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
-      }}>
-        <p style={{ margin: 0, fontWeight: "600" }}>{data.name}</p>
-        <p style={{ margin: "4px 0 0 0", color: "#2f6bff", fontWeight: "700" }}>
+      <div className="expense-pie-tooltip">
+        <p className="expense-pie-tooltip-title">{data.name}</p>
+        <p className="expense-pie-tooltip-value">
           {formatCompact(data.value)}
         </p>
       </div>
@@ -138,11 +130,11 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
 
   if (!categoryData || categoryData.length === 0 || totalExpenses <= 0) {
     return (
-      <div style={{ background: "#1a202c", border: "1px solid #404854", borderRadius: "20px", padding: "28px" }}>
-        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+      <div className="expense-pie-card expense-pie-empty">
+        <h2 className="expense-pie-title">
           <PieChartIcon size={24} strokeWidth={2.5} /> {t("expensesByCategory")}
         </h2>
-        <p style={{ marginTop: "12px", color: "#a0aec0" }}>
+        <p className="expense-pie-empty-text">
           {t("noData")}
         </p>
       </div>
@@ -150,36 +142,36 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
   }
 
   return (
-    <div style={{ background: "#1a202c", border: "1px solid #404854", borderRadius: "20px", padding: "28px", display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0, color: "#ffffff", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+    <div className="expense-pie-card">
+      <div className="expense-pie-head">
+        <h2 className="expense-pie-title">
           <PieChartIcon size={24} strokeWidth={2.5} /> {t("expensesByCategory")}
         </h2>
-        <div style={{ fontSize: "0.875rem", color: "#a0aec0", marginBottom: "8px" }}>
+        <div className="expense-pie-total-label">
           {t("totalSpent")}
         </div>
-        <div style={{ fontSize: "1.75rem", fontWeight: "700", color: "#ffffff" }}>
+        <div className="expense-pie-total-value">
           {formatAmount(Math.round(totalExpenses))}
         </div>
       </div>
 
-      <div style={{ marginBottom: "24px" }}>
-        <ResponsiveContainer width="100%" height={220}>
-          <PieChartRechart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+      <div className="expense-pie-chart-wrap">
+        <ResponsiveContainer width="100%" height={240}>
+          <PieChartRechart margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
             <Pie
               data={categoryData}
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ percent }) => (percent > 0 ? `${Math.max(1, Math.round(percent * 100))}%` : "")}
-              outerRadius={80}
-              innerRadius={38}
+              label={({ percent }) => (percent >= 0.035 ? `${Math.max(1, Math.round(percent * 100))}%` : "")}
+              outerRadius={86}
+              innerRadius={46}
               fill="#8884d8"
               dataKey="value"
               startAngle={90}
               endAngle={450}
-              paddingAngle={2}
-              minAngle={3}
+              paddingAngle={3}
+              minAngle={2}
               stroke="#0f172a"
               strokeWidth={2}
             >
@@ -195,28 +187,20 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
         </ResponsiveContainer>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px" }}>
+      <div className="expense-pie-legend-grid">
         {categoryData.map((item) => {
           const percent = totalExpenses > 0 ? Math.round((item.value / totalExpenses) * 100) : 0;
           return (
-            <div key={`summary-${item.category}`}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                <div
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    backgroundColor: CATEGORY_COLORS[item.category] || CATEGORY_COLORS.other
-                  }}
+            <div key={`summary-${item.category}`} className="expense-pie-legend-item">
+              <div className="expense-pie-legend-top">
+                <span
+                  className="expense-pie-dot"
+                  style={{ backgroundColor: CATEGORY_COLORS[item.category] || CATEGORY_COLORS.other }}
                 />
-                <span style={{ fontSize: "0.875rem", color: "#a0aec0" }}>
-                  {item.name}
-                </span>
-                <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
-                  {percent}%
-                </span>
+                <span className="expense-pie-legend-name">{item.name}</span>
+                <span className="expense-pie-legend-percent">{percent}%</span>
               </div>
-              <div style={{ fontSize: "1.05rem", fontWeight: "700", color: "#ffffff", marginLeft: "16px" }}>
+              <div className="expense-pie-legend-value">
                 {formatAmount(Math.round(item.value))}
               </div>
             </div>

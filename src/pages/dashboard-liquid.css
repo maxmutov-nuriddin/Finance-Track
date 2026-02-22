@@ -1,0 +1,632 @@
+﻿.dashboard-liquid {
+  --dl-ink: #f6eaff;
+  --dl-muted: #bda7d3;
+  --dl-magenta: #ef49ff;
+  --dl-magenta-2: #b347ff;
+  --dl-border: rgba(208, 129, 255, 0.24);
+  --dl-card-bg: linear-gradient(145deg, rgba(20, 14, 33, 0.76), rgba(13, 10, 23, 0.72));
+  position: relative;
+  color: var(--dl-ink);
+}
+
+.dashboard-liquid::before,
+.dashboard-liquid::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dashboard-liquid::before {
+  width: 360px;
+  height: 360px;
+  top: -120px;
+  left: -120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 142, 240, 0.35) 0%, rgba(255, 142, 240, 0) 70%);
+  filter: blur(2px);
+}
+
+.dashboard-liquid::after {
+  width: 420px;
+  height: 420px;
+  right: -120px;
+  top: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(144, 73, 255, 0.24) 0%, rgba(144, 73, 255, 0) 72%);
+  filter: blur(6px);
+}
+
+.dashboard-liquid > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-liquid .dashboard-main {
+  gap: 18px;
+}
+
+.dashboard-liquid .dashboard-main::before {
+  content: "Analytics";
+  display: block;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f6eaff;
+  margin-bottom: -2px;
+}
+
+.dashboard-liquid .dashboard-tiles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-liquid .stat-tile,
+.dashboard-liquid .budget-card-panel,
+.dashboard-liquid .stats-card,
+.dashboard-liquid .dashboard-insight-card,
+.dashboard-liquid .chart-card,
+.dashboard-liquid .plan-item,
+.dashboard-liquid .expense-pie-card,
+.dashboard-liquid .pie-header,
+.dashboard-liquid .legend-item,
+.dashboard-liquid .expense-pie-legend-item,
+.dashboard-liquid .insight-col {
+  background: var(--dl-card-bg);
+  border: 1px solid var(--dl-border);
+  box-shadow: 0 16px 30px rgba(5, 1, 12, 0.42);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+}
+
+.dashboard-liquid .stat-tile {
+  border-radius: 14px;
+  min-height: 124px;
+  padding: 14px 12px;
+}
+
+.dashboard-liquid .stat-tile:hover,
+.dashboard-liquid .budget-card-panel:hover,
+.dashboard-liquid .stats-card:hover,
+.dashboard-liquid .dashboard-insight-card:hover {
+  border-color: rgba(240, 132, 255, 0.42);
+  box-shadow: 0 20px 36px rgba(7, 2, 17, 0.48);
+}
+
+.dashboard-liquid .tile-icon {
+  border-radius: 10px;
+  border: 1px solid rgba(240, 135, 255, 0.28);
+  background: linear-gradient(135deg, rgba(168, 64, 255, 0.4), rgba(255, 73, 255, 0.32));
+  color: #fff3ff;
+}
+
+.dashboard-liquid .tile-value {
+  color: #fff0ff;
+  font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+}
+
+.dashboard-liquid .tile-value-sub,
+.dashboard-liquid .tile-sub,
+.dashboard-liquid .helper-text,
+.dashboard-liquid .insight-subtitle,
+.dashboard-liquid .muted {
+  color: var(--dl-muted);
+}
+
+.dashboard-liquid .tile-meta,
+.dashboard-liquid .insight-chip {
+  background: rgba(34, 22, 53, 0.62);
+  border: 1px solid rgba(214, 132, 255, 0.32);
+  color: #f2ddff;
+  box-shadow: none;
+}
+
+.dashboard-liquid .insight-chip.success {
+  background: rgba(158, 67, 255, 0.25);
+  border-color: rgba(220, 147, 255, 0.36);
+  color: #f4deff;
+}
+
+.dashboard-liquid .insight-chip.danger {
+  background: rgba(255, 77, 196, 0.2);
+  border-color: rgba(255, 129, 218, 0.34);
+  color: #ffd5f3;
+}
+
+.dashboard-liquid .insight-chip.neutral {
+  background: rgba(83, 57, 123, 0.34);
+  border-color: rgba(183, 132, 238, 0.34);
+  color: #d9c2ef;
+}
+
+.dashboard-liquid .budget-card-header,
+.dashboard-liquid .stats-card-header,
+.dashboard-liquid .pie-header {
+  border-bottom-color: rgba(190, 120, 242, 0.26);
+}
+
+.dashboard-liquid .budget-card-settings-btn {
+  background: rgba(31, 20, 48, 0.72);
+  border-color: rgba(182, 115, 232, 0.35);
+  color: #d8bced;
+}
+
+.dashboard-liquid .budget-card-settings-btn:hover {
+  background: rgba(107, 53, 168, 0.35);
+  border-color: rgba(231, 141, 255, 0.38);
+}
+
+.dashboard-liquid .budget-card-glow {
+  background: radial-gradient(circle at 35% 30%, rgba(239, 73, 255, 0.16) 0%, transparent 64%);
+}
+
+.dashboard-liquid .budget-card-panel {
+  border-radius: 20px;
+  padding: 20px 22px;
+  position: relative;
+}
+
+.dashboard-liquid .budget-card-panel-inner {
+  display: grid;
+  grid-template-columns: auto minmax(320px, 1fr);
+  align-items: center;
+  gap: 18px;
+  min-height: 136px;
+  justify-content: start;
+}
+
+.dashboard-liquid .budget-card-ring-wrapper {
+  width: 108px;
+  height: 108px;
+}
+
+.dashboard-liquid .budget-card-info {
+  width: 100%;
+  max-width: 560px;
+  justify-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.dashboard-liquid .budget-card-label {
+  color: #c9b3df;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dashboard-liquid .budget-card-amount {
+  font-size: clamp(2.15rem, 4.1vw, 2.95rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-liquid .budget-card-amount,
+.dashboard-liquid .stats-card-metric-value,
+.dashboard-liquid .insight-title,
+.dashboard-liquid .card-title {
+  color: #f9ecff;
+}
+
+.dashboard-liquid .budget-card-helper {
+  max-width: 520px;
+  color: #b69ecd;
+}
+
+.dashboard-liquid .budget-card-badge-icon {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  margin-left: 0;
+  opacity: 0.08;
+  transform: rotate(-8deg);
+  color: rgba(235, 201, 255, 0.44);
+}
+
+.dashboard-liquid .stats-split-container {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.62fr);
+  align-items: start;
+}
+
+.dashboard-liquid .stats-split-main,
+.dashboard-liquid .stats-split-side {
+  min-width: 0;
+}
+
+.dashboard-liquid .expense-pie-card {
+  border-radius: 18px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+.dashboard-liquid .expense-pie-head {
+  border-bottom: 1px solid rgba(190, 120, 242, 0.24);
+  padding-bottom: 14px;
+}
+
+.dashboard-liquid .expense-pie-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f9ecff;
+}
+
+.dashboard-liquid .expense-pie-total-label {
+  margin-top: 10px;
+  font-size: 0.84rem;
+  color: #b9a4cf;
+}
+
+.dashboard-liquid .expense-pie-total-value {
+  margin-top: 4px;
+  font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff1ff;
+}
+
+.dashboard-liquid .expense-pie-chart-wrap {
+  height: 240px;
+}
+
+.dashboard-liquid .expense-pie-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.dashboard-liquid .expense-pie-legend-item {
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.dashboard-liquid .expense-pie-legend-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.dashboard-liquid .expense-pie-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.14);
+}
+
+.dashboard-liquid .expense-pie-legend-name {
+  font-size: 0.9rem;
+  color: #d7c4ea;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-liquid .expense-pie-legend-percent {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: #9f84ba;
+}
+
+.dashboard-liquid .expense-pie-legend-value {
+  padding-left: 16px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #f8ebff;
+}
+
+.dashboard-liquid .expense-pie-empty {
+  min-height: 260px;
+}
+
+.dashboard-liquid .expense-pie-empty-text {
+  margin: 14px 0 0;
+  color: #b79fce;
+}
+
+.dashboard-liquid .expense-pie-tooltip {
+  border-radius: 10px;
+  border: 1px solid rgba(203, 127, 255, 0.4);
+  background: rgba(22, 14, 36, 0.92);
+  color: #f9ecff;
+  padding: 9px 10px;
+  box-shadow: 0 12px 22px rgba(7, 2, 17, 0.44);
+}
+
+.dashboard-liquid .expense-pie-tooltip-title {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #d6c0ea;
+}
+
+.dashboard-liquid .expense-pie-tooltip-value {
+  margin: 4px 0 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #ffd5ff;
+}
+
+.dashboard-liquid .stats-card .pill-tabs {
+  background: rgba(23, 14, 37, 0.78);
+  border-color: rgba(183, 112, 235, 0.34);
+}
+
+.dashboard-liquid .stats-card .pill-tab {
+  color: #baa2d2;
+}
+
+.dashboard-liquid .stats-card .pill-tab-active {
+  color: #fff;
+  border-color: rgba(242, 145, 255, 0.42);
+  background: linear-gradient(135deg, rgba(166, 76, 255, 0.52), rgba(239, 73, 255, 0.5));
+  box-shadow: 0 8px 16px rgba(50, 10, 74, 0.35);
+}
+
+.dashboard-liquid .stats-card-foot {
+  border-top-color: rgba(186, 117, 235, 0.22);
+}
+
+.dashboard-liquid .stats-card-legend-high {
+  background: #ef49ff;
+  box-shadow: 0 0 10px rgba(239, 73, 255, 0.5);
+}
+
+.dashboard-liquid .stats-card-legend-low {
+  background: #6e5985;
+}
+
+.dashboard-liquid .insight-col,
+.dashboard-liquid .legend-item,
+.dashboard-liquid .pie-header {
+  border-radius: 12px;
+}
+
+.dashboard-liquid .insight-col-title,
+.dashboard-liquid .insight-col-title.danger,
+.dashboard-liquid .insight-row,
+.dashboard-liquid .insight-row strong,
+.dashboard-liquid .insight-footer {
+  color: #e8d5fa;
+}
+
+.dashboard-liquid .goal-progress-fill,
+.dashboard-liquid .budget-ring-progress {
+  filter: drop-shadow(0 0 9px rgba(239, 73, 255, 0.3));
+}
+
+.dashboard-liquid .pie-chart-wrapper svg {
+  filter: drop-shadow(0 0 12px rgba(239, 73, 255, 0.2));
+}
+
+@media (max-width: 1200px) {
+  .dashboard-liquid .dashboard-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dashboard-liquid .stats-split-container {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.58fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-liquid .stats-split-container {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .dashboard-liquid::before {
+    width: 220px;
+    height: 220px;
+    top: -80px;
+    left: -70px;
+  }
+
+  .dashboard-liquid::after {
+    width: 260px;
+    height: 260px;
+    right: -90px;
+    top: 140px;
+  }
+
+  .dashboard-liquid .dashboard-main::before {
+    font-size: 1.35rem;
+  }
+
+  .dashboard-liquid .dashboard-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-liquid .budget-card-panel-inner {
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+  }
+
+  .dashboard-liquid .budget-card-badge-icon {
+    opacity: 0.09;
+  }
+
+  .dashboard-liquid .expense-pie-title {
+    font-size: 1.05rem;
+  }
+
+  .dashboard-liquid .expense-pie-chart-wrap {
+    height: 220px;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-liquid .dashboard-tiles {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-liquid .dashboard-main::before {
+    font-size: 1.2rem;
+    margin-bottom: 2px;
+  }
+
+  .dashboard-liquid .stat-tile,
+  .dashboard-liquid .budget-card-panel,
+  .dashboard-liquid .stats-card,
+  .dashboard-liquid .dashboard-insight-card {
+    backdrop-filter: blur(11px) saturate(110%);
+    -webkit-backdrop-filter: blur(11px) saturate(110%);
+  }
+
+  .dashboard-liquid .budget-card-panel {
+    padding: 18px 16px;
+  }
+
+  .dashboard-liquid .budget-card-panel-inner {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    min-height: 0;
+  }
+
+  .dashboard-liquid .budget-card-ring-wrapper {
+    width: 98px;
+    height: 98px;
+  }
+
+  .dashboard-liquid .budget-card-helper {
+    max-width: none;
+  }
+
+  .dashboard-liquid .budget-card-badge-icon {
+    display: none;
+  }
+
+  .dashboard-liquid .expense-pie-card {
+    padding: 18px 14px;
+    gap: 12px;
+  }
+
+  .dashboard-liquid .expense-pie-legend-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-liquid .stats-card-title-block {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .dashboard-liquid .stats-card .pill-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 4px;
+  }
+
+  .dashboard-liquid .stats-card .pill-tab {
+    min-width: 0;
+    width: 100%;
+    padding: 9px 4px;
+    font-size: 0.8rem;
+  }
+
+  .dashboard-liquid .stats-card-foot-row {
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-liquid .expense-pie-chart-wrap {
+    height: 214px;
+  }
+}
+
+@media (max-width: 360px) {
+  .dashboard-liquid .stats-split-container {
+    gap: 12px;
+  }
+
+  .dashboard-liquid .stats-card {
+    padding: 16px 12px;
+  }
+
+  .dashboard-liquid .stats-card-title {
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+  }
+
+  .dashboard-liquid .stats-card-legend {
+    gap: 10px;
+  }
+
+  .dashboard-liquid .stats-card-legend-label {
+    font-size: 0.74rem;
+  }
+
+  .dashboard-liquid .expense-pie-card {
+    padding: 16px 12px;
+  }
+
+  .dashboard-liquid .expense-pie-title {
+    font-size: 0.98rem;
+    gap: 8px;
+  }
+
+  .dashboard-liquid .expense-pie-total-value {
+    font-size: 1.6rem;
+  }
+
+  .dashboard-liquid .expense-pie-chart-wrap {
+    height: 200px;
+  }
+
+  .dashboard-liquid .expense-pie-legend-item {
+    padding: 9px 10px;
+  }
+
+  .dashboard-liquid .expense-pie-legend-value {
+    padding-left: 12px;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-liquid .expense-pie-chart-wrap .recharts-pie-label-text {
+    display: none;
+  }
+}
+
+@media (max-width: 320px) {
+  .dashboard-liquid .stats-card {
+    padding: 14px 10px;
+  }
+
+  .dashboard-liquid .stats-card .pill-tab {
+    font-size: 0.75rem;
+    padding: 8px 2px;
+  }
+
+  .dashboard-liquid .stats-card-metric-value {
+    font-size: 1.25rem;
+  }
+
+  .dashboard-liquid .expense-pie-card {
+    padding: 14px 10px;
+    gap: 10px;
+  }
+
+  .dashboard-liquid .expense-pie-total-value {
+    font-size: 1.45rem;
+  }
+
+  .dashboard-liquid .expense-pie-chart-wrap {
+    height: 184px;
+  }
+
+  .dashboard-liquid .expense-pie-legend-name {
+    font-size: 0.84rem;
+  }
+
+  .dashboard-liquid .expense-pie-legend-percent {
+    font-size: 0.72rem;
+  }
+}

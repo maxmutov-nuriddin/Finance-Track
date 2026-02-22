@@ -459,9 +459,9 @@ export default function QuickAddModal() {
       <GlassButton onClick={() => setOpen(true)}>{t("quickAdd")}</GlassButton>
       {open && (
         <ModalPortal>
-          <div className="modal-backdrop" onClick={() => setOpen(false)}>
-            <div className="modal" onClick={(event) => event.stopPropagation()}>
-              <div className="modal-header">
+          <div className="modal-backdrop quickadd-modal-backdrop" onClick={() => setOpen(false)}>
+            <div className="modal quickadd-modal" onClick={(event) => event.stopPropagation()}>
+              <div className="modal-header quickadd-modal-header">
                 <div>
                   <strong>{t("addRecordOneLine")}</strong>
                   <div className="modal-hint">{t("quickPlaceholder")}</div>
@@ -470,7 +470,7 @@ export default function QuickAddModal() {
                   {t("close")}
                 </GlassButton>
               </div>
-              <div className="modal-body">
+              <div className="modal-body quickadd-modal-body">
                 <div className="modal-card">
                   <div className="modal-label">{t("quickAdd")}</div>
                   <GlassInput

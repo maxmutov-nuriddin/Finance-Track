@@ -46,6 +46,7 @@ import {
   getActiveGoal
 } from "../lib/budgetCalc";
 import { showSiteToast } from "../lib/siteToast";
+import "./dashboard-liquid.css";
 
 const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
 const BORROW_DEBT_WORDS = ["взял", "взяла", "занял", "заняла", "borrow", "qarz ol", "одолжил у"];
@@ -1193,7 +1194,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="dashboard-grid hide-side">
+    <div className="dashboard-grid hide-side dashboard-liquid">
       {false && carryoverModalOpen && (
         <ModalPortal>
           <div className="modal-backdrop" onClick={() => setCarryoverModalOpen(false)}>

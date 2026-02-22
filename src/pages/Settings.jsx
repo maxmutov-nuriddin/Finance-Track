@@ -862,6 +862,19 @@ export default function Settings() {
   const telegramReportsEnabled = telegramConnected && allRemindersEnabled;
   const isTelegramIdChanged = telegramChatId.trim() !== savedTelegramChatId.trim();
   const canSendTelegramReport = telegramConnected && !telegramBusy && !telegramReportBusy;
+  const profileName =
+    String(user?.displayName || "").trim() ||
+    String(user?.email || "").split("@")[0] ||
+    "User";
+  const profileEmail = String(user?.email || "").trim() || "no-email";
+  const initials =
+    profileName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "U";
   const permissionState =
     reminderPermission === "unsupported"
       ? "unsupported"
@@ -894,6 +907,26 @@ export default function Settings() {
             <SettingsIcon size={28} strokeWidth={2.5} /> {t("settingsTitle")}
           </h1>
           <p className="settings-subtitle">{t("settingsHelp")}</p>
+        </div>
+        <div className="sidebar-user-card settings-user-card" title={profileEmail}>
+          <div className="sidebar-user-main">
+            <div className="sidebar-user-avatar" aria-hidden="true">
+              {user?.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={profileName}
+                  className="sidebar-user-photo"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span>{initials}</span>
+              )}
+            </div>
+            <div className="sidebar-user-meta">
+              <div className="sidebar-user-name">{profileName}</div>
+              <div className="sidebar-user-email">{profileEmail}</div>
+            </div>
+          </div>
         </div>
       </div>
 

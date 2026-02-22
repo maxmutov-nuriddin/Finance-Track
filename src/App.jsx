@@ -1,4 +1,5 @@
-﻿import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
+﻿import { useEffect } from "react";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import AuthGate from "./components/AuthGate";
 import QuickAddModal from "./components/QuickAddModal";
 import Sidebar from "./components/Sidebar";
@@ -10,23 +11,37 @@ import History from "./pages/History";
 import Payments from "./pages/Payments";
 import Settings from "./pages/Settings";
 import "./App.css";
+import "./App.meetai.css";
 
 function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useI18n();
 
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    document.body.classList.add("theme-meet");
+    return () => {
+      document.body.classList.remove("theme-meet");
+    };
+  }, []);
+
   return (
-    <div className="app-shell layout">
+    <div className="app-shell app-shell--meet layout">
       <Sidebar activePath={location.pathname} onNavigate={navigate} />
       <div className="app-content">
         <SiteToastStack />
         <header className="app-header">
-          <div className="brand">
-            <div className="brand-title">Finance Track</div>
-            <div className="brand-sub">{t("appSubtitle")}</div>
+          <div className="app-header-actions">
+            <div className="brand app-brand-mobile">
+              <div className="app-brand-chip" aria-hidden="true">FT</div>
+              <div className="app-brand-copy">
+                <div className="brand-title">Finance Track</div>
+                <div className="brand-sub">{t("appSubtitle")}</div>
+              </div>
+            </div>
+            <QuickAddModal />
           </div>
-          <QuickAddModal />
         </header>
         <main className="app-main">
           <div className="page-wrap">

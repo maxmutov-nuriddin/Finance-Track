@@ -14,16 +14,16 @@ function CustomTooltip({ active, payload, label }) {
   const value = payload[0].value;
   return (
     <div style={{
-      background: "#1a202c",
-      border: "1px solid #404854",
+      background: "rgba(24, 15, 37, 0.92)",
+      border: "1px solid rgba(205, 126, 255, 0.35)",
       borderRadius: "8px",
       padding: "10px 12px",
-      color: "#ffffff",
+      color: "#f7ecff",
       fontSize: "0.9rem",
-      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
+      boxShadow: "0 8px 18px rgba(8, 3, 16, 0.45)"
     }}>
-      <div style={{ color: "#a0aec0", margin: 0, fontSize: "0.875rem" }}>{label}</div>
-      <div style={{ marginTop: "4px", fontWeight: "700", color: "#2f6bff" }}>{formatCompact(value)}</div>
+      <div style={{ color: "#c6addc", margin: 0, fontSize: "0.875rem" }}>{label}</div>
+      <div style={{ marginTop: "4px", fontWeight: "700", color: "#ef49ff" }}>{formatCompact(value)}</div>
     </div>
   );
 }
@@ -36,6 +36,8 @@ export default function StatsChart({ series = [], height = 240 }) {
 
   const maxValue = Math.max(...data.map((d) => d.value), 1);
   const threshold = maxValue * 0.5; // Values above 50% of max are "high"
+  const highColor = "rgba(239, 73, 255, 0.95)";
+  const lowColor = "rgba(134, 92, 170, 0.45)";
 
   const safeHeight = Math.max(220, Number(height || 240));
   return (
@@ -69,7 +71,7 @@ export default function StatsChart({ series = [], height = 240 }) {
             {data.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={entry.value > threshold ? "#2f2f2f" : "#3a4556"}
+                fill={entry.value > threshold ? highColor : lowColor}
               />
             ))}
           </Bar>
@@ -78,4 +80,3 @@ export default function StatsChart({ series = [], height = 240 }) {
     </div>
   );
 }
-
