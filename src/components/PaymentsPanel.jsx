@@ -1,26 +1,12 @@
 import { useMemo } from "react";
-import { getNotificationStatus } from "../lib/notifications";
-import { addDaysInTz, formatDateISO, getTzParts, makeTashkentDate } from "../lib/timezone";
+import { CalendarDays, Clock3, Repeat2, Trash2 } from "lucide-react";
 import GlassCard from "./GlassCard";
 import GlassButton from "./GlassButton";
 import { formatAmount } from "../lib/format";
 import { useI18n } from "./I18nProvider";
 
-export default function PaymentsPanel({ payments, transactions = [], allRemindersEnabled = false, onDelete }) {
+export default function PaymentsPanel({ payments, transactions = [], onDelete }) {
   const { t } = useI18n();
-  const notificationStatus = getNotificationStatus();
-  const remindersReady = allRemindersEnabled && notificationStatus === "granted";
-
-  const upcomingAlertDateISO = useMemo(() => {
-    const base = makeTashkentDate(getTzParts(new Date()));
-    const parts = addDaysInTz(base, 3);
-    return formatDateISO(parts);
-  }, []);
-
-  const upcoming = useMemo(
-    () => payments.filter((pay) => pay.payDateISO === upcomingAlertDateISO),
-    [payments, upcomingAlertDateISO]
-  );
   const recurringFromTransactions = useMemo(() => {
     return (transactions || [])
       .filter((tx) => tx?.isRecurring && tx.type === "expense")
@@ -31,53 +17,22 @@ export default function PaymentsPanel({ payments, transactions = [], allReminder
   const recordsCount = usingTransactionFallback ? recurringVisible.length : payments.length;
 
   return (
-    <GlassCard>
+    <GlassCard className="payments-panel">
       <div className="payments-list-header">
         <div className="payments-list-title">{t("paymentsTitle")}</div>
         <div className="payments-badge">{recordsCount}</div>
       </div>
 
-      {!remindersReady ? (
-        <div className="alert" style={{ marginBottom: 20 }}>
-          <div>
-            {notificationStatus === "unsupported"
-              ? t("allRemindersUnsupported")
-              : notificationStatus === "denied"
-                ? t("allRemindersDenied")
-                : t("allRemindersOff")}
-          </div>
-        </div>
-      ) : (
-        <div className="alert" style={{ marginBottom: 20 }}>
-          ✓ {t("notificationsOn")}
-        </div>
-      )}
-
       <div className="payments-items">
-        {upcoming.length > 0 && (
-          <div className="upcoming-payments">
-            <div className="upcoming-title">⏰ {t("in3days")}</div>
-            <div className="upcoming-list">
-              {upcoming.map((payment) => (
-                <div className="upcoming-item" key={`up-${payment.id}`}>
-                  <div className="upcoming-info">
-                    <div className="upcoming-name">{payment.title}</div>
-                    <div className="upcoming-date">{payment.payDateISO}</div>
-                  </div>
-                  <div className="upcoming-amount">{formatAmount(payment.amount)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         <div className="payments-section">
-          <div className="payments-section-title">📋 {t("allRecords")}</div>
+          <div className="payments-section-title">{t("allRecords")}</div>
           <div className="payment-list">
             {recurringVisible.map((tx) => (
               <div className="payment-item" key={`rtx-${tx.id}`}>
                 <div className="payment-item-left">
-                  <div className="payment-icon">🔄</div>
+                  <div className="payment-icon payment-icon--recurring">
+                    <Repeat2 size={16} strokeWidth={2} />
+                  </div>
                   <div className="payment-info">
                     <div className="payment-name">{tx.description || t("monthlyExpense")}</div>
                     <div className="payment-meta">
@@ -92,7 +47,12 @@ export default function PaymentsPanel({ payments, transactions = [], allReminder
             {payments.map((payment) => (
               <div className="payment-item" key={payment.id}>
                 <div className="payment-item-left">
-                  <div className="payment-icon">{payment.recurrence === "monthly" ? "📅" : "⏱️"}</div>
+                  <div className={`payment-icon ${payment.recurrence === "monthly" ? "payment-icon--monthly" : "payment-icon--onetime"}`}>
+                    {payment.recurrence === "monthly"
+                      ? <CalendarDays size={16} strokeWidth={2} />
+                      : <Clock3 size={16} strokeWidth={2} />
+                    }
+                  </div>
                   <div className="payment-info">
                     <div className="payment-name">{payment.title}</div>
                     <div className="payment-meta">
@@ -109,8 +69,9 @@ export default function PaymentsPanel({ payments, transactions = [], allReminder
                     variant="ghost"
                     onClick={() => onDelete(payment.id)}
                     className="payment-delete-btn"
+                    aria-label={t("deleteConfirm")}
                   >
-                    ✕
+                    <Trash2 size={14} strokeWidth={2} />
                   </GlassButton>
                 </div>
               </div>

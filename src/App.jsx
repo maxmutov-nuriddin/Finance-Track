@@ -1,8 +1,10 @@
-﻿import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Sun, Moon } from "lucide-react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import AuthGate from "./components/AuthGate";
 import QuickAddModal from "./components/QuickAddModal";
 import Sidebar from "./components/Sidebar";
+import SmartInputBar from "./components/SmartInputBar";
 import SiteToastStack from "./components/SiteToastStack";
 import { I18nProvider, useI18n } from "./components/I18nProvider";
 import Dashboard from "./pages/Dashboard";
@@ -17,14 +19,23 @@ function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useI18n();
+  const [advancedRaw, setAdvancedRaw] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // Theme: read from localStorage, default dark
+  const [theme, setTheme] = useState(() => localStorage.getItem("ft-theme") || "dark");
 
   useEffect(() => {
-    if (typeof document === "undefined") return undefined;
+    document.body.classList.remove("theme-light", "theme-dark");
+    document.body.classList.add(`theme-${theme}`);
     document.body.classList.add("theme-meet");
-    return () => {
-      document.body.classList.remove("theme-meet");
-    };
-  }, []);
+    localStorage.setItem("ft-theme", theme);
+  }, [theme]);
+
+  const handleOpenAdvanced = (raw) => {
+    setAdvancedRaw(raw || "");
+    setAdvancedOpen(true);
+  };
 
   return (
     <div className="app-shell app-shell--meet layout">
@@ -40,7 +51,30 @@ function AppShell() {
                 <div className="brand-sub">{t("appSubtitle")}</div>
               </div>
             </div>
-            <QuickAddModal />
+
+            {/* Smart Input Bar — always visible */}
+            <SmartInputBar onOpenAdvanced={handleOpenAdvanced} />
+
+            {/* Advanced modal for debts, goals, transfers */}
+            <QuickAddModal
+              externalOpen={advancedOpen}
+              externalRaw={advancedRaw}
+              onExternalClose={() => { setAdvancedOpen(false); setAdvancedRaw(""); }}
+            />
+
+            {/* Theme toggle */}
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={() => setTheme((t) => t === "dark" ? "light" : "dark")}
+              title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+              aria-label="Переключить тему"
+            >
+              {theme === "dark"
+                ? <Sun size={16} strokeWidth={2} />
+                : <Moon size={16} strokeWidth={2} />
+              }
+            </button>
           </div>
         </header>
         <main className="app-main">

@@ -1,4 +1,5 @@
 ﻿import { useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
 import GlassCard from "./GlassCard";
 import GlassButton from "./GlassButton";
 import { formatAmount } from "../lib/format";
@@ -137,7 +138,7 @@ export default function GoalPanel({
   );
 
   return (
-    <GlassCard>
+    <GlassCard className="goals-panel">
       <div className="goals-list-header">
         <div className="goals-list-title">{t("allGoals")}</div>
         <div className="goals-count">{goals.length}</div>
@@ -225,8 +226,9 @@ export default function GoalPanel({
                 onClick={() => onDelete(goal.id)}
                 disabled={deletingIds?.has(goal.id)}
                 className="goal-delete-btn"
+                aria-label={t("deleteConfirm")}
               >
-                x
+                <Trash2 size={14} strokeWidth={2} />
               </GlassButton>
             </div>
 
@@ -285,5 +287,4 @@ export default function GoalPanel({
     </GlassCard>
   );
 }
-
 

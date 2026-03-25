@@ -15,7 +15,7 @@ import {
 import { buildMonthlyPlan, computeGoalPlan } from "../lib/budgetPlan";
 import { formatDateISO, getTzParts, nowInTashkent } from "../lib/timezone";
 import { useI18n } from "../components/I18nProvider";
-import { Target } from "lucide-react";
+import { Target, CheckCircle2, PiggyBank } from "lucide-react";
 import { formatAmount } from "../lib/format";
 
 export default function Goals() {
@@ -106,18 +106,21 @@ export default function Goals() {
 
       <div className="goals-stats">
         <div className="stat-card">
+          <div className="stat-card-icon" style={{ color: "#3b82f6" }}><Target size={20} strokeWidth={2} /></div>
           <div className="stat-card-label">{t("totalGoals")}</div>
           <div className="stat-card-value" style={{ color: "#3b82f6" }}>
             {goals.length}
           </div>
         </div>
         <div className="stat-card">
+          <div className="stat-card-icon" style={{ color: "#22c55e" }}><CheckCircle2 size={20} strokeWidth={2} /></div>
           <div className="stat-card-label">{t("goalCompleted")}</div>
           <div className="stat-card-value" style={{ color: "#22c55e" }}>
             {goals.filter((g) => g.isCompleted || g.completedAt).length}
           </div>
         </div>
         <div className="stat-card">
+          <div className="stat-card-icon" style={{ color: "#a855f7" }}><PiggyBank size={20} strokeWidth={2} /></div>
           <div className="stat-card-label">{t("totalSaved")}</div>
           <div className="stat-card-value" style={{ color: "#a855f7" }}>
             {formatAmount(totalSaved)}

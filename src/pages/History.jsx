@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { History as HistoryIcon } from "lucide-react";
+import {
+  History as HistoryIcon,
+  TrendingUp, TrendingDown, FileText,
+  FileSpreadsheet, Sheet
+} from "lucide-react";
 import GlassButton from "../components/GlassButton";
 import TransactionList from "../components/TransactionList";
 import { useI18n } from "../components/I18nProvider";
@@ -216,28 +220,31 @@ export default function History() {
         </div>
         <div className="history-actions">
           <GlassButton variant="ghost" onClick={handleExportCsv} disabled={!exportRows.length}>
-            {t("exportCsv")}
+            <FileText size={14} strokeWidth={2} style={{ marginRight: 6 }} />{t("exportCsv")}
           </GlassButton>
           <GlassButton variant="secondary" onClick={handleExportExcel} disabled={!exportRows.length}>
-            {t("exportExcel")}
+            <FileSpreadsheet size={14} strokeWidth={2} style={{ marginRight: 6 }} />{t("exportExcel")}
           </GlassButton>
         </div>
       </div>
 
       <div className="history-stats">
         <div className="stat-card income-card">
+          <div className="stat-card-icon" style={{ color: "#22c55e" }}><TrendingUp size={20} strokeWidth={2} /></div>
           <div className="stat-card-label">{t("typeIncome")}</div>
           <div className="stat-card-value" style={{ color: "#22c55e" }}>
             +{(stats.income || 0).toLocaleString()}
           </div>
         </div>
         <div className="stat-card expense-card">
+          <div className="stat-card-icon" style={{ color: "#ef4444" }}><TrendingDown size={20} strokeWidth={2} /></div>
           <div className="stat-card-label">{t("typeExpense")}</div>
           <div className="stat-card-value" style={{ color: "#ef4444" }}>
             -{(stats.expense || 0).toLocaleString()}
           </div>
         </div>
         <div className="stat-card total-card">
+          <div className="stat-card-icon" style={{ color: "#3b82f6" }}><FileText size={20} strokeWidth={2} /></div>
           <div className="stat-card-label">{t("allRecords")}</div>
           <div className="stat-card-value" style={{ color: "#3b82f6" }}>
             {stats.total}

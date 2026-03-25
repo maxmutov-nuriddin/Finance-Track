@@ -3,7 +3,8 @@ import GlassCard from "../components/GlassCard";
 import GlassButton from "../components/GlassButton";
 import GlassInput from "../components/GlassInput";
 import { useUser } from "../lib/user";
-import { clearAllUserData, saveSettings, watchGoals, watchSettings } from "../lib/store";
+import { clearAllUserData, saveSettings, watchGoals, watchSettings, watchTransactions } from "../lib/store";
+import { exportTransactionsCSV } from "../lib/csvExport";
 import { formatAmount } from "../lib/format";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +13,11 @@ import { auth } from "../lib/firebase";
 import { db } from "../lib/firebase";
 import { useI18n } from "../components/I18nProvider";
 import { enableNotifications, getNotificationStatus } from "../lib/notifications";
-import { Settings as SettingsIcon } from "lucide-react";
+import {
+  Settings as SettingsIcon, User, Globe, Bell, Palette, Download,
+  Trash2, Target, LogOut, Sun, Moon, CornerDownLeft,
+  Banknote, CalendarDays, Building2, Save, Bot, Send
+} from "lucide-react";
 import { getMonthRangeFor } from "../lib/utils";
 import { formatDateISO, getTzParts } from "../lib/timezone";
 import { showSiteToast } from "../lib/siteToast";
@@ -105,6 +110,20 @@ export default function Settings() {
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const [goals, setGoals] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [theme, setTheme] = useState(() => localStorage.getItem("ft-theme") || "dark");
+
+  const handleThemeToggle = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem("ft-theme", newTheme);
+    document.body.classList.remove("theme-light", "theme-dark");
+    document.body.classList.add(`theme-${newTheme}`);
+  };
+
+  const handleExportCSV = () => {
+    exportTransactionsCSV(allTransactions);
+    showSiteToast("CSV файл скачан", "success", { duration: 2500 });
+  };
 
   const [budgetMode, setBudgetMode] = useState("auto");
   const [manualMonthlyBudget, setManualMonthlyBudget] = useState("");
@@ -165,9 +184,11 @@ export default function Settings() {
       setSavedTelegramChatId(nextTelegramId);
     });
     const unsubGoals = watchGoals(user.uid, setGoals);
+    const unsubTxs = watchTransactions(user.uid, setAllTransactions);
     return () => {
       unsubSettings();
       unsubGoals();
+      unsubTxs();
     };
   }, [user]);
 
@@ -937,334 +958,404 @@ export default function Settings() {
           className={`settings-tab-btn ${activeTab === "budget" ? "active" : ""}`}
           onClick={() => setActiveTab("budget")}
         >
-          ⚙️ {t("settingsTabBudget")}
+          <SettingsIcon size={14} strokeWidth={2} /> {t("settingsTabBudget")}
         </button>
         <button
           className={`settings-tab-btn ${activeTab === "account" ? "active" : ""}`}
           onClick={() => setActiveTab("account")}
         >
-          👤 {t("settingsTabAccount")}
+          <User size={14} strokeWidth={2} /> {t("settingsTabAccount")}
         </button>
       </div>
 
       {activeTab === "budget" ? (
         <div className="settings-content budget-tab">
-          <div className="settings-grid">
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">💰 {t("budgetMode")}</h2>
-              </div>
-              <p className="settings-card-hint">{t("budgetModeHelp")}</p>
-
-              <div className="settings-mode-buttons">
-                <GlassButton
-                  variant={budgetMode === "auto" ? "secondary" : "ghost"}
-                  onClick={() => setBudgetMode("auto")}
-                  className="mode-btn"
-                >
-                  AUTO
-                </GlassButton>
-                <GlassButton
-                  variant={budgetMode === "manual" ? "secondary" : "ghost"}
-                  onClick={() => setBudgetMode("manual")}
-                  className="mode-btn"
-                >
-                  MANUAL
-                </GlassButton>
-              </div>
-
-              {budgetMode === "manual" && (
-                <div className="settings-input-wrapper">
-                  <GlassInput
-                    placeholder={t("monthlyBudget")}
-                    type="number"
-                    value={manualMonthlyBudget}
-                    onChange={(event) => setManualMonthlyBudget(event.target.value)}
-                  />
-                  {manualMonthlyBudget && (
-                    <div className="settings-preview">
-                      {formatAmount(manualMonthlyBudget)}
-                    </div>
-                  )}
+          <div className="settings-budget-layout">
+            <div className="settings-budget-side">
+              <GlassCard className="settings-card settings-card--feature">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Banknote size={16} strokeWidth={2} /> {t("budgetMode")}</h2>
                 </div>
-              )}
-            </GlassCard>
+                <p className="settings-card-hint">{t("budgetModeHelp")}</p>
 
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">🎯 {t("activeGoal")}</h2>
-              </div>
-              <p className="settings-card-hint">{t("activeGoalHelp")}</p>
-
-              <div className="settings-input-wrapper">
-                <select
-                  value={activeGoalId}
-                  onChange={(event) => setActiveGoalId(event.target.value)}
-                  className="settings-select"
-                >
-                  <option value="">{t("chooseGoal")}</option>
-                  {activeGoalOptions.map((goal) => (
-                    <option key={goal.id} value={goal.id}>
-                      {goal.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </GlassCard>
-          </div>
-
-          <div className="settings-grid settings-grid-budget-secondary">
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">📅 {t("salaryDayTitle")}</h2>
-              </div>
-              <p className="settings-card-hint">{t("salaryDayHelp")}</p>
-
-              <div className="settings-input-wrapper">
-                <GlassInput
-                  placeholder={t("salaryDayPlaceholder")}
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={salaryDayOfMonth}
-                  onChange={(event) => setSalaryDayOfMonth(event.target.value)}
-                />
-              </div>
-            </GlassCard>
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">🏦 {t("savingsTitle")}</h2>
-              </div>
-
-              <div className="settings-mode-buttons">
-                {savingsModes.map((mode) => (
+                <div className="settings-mode-buttons">
                   <GlassButton
-                    key={mode.value}
-                    variant={targetSavingsMode === mode.value ? "secondary" : "ghost"}
-                    onClick={() => setTargetSavingsMode(mode.value)}
+                    variant={budgetMode === "auto" ? "secondary" : "ghost"}
+                    onClick={() => setBudgetMode("auto")}
                     className="mode-btn"
                   >
-                    {lang === "uz" ? mode.labelUz : mode.labelRu}
+                    AUTO
                   </GlassButton>
-                ))}
-              </div>
+                  <GlassButton
+                    variant={budgetMode === "manual" ? "secondary" : "ghost"}
+                    onClick={() => setBudgetMode("manual")}
+                    className="mode-btn"
+                  >
+                    MANUAL
+                  </GlassButton>
+                </div>
 
-              {targetSavingsMode === "fixed" && (
+                {budgetMode === "manual" && (
+                  <div className="settings-input-wrapper">
+                    <GlassInput
+                      placeholder={t("monthlyBudget")}
+                      type="number"
+                      value={manualMonthlyBudget}
+                      onChange={(event) => setManualMonthlyBudget(event.target.value)}
+                    />
+                    {manualMonthlyBudget && (
+                      <div className="settings-preview">
+                        {formatAmount(manualMonthlyBudget)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </GlassCard>
+
+              <GlassCard className="settings-card">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><CalendarDays size={16} strokeWidth={2} /> {t("salaryDayTitle")}</h2>
+                </div>
+                <p className="settings-card-hint">{t("salaryDayHelp")}</p>
+
                 <div className="settings-input-wrapper">
                   <GlassInput
-                    placeholder={t("fixedMonthlyPlaceholder")}
+                    placeholder={t("salaryDayPlaceholder")}
                     type="number"
-                    value={fixedMonthlySavings}
-                    onChange={(event) => setFixedMonthlySavings(event.target.value)}
+                    min={1}
+                    max={31}
+                    value={salaryDayOfMonth}
+                    onChange={(event) => setSalaryDayOfMonth(event.target.value)}
                   />
-                  {fixedMonthlySavings && (
-                    <div className="settings-preview">
-                      {formatAmount(fixedMonthlySavings)}
-                    </div>
-                  )}
                 </div>
-              )}
-            </GlassCard>
+              </GlassCard>
 
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">💾 {t("saveChanges")}</h2>
-              </div>
-              <p className="settings-card-hint">{t("saveHelp")}</p>
+              <GlassCard className="settings-card">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Save size={16} strokeWidth={2} /> {t("saveChanges")}</h2>
+                </div>
+                <p className="settings-card-hint">{t("saveHelp")}</p>
 
-              <div className="settings-actions">
-                <GlassButton onClick={handleSave} disabled={!isBudgetSettingsChanged} className="settings-action-btn">
-                  {t("save")}
-                </GlassButton>
-                {savedMessage && <div className="settings-success">{savedMessage}</div>}
-              </div>
-            </GlassCard>
+                <div className="settings-actions">
+                  <GlassButton onClick={handleSave} disabled={!isBudgetSettingsChanged} className="settings-action-btn">
+                    {t("save")}
+                  </GlassButton>
+                  {savedMessage && <div className="settings-success">{savedMessage}</div>}
+                </div>
+              </GlassCard>
+            </div>
+
+            <div className="settings-budget-main">
+              <GlassCard className="settings-card settings-card--feature">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Target size={16} strokeWidth={2} /> {t("activeGoal")}</h2>
+                </div>
+                <p className="settings-card-hint">{t("activeGoalHelp")}</p>
+
+                <div className="settings-input-wrapper">
+                  <select
+                    value={activeGoalId}
+                    onChange={(event) => setActiveGoalId(event.target.value)}
+                    className="settings-select"
+                  >
+                    <option value="">{t("chooseGoal")}</option>
+                    {activeGoalOptions.map((goal) => (
+                      <option key={goal.id} value={goal.id}>
+                        {goal.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="settings-card settings-card--feature">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Building2 size={16} strokeWidth={2} /> {t("savingsTitle")}</h2>
+                </div>
+
+                <div className="settings-mode-buttons">
+                  {savingsModes.map((mode) => (
+                    <GlassButton
+                      key={mode.value}
+                      variant={targetSavingsMode === mode.value ? "secondary" : "ghost"}
+                      onClick={() => setTargetSavingsMode(mode.value)}
+                      className="mode-btn"
+                    >
+                      {lang === "uz" ? mode.labelUz : mode.labelRu}
+                    </GlassButton>
+                  ))}
+                </div>
+
+                {targetSavingsMode === "fixed" && (
+                  <div className="settings-input-wrapper">
+                    <GlassInput
+                      placeholder={t("fixedMonthlyPlaceholder")}
+                      type="number"
+                      value={fixedMonthlySavings}
+                      onChange={(event) => setFixedMonthlySavings(event.target.value)}
+                    />
+                    {fixedMonthlySavings && (
+                      <div className="settings-preview">
+                        {formatAmount(fixedMonthlySavings)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </GlassCard>
+            </div>
           </div>
         </div>
       ) : (
         <div className="settings-content account-tab">
-          <div className="settings-grid">
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">👤 {t("account")}</h2>
-              </div>
-              <p className="settings-card-hint">{t("logout")}</p>
-
-              <GlassButton
-                variant="ghost"
-                onClick={() => signOut(auth).then(() => navigate("/", { replace: true }))}
-                className="settings-action-btn danger"
-              >
-                {t("logout")}
-              </GlassButton>
-            </GlassCard>
-
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">🌐 {t("language")}</h2>
-              </div>
-              <p className="settings-card-hint">{t("languageHelp")}</p>
-
-              <div className="settings-lang-switch">
-                <GlassButton
-                  variant={lang === "ru" ? "secondary" : "ghost"}
-                  onClick={() => setLang("ru")}
-                  className="lang-btn"
-                >
-                  🇷🇺 Русский
-                </GlassButton>
-                <GlassButton
-                  variant={lang === "uz" ? "secondary" : "ghost"}
-                  onClick={() => setLang("uz")}
-                  className="lang-btn"
-                >
-                  🇺🇿 O'zbek
-                </GlassButton>
-              </div>
-            </GlassCard>
-
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">🤖 {t("telegramBotTitle")}</h2>
-              </div>
-              <p className="settings-card-hint">{t("telegramBotHelp")}</p>
-              <p className="settings-status-note" style={{ marginBottom: 10 }}>
-                {t("telegramLocalModeNote")}
-              </p>
-              <p className="settings-telegram-bot-line">
-                {t("telegramBotAccount")}{" "}
-                <a
-                  className="settings-telegram-bot-link"
-                  href="https://t.me/mvfintrackbot"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {telegramBotHandle}
-                </a>
-              </p>
-              <div className="settings-status-grid">
-                <div className={`settings-status-item ${telegramConnected ? "is-on" : "is-off"}`}>
-                  <span className="settings-status-label">{t("telegramConnectionStatusTitle")}</span>
-                  <span className="settings-status-value">
-                    {telegramConnected ? t("telegramConnectionConnected") : t("telegramConnectionNotConnected")}
-                  </span>
+          <div className="settings-account-layout">
+            <div className="settings-account-side">
+              <GlassCard className="settings-card settings-account-profile-card">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><User size={16} strokeWidth={2} /> {t("account")}</h2>
                 </div>
-                <div className={`settings-status-item ${telegramReportsEnabled ? "is-on" : "is-off"}`}>
-                  <span className="settings-status-label">{t("telegramReportsStatusTitle")}</span>
-                  <span className="settings-status-value">
-                    {telegramReportsEnabled ? t("statusEnabled") : t("statusDisabled")}
-                  </span>
+                <p className="settings-card-hint">{profileEmail}</p>
+
+                <div className="settings-account-summary">
+                  <div className="sidebar-user-avatar settings-account-avatar" aria-hidden="true">
+                    {user?.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt={profileName}
+                        className="sidebar-user-photo"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <span>{initials}</span>
+                    )}
+                  </div>
+                  <div className="sidebar-user-meta">
+                    <div className="sidebar-user-name">{profileName}</div>
+                    <div className="sidebar-user-email">{profileEmail}</div>
+                  </div>
                 </div>
-              </div>
-              {!allRemindersEnabled && telegramConnected ? (
-                <p className="settings-status-note">{t("telegramEnableHint")}</p>
-              ) : null}
-              <div className="settings-input-wrapper">
-                <label className="filter-label">{t("telegramIdLabel")}</label>
-                <GlassInput
-                  placeholder={t("telegramIdPlaceholder")}
-                  value={telegramChatId}
-                  onChange={(event) => setTelegramChatId(event.target.value)}
-                />
-              </div>
-              <div className="settings-actions">
-                <GlassButton
-                  onClick={handleSaveTelegramId}
-                  disabled={telegramBusy || !isTelegramIdChanged}
-                  className="settings-action-btn"
-                >
-                  {t("saveTelegramId")}
-                </GlassButton>
-                <GlassButton
-                  variant="ghost"
-                  onClick={handleSendTelegramReport}
-                  disabled={!canSendTelegramReport}
-                  className="settings-action-btn"
-                >
-                  {t("sendTelegramReport")}
-                </GlassButton>
-                {telegramReportBusy ? (
-                  <span className="inline-loader" role="status" aria-label={t("sendTelegramReport")}>
-                    <span className="loading-dot" />
-                    <span className="loading-dot" />
-                    <span className="loading-dot" />
-                  </span>
+
+                <div className="settings-actions">
+                  <GlassButton
+                    variant="ghost"
+                    onClick={() => signOut(auth).then(() => navigate("/", { replace: true }))}
+                    className="settings-action-btn danger"
+                  >
+                    <LogOut size={14} strokeWidth={2} style={{ marginRight: 6 }} />{t("logout")}
+                  </GlassButton>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="settings-card">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Globe size={16} strokeWidth={2} /> {t("language")}</h2>
+                </div>
+                <p className="settings-card-hint">{t("languageHelp")}</p>
+
+                <div className="settings-lang-switch">
+                  <GlassButton
+                    variant={lang === "ru" ? "secondary" : "ghost"}
+                    onClick={() => setLang("ru")}
+                    className="lang-btn"
+                  >
+                    🇷🇺 Русский
+                  </GlassButton>
+                  <GlassButton
+                    variant={lang === "uz" ? "secondary" : "ghost"}
+                    onClick={() => setLang("uz")}
+                    className="lang-btn"
+                  >
+                    🇺🇿 O'zbek
+                  </GlassButton>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="settings-card">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Palette size={16} strokeWidth={2} /> Тема интерфейса</h2>
+                </div>
+                <p className="settings-card-hint">Выберите тёмную или светлую тему</p>
+                <div className="settings-lang-switch">
+                  <GlassButton
+                    variant={theme === "dark" ? "secondary" : "ghost"}
+                    onClick={() => handleThemeToggle("dark")}
+                    className="lang-btn"
+                  >
+                    <Moon size={14} strokeWidth={2} /> Тёмная
+                  </GlassButton>
+                  <GlassButton
+                    variant={theme === "light" ? "secondary" : "ghost"}
+                    onClick={() => handleThemeToggle("light")}
+                    className="lang-btn"
+                  >
+                    <Sun size={14} strokeWidth={2} /> Светлая
+                  </GlassButton>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="settings-card">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Download size={16} strokeWidth={2} /> Экспорт данных</h2>
+                </div>
+                <p className="settings-card-hint">
+                  Скачать все транзакции в CSV формате для Excel или Google Sheets
+                </p>
+                <div className="settings-actions">
+                  <GlassButton
+                    variant="secondary"
+                    onClick={handleExportCSV}
+                    disabled={!allTransactions.length}
+                    className="settings-action-btn"
+                  >
+                    <Download size={14} strokeWidth={2} /> Скачать CSV ({allTransactions.length} записей)
+                  </GlassButton>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="settings-card settings-card--danger">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Trash2 size={16} strokeWidth={2} /> {t("clearAll")}</h2>
+                </div>
+                <p className="settings-card-hint danger-hint">{t("clearAllHelp")}</p>
+
+                <div className="settings-actions">
+                  <GlassButton
+                    variant="ghost"
+                    onClick={handleClearAll}
+                    disabled={clearing}
+                    className="settings-action-btn danger"
+                  >
+                    {t("clearAll")}
+                  </GlassButton>
+                  {clearing ? (
+                    <span className="inline-loader" role="status" aria-label={t("clearing")}>
+                      <span className="loading-dot" />
+                      <span className="loading-dot" />
+                      <span className="loading-dot" />
+                    </span>
+                  ) : null}
+                </div>
+              </GlassCard>
+            </div>
+
+            <div className="settings-account-main">
+              <GlassCard className="settings-card settings-card--feature">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Bot size={16} strokeWidth={2} /> {t("telegramBotTitle")}</h2>
+                </div>
+                <p className="settings-card-hint">{t("telegramBotHelp")}</p>
+                <p className="settings-status-note" style={{ marginBottom: 10 }}>
+                  {t("telegramLocalModeNote")}
+                </p>
+                <p className="settings-telegram-bot-line">
+                  {t("telegramBotAccount")}{" "}
+                  <a
+                    className="settings-telegram-bot-link"
+                    href="https://t.me/mvfintrackbot"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {telegramBotHandle}
+                  </a>
+                </p>
+                <div className="settings-status-grid">
+                  <div className={`settings-status-item ${telegramConnected ? "is-on" : "is-off"}`}>
+                    <span className="settings-status-label">{t("telegramConnectionStatusTitle")}</span>
+                    <span className="settings-status-value">
+                      {telegramConnected ? t("telegramConnectionConnected") : t("telegramConnectionNotConnected")}
+                    </span>
+                  </div>
+                  <div className={`settings-status-item ${telegramReportsEnabled ? "is-on" : "is-off"}`}>
+                    <span className="settings-status-label">{t("telegramReportsStatusTitle")}</span>
+                    <span className="settings-status-value">
+                      {telegramReportsEnabled ? t("statusEnabled") : t("statusDisabled")}
+                    </span>
+                  </div>
+                </div>
+                {!allRemindersEnabled && telegramConnected ? (
+                  <p className="settings-status-note">{t("telegramEnableHint")}</p>
                 ) : null}
-              </div>
-              {telegramMessage && <div className="settings-success" style={{ marginTop: 12 }}>{telegramMessage}</div>}
-            </GlassCard>
-
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">🔔 {t("allRemindersTitle")}</h2>
-              </div>
-              <p className="settings-card-hint">{t("allRemindersHelp")}</p>
-              <div className="settings-status-grid">
-                <div className={`settings-status-item ${allRemindersEnabled ? "is-on" : "is-off"}`}>
-                  <span className="settings-status-label">{t("allRemindersStatusTitle")}</span>
-                  <span className="settings-status-value">
-                    {allRemindersEnabled ? t("statusEnabled") : t("statusDisabled")}
-                  </span>
+                <div className="settings-input-wrapper">
+                  <label className="filter-label">{t("telegramIdLabel")}</label>
+                  <GlassInput
+                    placeholder={t("telegramIdPlaceholder")}
+                    value={telegramChatId}
+                    onChange={(event) => setTelegramChatId(event.target.value)}
+                  />
                 </div>
-                <div className={`settings-status-item ${permissionIsGood ? "is-on" : "is-off"}`}>
-                  <span className="settings-status-label">{t("notificationPermissionTitle")}</span>
-                  <span className="settings-status-value">{permissionLabel}</span>
+                <div className="settings-actions">
+                  <GlassButton
+                    onClick={handleSaveTelegramId}
+                    disabled={telegramBusy || !isTelegramIdChanged}
+                    className="settings-action-btn"
+                  >
+                    {t("saveTelegramId")}
+                  </GlassButton>
+                  <GlassButton
+                    variant="ghost"
+                    onClick={handleSendTelegramReport}
+                    disabled={!canSendTelegramReport}
+                    className="settings-action-btn"
+                  >
+                    <Send size={14} strokeWidth={2} style={{ marginRight: 6 }} />{t("sendTelegramReport")}
+                  </GlassButton>
+                  {telegramReportBusy ? (
+                    <span className="inline-loader" role="status" aria-label={t("sendTelegramReport")}>
+                      <span className="loading-dot" />
+                      <span className="loading-dot" />
+                      <span className="loading-dot" />
+                    </span>
+                  ) : null}
                 </div>
-              </div>
+                {telegramMessage && <div className="settings-success" style={{ marginTop: 12 }}>{telegramMessage}</div>}
+              </GlassCard>
 
-              <div className="settings-actions">
-                <GlassButton
-                  variant={allRemindersEnabled ? "ghost" : "secondary"}
-                  onClick={handleToggleAllReminders}
-                  disabled={reminderBusy}
-                  className="settings-action-btn"
-                >
-                  {allRemindersEnabled ? t("allRemindersDisableBtn") : t("allRemindersEnableBtn")}
-                </GlassButton>
-                {reminderBusy ? (
-                  <span className="inline-loader" role="status" aria-label={t("save")}>
-                    <span className="loading-dot" />
-                    <span className="loading-dot" />
-                    <span className="loading-dot" />
-                  </span>
-                ) : null}
-              </div>
-              <p className="settings-card-hint" style={{ marginTop: 10, marginBottom: 0 }}>
-                {reminderPermission === "unsupported"
-                  ? t("allRemindersUnsupported")
-                  : reminderPermission === "denied"
-                    ? t("allRemindersDenied")
-                    : allRemindersEnabled
-                      ? t("allRemindersOn")
-                      : t("allRemindersOff")}
-              </p>
-              {reminderMessage && <div className="settings-success" style={{ marginTop: 12 }}>{reminderMessage}</div>}
-            </GlassCard>
+              <GlassCard className="settings-card settings-card--feature">
+                <div className="settings-card-header">
+                  <h2 className="settings-card-title"><Bell size={16} strokeWidth={2} /> {t("allRemindersTitle")}</h2>
+                </div>
+                <p className="settings-card-hint">{t("allRemindersHelp")}</p>
+                <div className="settings-status-grid">
+                  <div className={`settings-status-item ${allRemindersEnabled ? "is-on" : "is-off"}`}>
+                    <span className="settings-status-label">{t("allRemindersStatusTitle")}</span>
+                    <span className="settings-status-value">
+                      {allRemindersEnabled ? t("statusEnabled") : t("statusDisabled")}
+                    </span>
+                  </div>
+                  <div className={`settings-status-item ${permissionIsGood ? "is-on" : "is-off"}`}>
+                    <span className="settings-status-label">{t("notificationPermissionTitle")}</span>
+                    <span className="settings-status-value">{permissionLabel}</span>
+                  </div>
+                </div>
 
-            <GlassCard>
-              <div className="settings-card-header">
-                <h2 className="settings-card-title">🗑️ {t("clearAll")}</h2>
-              </div>
-              <p className="settings-card-hint danger-hint">{t("clearAllHelp")}</p>
-
-              <div className="settings-actions">
-                <GlassButton
-                  variant="ghost"
-                  onClick={handleClearAll}
-                  disabled={clearing}
-                  className="settings-action-btn danger"
-                >
-                  {t("clearAll")}
-                </GlassButton>
-                {clearing ? (
-                  <span className="inline-loader" role="status" aria-label={t("clearing")}>
-                    <span className="loading-dot" />
-                    <span className="loading-dot" />
-                    <span className="loading-dot" />
-                  </span>
-                ) : null}
-              </div>
-            </GlassCard>
+                <div className="settings-actions">
+                  <GlassButton
+                    variant={allRemindersEnabled ? "ghost" : "secondary"}
+                    onClick={handleToggleAllReminders}
+                    disabled={reminderBusy}
+                    className="settings-action-btn"
+                  >
+                    {allRemindersEnabled ? t("allRemindersDisableBtn") : t("allRemindersEnableBtn")}
+                  </GlassButton>
+                  {reminderBusy ? (
+                    <span className="inline-loader" role="status" aria-label={t("save")}>
+                      <span className="loading-dot" />
+                      <span className="loading-dot" />
+                      <span className="loading-dot" />
+                    </span>
+                  ) : null}
+                </div>
+                <p className="settings-card-hint" style={{ marginTop: 10, marginBottom: 0 }}>
+                  {reminderPermission === "unsupported"
+                    ? t("allRemindersUnsupported")
+                    : reminderPermission === "denied"
+                      ? t("allRemindersDenied")
+                      : allRemindersEnabled
+                        ? t("allRemindersOn")
+                        : t("allRemindersOff")}
+                </p>
+                {reminderMessage && <div className="settings-success" style={{ marginTop: 12 }}>{reminderMessage}</div>}
+              </GlassCard>
+            </div>
           </div>
         </div>
       )}

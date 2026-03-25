@@ -15,7 +15,8 @@ export function showSiteToast(message, variant = "info", options = {}) {
     id: nextToastId(),
     message: String(message),
     variant: variant || "info",
-    duration: Number.isFinite(duration) && duration > 0 ? duration : 3200
+    duration: Number.isFinite(duration) && duration > 0 ? duration : 3200,
+    action: options?.action || null
   };
 
   window.dispatchEvent(new CustomEvent(SITE_TOAST_EVENT, { detail: payload }));

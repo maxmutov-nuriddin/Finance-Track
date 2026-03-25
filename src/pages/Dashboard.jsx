@@ -46,6 +46,7 @@ import {
   getActiveGoal
 } from "../lib/budgetCalc";
 import { showSiteToast } from "../lib/siteToast";
+import InsightsWidget from "../components/InsightsWidget";
 import "./dashboard-liquid.css";
 
 const SALARY_WORDS = ["зп", "зарплат", "salary", "maosh", "oylik", "аванс", "премия", "бонус"];
@@ -1229,6 +1230,12 @@ export default function Dashboard() {
         </ModalPortal>
       )}
       <div className="dashboard-main">
+        <InsightsWidget
+          transactions={allTransactions}
+          monthlyIncome={monthlyIncome}
+          recommendedSpend={safeRecommendedSpend}
+          activeGoal={activeGoal}
+        />
         <div className="dashboard-tiles">
           <div className="stat-tile tile-green">
             <div className="tile-icon"><Banknote size={20} strokeWidth={2.5} /></div>

@@ -31,17 +31,25 @@ export default function BudgetCard({
           ? t("budgetWarnNegative")
           : warning
     : "";
+  const budgetModeLabel = budgetMode === "manual" ? "MANUAL" : "AUTO";
+  const statusLabel = overspent ? t("overspent") : t("canSpend");
 
   // Calculate circle progress
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
-  const progressPercent = Math.min(100, Math.round((currentMonthExpense / recommendedMaxSpend) * 100));
+  const safeRecommended = Math.max(0, Number(recommendedMaxSpend || 0));
+  const progressPercent = safeRecommended > 0
+    ? Math.min(100, Math.round((currentMonthExpense / safeRecommended) * 100))
+    : 0;
   const offset = circumference - (progressPercent / 100) * circumference;
 
   return (
     <div className="budget-card">
       <div className="budget-card-header">
-        <h2 className="budget-card-title">{t("budgetTitle")}</h2>
+        <div className="budget-card-title-block">
+          <h2 className="budget-card-title">{t("budgetTitle")}</h2>
+          <div className="budget-card-subtitle">{t("budgetHelper")}</div>
+        </div>
         <button
           onClick={onOpenSettings}
           className="budget-card-settings-btn"
@@ -102,7 +110,13 @@ export default function BudgetCard({
                 <div className={`budget-card-amount ${remaining < 0 ? "value-negative" : ""}`}>
                   {formatAmount(remaining)}
                 </div>
-                <div className="budget-card-helper">{t("budgetHelper")}</div>
+                <div className="budget-card-meta-row">
+                  <span className={`budget-card-status ${overspent ? "danger" : "ok"}`}>
+                    {statusLabel}
+                  </span>
+                  <span className="budget-card-mode">{budgetModeLabel}</span>
+                </div>
+                <div className="budget-card-helper">{progress}% • {t("canSpend")} {formatAmount(Math.round(planSpend))}</div>
               </div>
 
               <div className="budget-card-badge-icon">
@@ -115,22 +129,22 @@ export default function BudgetCard({
             <div className="plan-item">
               <div className="plan-icon-small green"><Banknote size={16} /></div>
               <div className="plan-details">
-                <span className="muted">{t("income")}</span>
-                <span className="stat-value">{formatAmount(Math.round(monthlyIncome))}</span>
+                <span className="plan-label">{t("income")}</span>
+                <span className="plan-value">{formatAmount(Math.round(monthlyIncome))}</span>
               </div>
             </div>
             <div className="plan-item">
               <div className="plan-icon-small orange"><Wallet size={16} /></div>
               <div className="plan-details">
-                <span className="muted">{t("mandatory")}</span>
-                <span className="stat-value">{formatAmount(Math.round(monthlyMandatory))}</span>
+                <span className="plan-label">{t("mandatory")}</span>
+                <span className="plan-value">{formatAmount(Math.round(monthlyMandatory))}</span>
               </div>
             </div>
             <div className="plan-item">
               <div className="plan-icon-small blue"><TrendingUp size={16} /></div>
               <div className="plan-details">
-                <span className="muted">{t("canSpend")}</span>
-                <span className="stat-value">{formatAmount(Math.round(planSpend))}</span>
+                <span className="plan-label">{t("canSpend")}</span>
+                <span className="plan-value">{formatAmount(Math.round(planSpend))}</span>
               </div>
             </div>
           </div>

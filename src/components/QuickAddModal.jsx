@@ -20,11 +20,16 @@ import GlassInput from "./GlassInput";
 import { formatAmount } from "../lib/format";
 import ModalPortal from "./ModalPortal";
 import { useI18n } from "./I18nProvider";
+import {
+  Sparkles, TrendingUp, TrendingDown, Target, ArrowLeftRight, Handshake,
+  X as XIcon, HandCoins, CornerUpLeft, Banknote as BanknoteIcon, CircleCheck,
+  Wallet, ArrowRight
+} from "lucide-react";
 import { getMonthRangeFor } from "../lib/utils";
 import { computeMandatoryMonthly, computeRecommendedSpend } from "../lib/budgetCalc";
 import { showSiteToast } from "../lib/siteToast";
 
-export default function QuickAddModal() {
+export default function QuickAddModal({ externalOpen, externalRaw, onExternalClose } = {}) {
   const user = useUser();
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
@@ -84,6 +89,19 @@ export default function QuickAddModal() {
     if (key === "personal") return t("categoryPersonal");
     if (key === "carryover") return t("categoryCarryover");
     return t("categoryOther");
+  };
+
+  // Support external open (from SmartInputBar for complex cases)
+  useEffect(() => {
+    if (externalOpen) {
+      setOpen(true);
+      if (externalRaw) setRaw(externalRaw);
+    }
+  }, [externalOpen, externalRaw]);
+
+  const handleClose = () => {
+    setOpen(false);
+    onExternalClose?.();
   };
 
   useEffect(() => {
@@ -277,7 +295,7 @@ export default function QuickAddModal() {
       }
     }
     const finalizeSuccess = () => {
-      setOpen(false);
+      handleClose();
       setRaw("");
       setPreview(null);
       setDebtMode("none");
@@ -450,24 +468,29 @@ export default function QuickAddModal() {
       handleSubmit();
     }
     if (event.key === "Escape") {
-      setOpen(false);
+      handleClose();
     }
   };
 
   return (
     <>
-      <GlassButton onClick={() => setOpen(true)}>{t("quickAdd")}</GlassButton>
+      {!externalOpen && (
+        <GlassButton onClick={() => setOpen(true)}>{t("quickAdd")}</GlassButton>
+      )}
       {open && (
         <ModalPortal>
-          <div className="modal-backdrop quickadd-modal-backdrop" onClick={() => setOpen(false)}>
+          <div className="modal-backdrop quickadd-modal-backdrop" onClick={handleClose}>
             <div className="modal quickadd-modal" onClick={(event) => event.stopPropagation()}>
               <div className="modal-header quickadd-modal-header">
-                <div>
-                  <strong>{t("addRecordOneLine")}</strong>
-                  <div className="modal-hint">{t("quickPlaceholder")}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <Sparkles size={18} strokeWidth={2} style={{ color: "var(--brand)", flexShrink: 0 }} />
+                  <div>
+                    <strong>{t("addRecordOneLine")}</strong>
+                    <div className="modal-hint">{t("quickPlaceholder")}</div>
+                  </div>
                 </div>
-                <GlassButton variant="ghost" onClick={() => setOpen(false)}>
-                  {t("close")}
+                <GlassButton variant="ghost" onClick={handleClose}>
+                  <XIcon size={15} strokeWidth={2.5} />
                 </GlassButton>
               </div>
               <div className="modal-body quickadd-modal-body">
@@ -499,7 +522,7 @@ export default function QuickAddModal() {
                       setTypeTouched(true);
                     }}
                   >
-                    {t("typeAuto")}
+                    <Sparkles size={13} strokeWidth={2} style={{ color: (!isDebtType && !isTransfer && typeOverride === "auto") ? "#fff" : "#a855f7" }} />{t("typeAuto")}
                   </button>
                   <button
                     type="button"
@@ -512,7 +535,7 @@ export default function QuickAddModal() {
                       setTypeTouched(true);
                     }}
                   >
-                    {t("typeIncome")}
+                    <TrendingUp size={13} strokeWidth={2} style={{ color: (!isDebtType && !isTransfer && typeOverride === "income") ? "#fff" : "#22c55e" }} />{t("typeIncome")}
                   </button>
                   <button
                     type="button"
@@ -525,7 +548,7 @@ export default function QuickAddModal() {
                       setTypeTouched(true);
                     }}
                   >
-                    {t("typeExpense")}
+                    <TrendingDown size={13} strokeWidth={2} style={{ color: (!isDebtType && !isTransfer && typeOverride === "expense") ? "#fff" : "#ef4444" }} />{t("typeExpense")}
                   </button>
                   <button
                     type="button"
@@ -538,7 +561,7 @@ export default function QuickAddModal() {
                       setTypeTouched(true);
                     }}
                   >
-                    {t("typeGoal")}
+                    <Target size={13} strokeWidth={2} style={{ color: (!isDebtType && !isTransfer && typeOverride === "goal") ? "#fff" : "#f59e0b" }} />{t("typeGoal")}
                   </button>
                   <button
                     type="button"
@@ -552,7 +575,7 @@ export default function QuickAddModal() {
                       setTransferMode((current) => (current === "none" ? "wallet_to_spend" : "none"));
                     }}
                   >
-                    {t("typeTransfer")}
+                    <ArrowLeftRight size={13} strokeWidth={2} style={{ color: isTransfer ? "#fff" : "#3b82f6" }} />{t("typeTransfer")}
                   </button>
                   <button
                     type="button"
@@ -564,7 +587,7 @@ export default function QuickAddModal() {
                       setTypeTouched(true);
                     }}
                   >
-                    {t("typeDebt")}
+                    <Handshake size={13} strokeWidth={2} style={{ color: isDebtType ? "#fff" : "#f97316" }} />{t("typeDebt")}
                   </button>
                 </div>
               </div>
@@ -607,9 +630,10 @@ export default function QuickAddModal() {
                         setTransferMode("wallet_to_spend");
                       }}
                     >
-                      <span className="debt-button-title">{t("transferToSpendShort")}</span>
-                      <span className="debt-button-sub">
-                        {formatMaybeAmount(remainingSpend)}
+                      <ArrowRight size={14} strokeWidth={2} />
+                      <span>
+                        <span className="debt-button-title">{t("transferToSpendShort")}</span>
+                        <span className="debt-button-sub">{formatMaybeAmount(remainingSpend)}</span>
                       </span>
                     </button>
                     <button
@@ -621,9 +645,10 @@ export default function QuickAddModal() {
                         setTransferMode("spend_to_wallet");
                       }}
                     >
-                      <span className="debt-button-title">{t("transferToWalletShort")}</span>
-                      <span className="debt-button-sub">
-                        {formatMaybeAmount(walletDebug)}
+                      <Wallet size={14} strokeWidth={2} />
+                      <span>
+                        <span className="debt-button-title">{t("transferToWalletShort")}</span>
+                        <span className="debt-button-sub">{formatMaybeAmount(walletDebug)}</span>
                       </span>
                     </button>
                   </div>
@@ -648,6 +673,7 @@ export default function QuickAddModal() {
                           setDebtMode("none");
                         }}
                       >
+                        <XIcon size={14} strokeWidth={2.5} style={{ color: debtMode === "none" ? "#fff" : "var(--ink-muted)" }} />
                         {t("debtNone")}
                       </button>
                       <button
@@ -660,6 +686,7 @@ export default function QuickAddModal() {
                           setDebtMode("borrow");
                         }}
                       >
+                        <HandCoins size={14} strokeWidth={2} style={{ color: debtMode === "borrow" ? "#fff" : "#22c55e" }} />
                         {t("debtBorrow")}
                       </button>
                       <button
@@ -672,6 +699,7 @@ export default function QuickAddModal() {
                           setDebtMode("repay");
                         }}
                       >
+                        <CornerUpLeft size={14} strokeWidth={2} style={{ color: debtMode === "repay" ? "#fff" : "#ef4444" }} />
                         {t("debtRepay")}
                       </button>
                       <button
@@ -684,6 +712,7 @@ export default function QuickAddModal() {
                           setDebtMode("lend");
                         }}
                       >
+                        <BanknoteIcon size={14} strokeWidth={2} style={{ color: debtMode === "lend" ? "#fff" : "#3b82f6" }} />
                         {t("debtLend")}
                       </button>
                       <button
@@ -696,6 +725,7 @@ export default function QuickAddModal() {
                           setDebtMode("collect");
                         }}
                       >
+                        <CircleCheck size={14} strokeWidth={2} style={{ color: debtMode === "collect" ? "#fff" : "#22c55e" }} />
                         {t("debtCollect")}
                       </button>
                     </div>

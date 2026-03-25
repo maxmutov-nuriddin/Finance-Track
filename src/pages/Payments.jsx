@@ -4,7 +4,7 @@ import { useUser } from "../lib/user";
 import { deletePayment, watchPayments, watchSettings, watchTransactions } from "../lib/store";
 import { useI18n } from "../components/I18nProvider";
 import { formatAmount } from "../lib/format";
-import { CreditCard } from "lucide-react";
+import { CreditCard, LayoutList, CalendarCheck, CircleDollarSign } from "lucide-react";
 
 export default function Payments() {
   const user = useUser();
@@ -26,21 +26,30 @@ export default function Payments() {
     return watchSettings(user.uid, setSettings);
   }, [user]);
 
+  const fallbackPayments = useMemo(() => {
+    return (transactions || [])
+      .filter((tx) => tx?.isRecurring && tx.type === "expense")
+      .map((tx) => ({
+        id: `fallback-${tx.id}`,
+        title: tx.description || t("monthlyExpense"),
+        payDateISO: tx.occurredAtISO?.slice(0, 10) || "",
+        amount: Number(tx.amount || 0),
+        recurrence: "monthly"
+      }));
+  }, [transactions, t]);
+
   const stats = useMemo(() => {
-    const fallbackRecurring = (transactions || []).filter(
-      (tx) => tx?.isRecurring && tx.type === "expense"
-    );
     const useFallback = payments.length === 0;
 
     if (useFallback) {
-      const total = fallbackRecurring.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
-      return { total, monthly: fallbackRecurring.length, count: fallbackRecurring.length };
+      const total = fallbackPayments.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+      return { total, monthly: fallbackPayments.length, count: fallbackPayments.length };
     }
 
     const total = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     const monthly = payments.filter((p) => p.recurrence === "monthly").length;
     return { total, monthly, count: payments.length };
-  }, [payments, transactions]);
+  }, [fallbackPayments, payments]);
   const remindersEnabled = Boolean(settings?.remindersEnabled);
 
   return (
@@ -58,18 +67,21 @@ export default function Payments() {
 
       <div className="payments-stats">
         <div className="stat-card">
+          <div className="stat-card-icon" style={{ color: "#3b82f6" }}><LayoutList size={20} strokeWidth={2} /></div>
           <div className="stat-card-label">{t("allPayments")}</div>
           <div className="stat-card-value" style={{ color: "#3b82f6" }}>
             {stats.count}
           </div>
         </div>
         <div className="stat-card">
+          <div className="stat-card-icon" style={{ color: "#22c55e" }}><CalendarCheck size={20} strokeWidth={2} /></div>
           <div className="stat-card-label">{t("monthlyInBudget")}</div>
           <div className="stat-card-value" style={{ color: "#22c55e" }}>
             {stats.monthly}
           </div>
         </div>
         <div className="stat-card">
+          <div className="stat-card-icon" style={{ color: "#f97316" }}><CircleDollarSign size={20} strokeWidth={2} /></div>
           <div className="stat-card-label">{t("totalAmount")}</div>
           <div className="stat-card-value" style={{ color: "#f97316" }}>
             {formatAmount(stats.total)}
@@ -80,7 +92,6 @@ export default function Payments() {
       <PaymentsPanel
         payments={payments}
         transactions={transactions}
-        allRemindersEnabled={Boolean(settings?.remindersEnabled)}
         onDelete={async (id) => {
           if (!user) return;
           const confirmed = window.confirm(t("deleteConfirm"));

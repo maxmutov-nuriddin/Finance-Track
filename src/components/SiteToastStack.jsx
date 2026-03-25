@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { onSiteToast } from "../lib/siteToast";
 
 export default function SiteToastStack() {
@@ -22,7 +23,8 @@ export default function SiteToastStack() {
         id: toast.id,
         message: toast.message,
         variant: toast.variant || "info",
-        duration: toast.duration || 3200
+        duration: toast.duration || 3200,
+        action: toast.action || null
       };
       setToasts((prev) => [...prev, item].slice(-4));
       const timeoutId = setTimeout(() => removeToast(item.id), item.duration);
@@ -43,21 +45,40 @@ export default function SiteToastStack() {
       {toasts.map((toast) => (
         <div key={toast.id} className={`site-toast site-toast--${toast.variant}`} role="status">
           <span className="site-toast-message">{toast.message}</span>
-          <button
-            type="button"
-            className="site-toast-close"
-            onClick={() => {
-              const timer = timersRef.current.get(toast.id);
-              if (timer) {
-                clearTimeout(timer);
-                timersRef.current.delete(toast.id);
-              }
-              setToasts((prev) => prev.filter((item) => item.id !== toast.id));
-            }}
-            aria-label="Close"
-          >
-            x
-          </button>
+          <div className="site-toast-controls">
+            {toast.action && (
+              <button
+                type="button"
+                className="site-toast-action"
+                onClick={() => {
+                  toast.action.onClick();
+                  const timer = timersRef.current.get(toast.id);
+                  if (timer) {
+                    clearTimeout(timer);
+                    timersRef.current.delete(toast.id);
+                  }
+                  setToasts((prev) => prev.filter((item) => item.id !== toast.id));
+                }}
+              >
+                {toast.action.label}
+              </button>
+            )}
+            <button
+              type="button"
+              className="site-toast-close"
+              onClick={() => {
+                const timer = timersRef.current.get(toast.id);
+                if (timer) {
+                  clearTimeout(timer);
+                  timersRef.current.delete(toast.id);
+                }
+                setToasts((prev) => prev.filter((item) => item.id !== toast.id));
+              }}
+              aria-label="Close"
+            >
+              <X size={13} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
       ))}
     </div>

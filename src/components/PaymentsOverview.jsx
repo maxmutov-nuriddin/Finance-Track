@@ -4,7 +4,12 @@ import GlassCard from "./GlassCard";
 import { formatAmount } from "../lib/format";
 import { useI18n } from "./I18nProvider";
 
-export default function PaymentsOverview({ payments }) {
+export default function PaymentsOverview({
+  payments,
+  className = "",
+  monthlyLimit = Number.POSITIVE_INFINITY,
+  upcomingLimit = 3
+}) {
   const { t } = useI18n();
   const upcomingAlertDateISO = useMemo(() => {
     const base = makeTashkentDate(getTzParts(new Date()));
@@ -13,16 +18,16 @@ export default function PaymentsOverview({ payments }) {
   }, []);
 
   const upcoming = useMemo(
-    () => payments.filter((pay) => pay.payDateISO >= upcomingAlertDateISO).slice(0, 3),
-    [payments, upcomingAlertDateISO]
+    () => payments.filter((pay) => pay.payDateISO >= upcomingAlertDateISO).slice(0, upcomingLimit),
+    [payments, upcomingAlertDateISO, upcomingLimit]
   );
   const monthly = useMemo(
-    () => payments.filter((pay) => (pay.recurrence || "oneTime") === "monthly"),
-    [payments]
+    () => payments.filter((pay) => (pay.recurrence || "oneTime") === "monthly").slice(0, monthlyLimit),
+    [payments, monthlyLimit]
   );
 
   return (
-    <GlassCard>
+    <GlassCard className={className}>
       <div className="card-title">{t("upcomingPayments")}</div>
       <div className="helper-text">{t("remind3days")}</div>
       <div className="list" style={{ marginTop: 12 }}>

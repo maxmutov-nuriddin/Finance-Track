@@ -1,40 +1,12 @@
-﻿.dashboard-liquid {
-  --dl-ink: #f6eaff;
-  --dl-muted: #bda7d3;
-  --dl-magenta: #ef49ff;
-  --dl-magenta-2: #b347ff;
-  --dl-border: rgba(208, 129, 255, 0.24);
-  --dl-card-bg: linear-gradient(145deg, rgba(20, 14, 33, 0.76), rgba(13, 10, 23, 0.72));
-  position: relative;
-  color: var(--dl-ink);
+/* dashboard-liquid — clean fintech overrides (Revolut/Apple Finance style) */
+.dashboard-liquid {
+  color: var(--ink);
 }
 
+/* Remove pseudo-element blobs */
 .dashboard-liquid::before,
 .dashboard-liquid::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.dashboard-liquid::before {
-  width: 360px;
-  height: 360px;
-  top: -120px;
-  left: -120px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 142, 240, 0.35) 0%, rgba(255, 142, 240, 0) 70%);
-  filter: blur(2px);
-}
-
-.dashboard-liquid::after {
-  width: 420px;
-  height: 420px;
-  right: -120px;
-  top: 120px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(144, 73, 255, 0.24) 0%, rgba(144, 73, 255, 0) 72%);
-  filter: blur(6px);
+  display: none;
 }
 
 .dashboard-liquid > * {
@@ -49,10 +21,10 @@
 .dashboard-liquid .dashboard-main::before {
   content: "Analytics";
   display: block;
-  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #f6eaff;
+  color: var(--ink);
   margin-bottom: -2px;
 }
 
@@ -61,6 +33,7 @@
   gap: 12px;
 }
 
+/* Cards: clean flat surface */
 .dashboard-liquid .stat-tile,
 .dashboard-liquid .budget-card-panel,
 .dashboard-liquid .stats-card,
@@ -72,15 +45,15 @@
 .dashboard-liquid .legend-item,
 .dashboard-liquid .expense-pie-legend-item,
 .dashboard-liquid .insight-col {
-  background: var(--dl-card-bg);
-  border: 1px solid var(--dl-border);
-  box-shadow: 0 16px 30px rgba(5, 1, 12, 0.42);
-  backdrop-filter: blur(14px) saturate(120%);
-  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .dashboard-liquid .stat-tile {
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   min-height: 124px;
   padding: 14px 12px;
 }
@@ -89,19 +62,19 @@
 .dashboard-liquid .budget-card-panel:hover,
 .dashboard-liquid .stats-card:hover,
 .dashboard-liquid .dashboard-insight-card:hover {
-  border-color: rgba(240, 132, 255, 0.42);
-  box-shadow: 0 20px 36px rgba(7, 2, 17, 0.48);
+  border-color: var(--border-2);
+  box-shadow: var(--shadow-md);
 }
 
 .dashboard-liquid .tile-icon {
-  border-radius: 10px;
-  border: 1px solid rgba(240, 135, 255, 0.28);
-  background: linear-gradient(135deg, rgba(168, 64, 255, 0.4), rgba(255, 73, 255, 0.32));
-  color: #fff3ff;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--brand);
 }
 
 .dashboard-liquid .tile-value {
-  color: #fff0ff;
+  color: var(--ink);
   font-size: clamp(1.1rem, 1.8vw, 1.4rem);
 }
 
@@ -110,58 +83,58 @@
 .dashboard-liquid .helper-text,
 .dashboard-liquid .insight-subtitle,
 .dashboard-liquid .muted {
-  color: var(--dl-muted);
+  color: var(--ink-muted);
 }
 
 .dashboard-liquid .tile-meta,
 .dashboard-liquid .insight-chip {
-  background: rgba(34, 22, 53, 0.62);
-  border: 1px solid rgba(214, 132, 255, 0.32);
-  color: #f2ddff;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
   box-shadow: none;
 }
 
 .dashboard-liquid .insight-chip.success {
-  background: rgba(158, 67, 255, 0.25);
-  border-color: rgba(220, 147, 255, 0.36);
-  color: #f4deff;
+  background: rgba(var(--c-success-rgb, 34, 197, 94), 0.1);
+  border-color: rgba(var(--c-success-rgb, 34, 197, 94), 0.25);
+  color: var(--c-success);
 }
 
 .dashboard-liquid .insight-chip.danger {
-  background: rgba(255, 77, 196, 0.2);
-  border-color: rgba(255, 129, 218, 0.34);
-  color: #ffd5f3;
+  background: rgba(var(--c-danger-rgb, 239, 68, 68), 0.1);
+  border-color: rgba(var(--c-danger-rgb, 239, 68, 68), 0.25);
+  color: var(--c-danger);
 }
 
 .dashboard-liquid .insight-chip.neutral {
-  background: rgba(83, 57, 123, 0.34);
-  border-color: rgba(183, 132, 238, 0.34);
-  color: #d9c2ef;
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--ink-muted);
 }
 
 .dashboard-liquid .budget-card-header,
 .dashboard-liquid .stats-card-header,
 .dashboard-liquid .pie-header {
-  border-bottom-color: rgba(190, 120, 242, 0.26);
+  border-bottom-color: var(--border);
 }
 
 .dashboard-liquid .budget-card-settings-btn {
-  background: rgba(31, 20, 48, 0.72);
-  border-color: rgba(182, 115, 232, 0.35);
-  color: #d8bced;
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--ink-2);
 }
 
 .dashboard-liquid .budget-card-settings-btn:hover {
-  background: rgba(107, 53, 168, 0.35);
-  border-color: rgba(231, 141, 255, 0.38);
+  background: var(--surface-3);
+  border-color: var(--border-2);
 }
 
 .dashboard-liquid .budget-card-glow {
-  background: radial-gradient(circle at 35% 30%, rgba(239, 73, 255, 0.16) 0%, transparent 64%);
+  display: none;
 }
 
 .dashboard-liquid .budget-card-panel {
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 20px 22px;
   position: relative;
 }
@@ -190,7 +163,7 @@
 }
 
 .dashboard-liquid .budget-card-label {
-  color: #c9b3df;
+  color: var(--ink-muted);
   font-weight: 600;
   margin-bottom: 4px;
 }
@@ -205,12 +178,12 @@
 .dashboard-liquid .stats-card-metric-value,
 .dashboard-liquid .insight-title,
 .dashboard-liquid .card-title {
-  color: #f9ecff;
+  color: var(--ink);
 }
 
 .dashboard-liquid .budget-card-helper {
   max-width: 520px;
-  color: #b69ecd;
+  color: var(--ink-muted);
 }
 
 .dashboard-liquid .budget-card-badge-icon {
@@ -218,9 +191,9 @@
   right: 20px;
   bottom: 16px;
   margin-left: 0;
-  opacity: 0.08;
+  opacity: 0.05;
   transform: rotate(-8deg);
-  color: rgba(235, 201, 255, 0.44);
+  color: var(--ink);
 }
 
 .dashboard-liquid .stats-split-container {
@@ -234,7 +207,7 @@
 }
 
 .dashboard-liquid .expense-pie-card {
-  border-radius: 18px;
+  border-radius: var(--r-xl);
   padding: 22px 18px;
   display: flex;
   flex-direction: column;
@@ -243,7 +216,7 @@
 }
 
 .dashboard-liquid .expense-pie-head {
-  border-bottom: 1px solid rgba(190, 120, 242, 0.24);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 14px;
 }
 
@@ -252,15 +225,15 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #f9ecff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .dashboard-liquid .expense-pie-total-label {
   margin-top: 10px;
   font-size: 0.84rem;
-  color: #b9a4cf;
+  color: var(--ink-muted);
 }
 
 .dashboard-liquid .expense-pie-total-value {
@@ -268,7 +241,7 @@
   font-size: clamp(1.7rem, 2.4vw, 2.2rem);
   font-weight: 800;
   letter-spacing: -0.01em;
-  color: #fff1ff;
+  color: var(--ink);
 }
 
 .dashboard-liquid .expense-pie-chart-wrap {
@@ -282,7 +255,7 @@
 }
 
 .dashboard-liquid .expense-pie-legend-item {
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 10px 12px;
 }
 
@@ -298,12 +271,11 @@
   height: 8px;
   border-radius: 999px;
   flex-shrink: 0;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.14);
 }
 
 .dashboard-liquid .expense-pie-legend-name {
   font-size: 0.9rem;
-  color: #d7c4ea;
+  color: var(--ink-2);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -313,14 +285,14 @@
 .dashboard-liquid .expense-pie-legend-percent {
   margin-left: auto;
   font-size: 0.78rem;
-  color: #9f84ba;
+  color: var(--ink-muted);
 }
 
 .dashboard-liquid .expense-pie-legend-value {
   padding-left: 16px;
-  font-size: 1.02rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #f8ebff;
+  color: var(--ink);
 }
 
 .dashboard-liquid .expense-pie-empty {
@@ -329,64 +301,63 @@
 
 .dashboard-liquid .expense-pie-empty-text {
   margin: 14px 0 0;
-  color: #b79fce;
+  color: var(--ink-muted);
 }
 
 .dashboard-liquid .expense-pie-tooltip {
-  border-radius: 10px;
-  border: 1px solid rgba(203, 127, 255, 0.4);
-  background: rgba(22, 14, 36, 0.92);
-  color: #f9ecff;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
   padding: 9px 10px;
-  box-shadow: 0 12px 22px rgba(7, 2, 17, 0.44);
+  box-shadow: var(--shadow-md);
 }
 
 .dashboard-liquid .expense-pie-tooltip-title {
   margin: 0;
   font-size: 0.82rem;
-  color: #d6c0ea;
+  color: var(--ink-muted);
 }
 
 .dashboard-liquid .expense-pie-tooltip-value {
   margin: 4px 0 0;
   font-weight: 700;
   font-size: 0.95rem;
-  color: #ffd5ff;
+  color: var(--ink);
 }
 
 .dashboard-liquid .stats-card .pill-tabs {
-  background: rgba(23, 14, 37, 0.78);
-  border-color: rgba(183, 112, 235, 0.34);
+  background: var(--surface-2);
+  border-color: var(--border);
 }
 
 .dashboard-liquid .stats-card .pill-tab {
-  color: #baa2d2;
+  color: var(--ink-muted);
 }
 
 .dashboard-liquid .stats-card .pill-tab-active {
   color: #fff;
-  border-color: rgba(242, 145, 255, 0.42);
-  background: linear-gradient(135deg, rgba(166, 76, 255, 0.52), rgba(239, 73, 255, 0.5));
-  box-shadow: 0 8px 16px rgba(50, 10, 74, 0.35);
+  border-color: transparent;
+  background: var(--brand);
+  box-shadow: 0 4px 12px rgba(79, 110, 247, 0.3);
 }
 
 .dashboard-liquid .stats-card-foot {
-  border-top-color: rgba(186, 117, 235, 0.22);
+  border-top-color: var(--border);
 }
 
 .dashboard-liquid .stats-card-legend-high {
-  background: #ef49ff;
-  box-shadow: 0 0 10px rgba(239, 73, 255, 0.5);
+  background: var(--brand);
 }
 
 .dashboard-liquid .stats-card-legend-low {
-  background: #6e5985;
+  background: var(--border-2);
 }
 
 .dashboard-liquid .insight-col,
 .dashboard-liquid .legend-item,
 .dashboard-liquid .pie-header {
-  border-radius: 12px;
+  border-radius: var(--r-md);
 }
 
 .dashboard-liquid .insight-col-title,
@@ -394,18 +365,20 @@
 .dashboard-liquid .insight-row,
 .dashboard-liquid .insight-row strong,
 .dashboard-liquid .insight-footer {
-  color: #e8d5fa;
+  color: var(--ink);
 }
 
+/* Remove glow filters */
 .dashboard-liquid .goal-progress-fill,
 .dashboard-liquid .budget-ring-progress {
-  filter: drop-shadow(0 0 9px rgba(239, 73, 255, 0.3));
+  filter: none;
 }
 
 .dashboard-liquid .pie-chart-wrapper svg {
-  filter: drop-shadow(0 0 12px rgba(239, 73, 255, 0.2));
+  filter: none;
 }
 
+/* ── Responsive ─────────────────────────────────── */
 @media (max-width: 1200px) {
   .dashboard-liquid .dashboard-tiles {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -422,22 +395,8 @@
     gap: 14px;
   }
 
-  .dashboard-liquid::before {
-    width: 220px;
-    height: 220px;
-    top: -80px;
-    left: -70px;
-  }
-
-  .dashboard-liquid::after {
-    width: 260px;
-    height: 260px;
-    right: -90px;
-    top: 140px;
-  }
-
   .dashboard-liquid .dashboard-main::before {
-    font-size: 1.35rem;
+    font-size: 1.3rem;
   }
 
   .dashboard-liquid .dashboard-tiles {
@@ -447,10 +406,6 @@
   .dashboard-liquid .budget-card-panel-inner {
     grid-template-columns: auto 1fr;
     gap: 16px;
-  }
-
-  .dashboard-liquid .budget-card-badge-icon {
-    opacity: 0.09;
   }
 
   .dashboard-liquid .expense-pie-title {
@@ -470,14 +425,6 @@
   .dashboard-liquid .dashboard-main::before {
     font-size: 1.2rem;
     margin-bottom: 2px;
-  }
-
-  .dashboard-liquid .stat-tile,
-  .dashboard-liquid .budget-card-panel,
-  .dashboard-liquid .stats-card,
-  .dashboard-liquid .dashboard-insight-card {
-    backdrop-filter: blur(11px) saturate(110%);
-    -webkit-backdrop-filter: blur(11px) saturate(110%);
   }
 
   .dashboard-liquid .budget-card-panel {
@@ -551,7 +498,7 @@
   }
 
   .dashboard-liquid .stats-card-title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     margin-bottom: 12px;
   }
 
@@ -588,10 +535,6 @@
     padding-left: 12px;
     font-size: 0.95rem;
     overflow-wrap: anywhere;
-  }
-
-  .dashboard-liquid .expense-pie-chart-wrap .recharts-pie-label-text {
-    display: none;
   }
 }
 
