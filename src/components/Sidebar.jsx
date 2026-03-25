@@ -1,5 +1,6 @@
 ﻿import React, { useMemo } from "react";
 import { LayoutDashboard, Clock, Target, CreditCard, Settings2 } from "lucide-react";
+import { getAppNavigation } from "../lib/navigation";
 import { useI18n } from "./I18nProvider";
 
 const ICON_MAP = {
@@ -21,16 +22,7 @@ const ICON_COLOR = {
 
 export default function Sidebar({ activePath, onNavigate }) {
   const { t } = useI18n();
-  const menu = useMemo(
-    () => [
-      { label: t("navHome"), path: "/", icon: "home" },
-      { label: t("navHistory"), path: "/history", icon: "history" },
-      { label: t("navGoals"), path: "/goals", icon: "goals" },
-      { label: t("navPayments"), path: "/payments", icon: "payments" },
-      { label: t("navSettings"), path: "/settings", icon: "settings" }
-    ],
-    [t]
-  );
+  const menu = useMemo(() => getAppNavigation(t), [t]);
 
   const handleNavigate = (path) => {
     onNavigate(path);

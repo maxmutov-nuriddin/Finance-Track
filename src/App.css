@@ -2160,6 +2160,58 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 @media (max-width: 640px) {
+  .settings-content,
+  .settings-budget-side,
+  .settings-budget-main,
+  .settings-account-side,
+  .settings-account-main {
+    gap: 18px;
+  }
+
+  .settings-grid,
+  .settings-grid-budget-secondary {
+    gap: 12px;
+  }
+
+  .settings-card {
+    gap: 14px;
+  }
+
+  .settings-input-wrapper,
+  .modal-row {
+    gap: 8px;
+  }
+
+  .settings-mode-buttons,
+  .settings-actions,
+  .settings-lang-switch {
+    gap: 10px;
+  }
+
+  .modal-body {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .modal-card {
+    gap: 12px;
+    padding: 15px;
+  }
+
+  .modal-grid,
+  .transfer-balance {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .modal-check {
+    align-items: flex-start;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+
   .settings-account-summary {
     align-items: flex-start;
   }
@@ -2837,9 +2889,22 @@ button { font-family: inherit; cursor: pointer; }
   }
   .modal-card .pill-tabs,
   .pill-tabs.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .debt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .debt-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
   .stats-card .pill-tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
   .stats-card .pill-tab { border-radius: var(--r-sm); font-size: 0.75rem; padding: 6px 4px; }
   .transaction-filters { grid-template-columns: 1fr; }
   .transaction-item { padding: 11px 14px; gap: 10px; }
+
+  .modal-body {
+    padding: 14px;
+  }
+
+  .modal-card .pill-tabs,
+  .pill-tabs.compact,
+  .modal-grid {
+    gap: 8px;
+  }
 }

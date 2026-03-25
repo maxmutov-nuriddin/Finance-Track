@@ -274,6 +274,10 @@
   background: var(--bg);
 }
 
+.app-shell--meet .mobile-nav {
+  display: none;
+}
+
 /* ── Cards / panels ─────────────────────────────── */
 .app-shell--meet .glass-card,
 .app-shell--meet .card,
@@ -418,6 +422,7 @@
     width: 100%;
     flex-wrap: wrap;
     justify-content: flex-end;
+    column-gap: 10px;
     row-gap: 10px;
   }
 
@@ -460,6 +465,82 @@
   .app-shell--meet .app-header {
     padding: 10px 14px;
   }
+
+  .app-shell--meet .app-header-actions {
+    row-gap: 12px;
+  }
+
+  .app-shell--meet .smart-input-wrap {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 700px) {
+  .app-shell--meet .mobile-nav {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 15;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--r-lg) + 4px);
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+    backdrop-filter: blur(14px);
+  }
+
+  .app-shell--meet .mobile-nav-item {
+    min-width: 0;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--ink-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 4px;
+    transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+
+  .app-shell--meet .mobile-nav-item:hover {
+    background: var(--surface-2);
+    color: var(--ink);
+    border-color: var(--border);
+  }
+
+  .app-shell--meet .mobile-nav-item.active {
+    background: var(--brand);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 8px 16px rgba(79, 110, 247, 0.24);
+  }
+
+  .app-shell--meet .mobile-nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 18px;
+  }
+
+  .app-shell--meet .mobile-nav-label {
+    min-width: 0;
+    font-size: 0.67rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-shell--meet .page-wrap {
+    padding-bottom: calc(106px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (max-width: 420px) {
@@ -482,7 +563,29 @@
     padding: 9px 14px;
   }
 
+  .app-shell--meet .smart-input-wrap {
+    gap: 9px;
+    padding-left: 12px;
+    padding-right: 8px;
+  }
+
   .app-shell--meet .smart-input-field::placeholder {
     font-size: 0.75rem;
+  }
+
+  .app-shell--meet .mobile-nav {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .app-shell--meet .mobile-nav-item {
+    padding: 8px 2px;
+  }
+
+  .app-shell--meet .mobile-nav-label {
+    font-size: 0.62rem;
   }
 }

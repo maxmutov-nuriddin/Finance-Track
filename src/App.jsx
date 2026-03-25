@@ -4,6 +4,7 @@ import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import AuthGate from "./components/AuthGate";
 import QuickAddModal from "./components/QuickAddModal";
 import Sidebar from "./components/Sidebar";
+import MobileNav from "./components/MobileNav";
 import SmartInputBar from "./components/SmartInputBar";
 import SiteToastStack from "./components/SiteToastStack";
 import { I18nProvider, useI18n } from "./components/I18nProvider";
@@ -88,6 +89,7 @@ function AppShell() {
             </Routes>
           </div>
         </main>
+        <MobileNav activePath={location.pathname} onNavigate={navigate} />
       </div>
     </div>
   );
