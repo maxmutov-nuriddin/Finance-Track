@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import GlassButton from "./GlassButton";
 import { computeBudgetProgress } from "../lib/budget";
 import { formatAmount } from "../lib/format";
@@ -77,7 +77,7 @@ export default function BudgetCard({
                     cy="64"
                     r={radius}
                     fill="none"
-                    stroke="rgba(255, 255, 255, 0.05)"
+                    stroke="var(--border-2)"
                     strokeWidth="10"
                   />
                   <circle

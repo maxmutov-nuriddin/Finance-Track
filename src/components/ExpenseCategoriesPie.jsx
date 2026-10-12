@@ -172,7 +172,7 @@ export default function ExpenseCategoriesPie({ transactions = [] }) {
               endAngle={450}
               paddingAngle={3}
               minAngle={2}
-              stroke="#0f172a"
+              stroke="var(--surface)"
               strokeWidth={2}
             >
               {categoryData.map((entry, index) => (

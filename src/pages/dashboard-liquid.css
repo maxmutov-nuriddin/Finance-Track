@@ -38,16 +38,24 @@
 .dashboard-liquid .budget-card-panel,
 .dashboard-liquid .stats-card,
 .dashboard-liquid .dashboard-insight-card,
+.dashboard-liquid .expense-pie-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Nested cards inside panels: elevated surface-2 for clear depth */
 .dashboard-liquid .chart-card,
 .dashboard-liquid .plan-item,
-.dashboard-liquid .expense-pie-card,
 .dashboard-liquid .pie-header,
 .dashboard-liquid .legend-item,
 .dashboard-liquid .expense-pie-legend-item,
 .dashboard-liquid .insight-col {
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -68,9 +76,6 @@
 
 .dashboard-liquid .tile-icon {
   border-radius: var(--r-md);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--brand);
 }
 
 .dashboard-liquid .tile-value {
@@ -141,7 +146,7 @@
 
 .dashboard-liquid .budget-card-panel-inner {
   display: grid;
-  grid-template-columns: auto minmax(320px, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 18px;
   min-height: 136px;
@@ -360,12 +365,24 @@
   border-radius: var(--r-md);
 }
 
-.dashboard-liquid .insight-col-title,
-.dashboard-liquid .insight-col-title.danger,
-.dashboard-liquid .insight-row,
-.dashboard-liquid .insight-row strong,
-.dashboard-liquid .insight-footer {
+.dashboard-liquid .insight-col-title {
   color: var(--ink);
+}
+
+.dashboard-liquid .insight-col-title.danger {
+  color: var(--c-danger);
+}
+
+.dashboard-liquid .insight-row {
+  color: var(--ink-2);
+}
+
+.dashboard-liquid .insight-row strong {
+  color: var(--ink);
+}
+
+.dashboard-liquid .insight-footer {
+  color: var(--ink-muted);
 }
 
 /* Remove glow filters */
@@ -419,6 +436,10 @@
 
 @media (max-width: 520px) {
   .dashboard-liquid .dashboard-tiles {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-liquid .stats-card-summary {
     grid-template-columns: 1fr;
   }
 

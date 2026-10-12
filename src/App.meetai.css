@@ -290,17 +290,17 @@
 }
 
 /* ── Inputs ─────────────────────────────────────── */
-.app-shell--meet input:not(.smart-input-field),
+.app-shell--meet input:not(.smart-input-field):not([type="checkbox"]):not([type="radio"]),
 .app-shell--meet select,
 .app-shell--meet textarea {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   color: var(--ink);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   outline: none;
 }
 
-.app-shell--meet input:not(.smart-input-field):focus,
+.app-shell--meet input:not(.smart-input-field):not([type="checkbox"]):not([type="radio"]):focus,
 .app-shell--meet select:focus,
 .app-shell--meet textarea:focus {
   border-color: var(--brand);
@@ -382,7 +382,7 @@
 }
 
 /* ── Responsive ──────────────────────────────────── */
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .app-shell--meet .sidebar {
     width: 72px;
     padding: 16px 8px;
@@ -410,6 +410,7 @@
     padding: 10px 8px;
   }
 
+  .app-shell--meet .sidebar-label,
   .app-shell--meet .sidebar-item-label {
     display: none;
   }
@@ -444,7 +445,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   .app-shell--meet .sidebar {
     display: none;
   }
@@ -473,9 +474,7 @@
   .app-shell--meet .smart-input-wrap {
     min-height: 44px;
   }
-}
 
-@media (max-width: 700px) {
   .app-shell--meet .mobile-nav {
     position: fixed;
     left: 12px;
@@ -486,10 +485,10 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 6px;
     padding: 8px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-2);
     border-radius: calc(var(--r-lg) + 4px);
     background: color-mix(in srgb, var(--surface) 94%, transparent);
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+    box-shadow: var(--shadow-lg);
     backdrop-filter: blur(14px);
   }
 
